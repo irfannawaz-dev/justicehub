@@ -181,15 +181,17 @@
                         $avBg  = $avColors[$idx % count($avColors)];
                         $flags = intval($case->is_gbv) . intval($case->is_child) . intval($case->is_minority || $case->is_disability || $case->is_underserved);
                     @endphp
-                    <a href="{{ route('cases.show', $case) }}"
-                       class="lit-kanban-card"
+                    <div class="lit-kanban-card"
+                       data-case-id="{{ $case->id }}"
                        data-gbv="{{ $case->is_gbv ? '1' : '0' }}"
                        data-child="{{ $case->is_child ? '1' : '0' }}"
                        data-underserved="{{ ($case->is_minority || $case->is_disability || $case->is_underserved) ? '1' : '0' }}">
 
-                        {{-- Row 1: UID + days badge --}}
+                        {{-- Row 1: UID + days badge + link --}}
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px;">
-                            <span class="mono" style="font-size: 10px; color: var(--ink-3); letter-spacing: 0.04em;">{{ $case->case_uid }}</span>
+                            <a href="{{ route('cases.show', $case) }}" style="text-decoration:none;">
+                                <span class="mono" style="font-size: 10px; color: var(--ink-3); letter-spacing: 0.04em;">{{ $case->case_uid }}</span>
+                            </a>
                             @if($case->days_in_stage > 30)
                             <span style="font-size: 9px; padding: 2px 6px; background: var(--ochre-tint); color: var(--ochre); font-weight: 700; border-radius: 2px;">{{ $case->days_in_stage }}d</span>
                             @endif
@@ -280,7 +282,27 @@
                         </div>
                         @endif
 
-                    </a>
+                        {{-- Stage change dropdown --}}
+                        @php
+                            $changer   = $case->litigation_stage_changed_by ? \App\Models\User::find($case->litigation_stage_changed_by)?->name : null;
+                            $changedAt = $case->litigation_stage_changed_at ? \Carbon\Carbon::parse($case->litigation_stage_changed_at)->format('d M Y, H:i') : null;
+                        @endphp
+                        <div style="margin-top:8px; border-top:1px solid var(--rule-2); padding-top:8px;" onclick="event.stopPropagation()">
+                            <label style="font-size:9px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--ink-3); display:block; margin-bottom:3px;">Move Stage</label>
+                            <select onchange="litUpdateStage(this, {{ $case->id }})"
+                                    style="width:100%; font-size:11px; padding:5px 6px; border:1px solid var(--rule); background:var(--parchment); color:var(--ink); font-family:inherit; border-radius:2px; cursor:pointer;">
+                                @foreach(['Filed','In Hearings','Awaiting Judgment','Resolved'] as $s)
+                                    <option value="{{ $s }}" {{ ($case->litigation_stage ?? 'Filed') === $s ? 'selected' : '' }}>{{ $s }}</option>
+                                @endforeach
+                            </select>
+                            @if($changer)
+                            <div style="font-size:9px; color:var(--ink-4); margin-top:4px;">
+                                <strong>{{ $changer }}</strong> · {{ $changedAt }}
+                            </div>
+                            @endif
+                        </div>
+
+                    </div>
                     @empty
                     <div style="padding: 20px 14px; text-align: center; color: var(--ink-4); font-size: 11px; border: 1px dashed var(--rule);">
                         No cases
@@ -573,6 +595,40 @@
 </div>
 
 <script>
+// ── Stage update ──────────────────────────────────────────────
+function litUpdateStage(selectEl, caseId) {
+    var newStage = selectEl.value;
+    selectEl.disabled = true;
+
+    fetch('/cases/' + caseId + '/litigation-stage', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ stage: newStage })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            // Update the "changed by" text below the dropdown
+            var info = selectEl.nextElementSibling;
+            if (info && info.style.fontSize === '9px') {
+                info.innerHTML = '<strong>' + data.changed_by + '</strong> · ' + data.changed_at;
+            } else {
+                var div = document.createElement('div');
+                div.style.cssText = 'font-size:9px; color:var(--ink-4); margin-top:4px;';
+                div.innerHTML = '<strong>' + data.changed_by + '</strong> · ' + data.changed_at;
+                selectEl.parentNode.appendChild(div);
+            }
+            // Reload page to move card to new column
+            setTimeout(() => location.reload(), 600);
+        }
+        selectEl.disabled = false;
+    })
+    .catch(() => { selectEl.disabled = false; });
+}
+
 // ── Kanban filter ──────────────────────────────────────────────
 function litFilter(type, btn) {
     document.querySelectorAll('.lit-pill-filter').forEach(b => b.classList.remove('active'));

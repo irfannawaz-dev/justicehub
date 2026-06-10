@@ -319,7 +319,11 @@ class ServiceController extends Controller
                 $c->court_type = 'Civil';
             }
 
-            if (in_array($c->status->value, ['Closed', 'Settlement'])) {
+            // Use manual litigation_stage if set, otherwise infer from encounters/status
+            $manualStage = $c->litigation_stage ?? null;
+            if ($manualStage && array_key_exists($manualStage, $pipeline)) {
+                $pipeline[$manualStage][] = $c;
+            } elseif (in_array($c->status->value, ['Closed', 'Settlement'])) {
                 $pipeline['Resolved'][] = $c;
             } elseif (
                 str_contains($lastType, 'judgment') || str_contains($lastType, 'verdict') ||
@@ -481,5 +485,42 @@ class ServiceController extends Controller
             'totalCases', 'todayHearings', 'upcomingHearings',
             'missingNextHearing', 'activeCases', 'staff'
         ));
+    }
+
+    public function updateLitigationStage(Request $request, CaseRecord $case)
+    {
+        $stages = ['Filed', 'In Hearings', 'Awaiting Judgment', 'Resolved'];
+        $request->validate(['stage' => 'required|in:' . implode(',', $stages)]);
+
+        $fromStage = $case->litigation_stage ?? 'Filed';
+        $toStage   = $request->stage;
+
+        if ($fromStage === $toStage) {
+            return response()->json(['success' => false, 'message' => 'No change']);
+        }
+
+        // Update case
+        DB::table('cases')->where('id', $case->id)->update([
+            'litigation_stage'            => $toStage,
+            'litigation_stage_changed_by' => $request->user()->id,
+            'litigation_stage_changed_at' => now(),
+        ]);
+
+        // Log the change
+        DB::table('litigation_stage_logs')->insert([
+            'case_id'    => $case->id,
+            'from_stage' => $fromStage,
+            'to_stage'   => $toStage,
+            'changed_by' => $request->user()->id,
+            'changed_at' => now(),
+        ]);
+
+        return response()->json([
+            'success'    => true,
+            'from'       => $fromStage,
+            'to'         => $toStage,
+            'changed_by' => $request->user()->name,
+            'changed_at' => now()->format('d M Y, H:i'),
+        ]);
     }
 }
