@@ -45,6 +45,7 @@ class CaseRecord extends Model
         'urgency', 'status', 'disposition', 'risk',
         'sla_met',
         'litigation_stage', 'litigation_stage_changed_by', 'litigation_stage_changed_at',
+        'adr_stage', 'adr_stage_changed_by', 'adr_stage_changed_at',
         // Vulnerability flags
         'is_gbv', 'is_child', 'is_minority', 'is_disability', 'is_underserved',
         // Pathway

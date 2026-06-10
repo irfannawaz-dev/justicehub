@@ -222,18 +222,19 @@
                         $cInitials = collect(explode(' ', $case->name))->map(fn($n) => strtoupper(substr($n, 0, 1)))->take(2)->join('');
                         $avatarBg = $avatarColors[abs(crc32($case->name ?? '')) % count($avatarColors)];
                         $nextSession = $case->serviceEncounters->where('date', '>=', now()->toDateString())->first();
+                        $adrStages = ['ADR Intake', 'In Mediation', 'Settlement Draft', 'Resolved', 'Escalated'];
+                        $currentAdrStage = $case->adr_stage ?? 'ADR Intake';
                     @endphp
-                    <a href="{{ route('cases.show', $case) }}"
-                       class="card jh-kanban-card"
-                       style="padding: 12px 13px; text-decoration: none; color: inherit; display: block;"
-                       data-gbv="{{ $case->is_gbv ? '1' : '0' }}"
-                       data-child="{{ $case->is_child ? '1' : '0' }}"
-                       data-minority="{{ $case->is_minority ? '1' : '0' }}"
-                       data-disability="{{ $case->is_disability ? '1' : '0' }}">
+                    <div class="card jh-kanban-card"
+                         style="padding: 12px 13px; display: block;"
+                         data-gbv="{{ $case->is_gbv ? '1' : '0' }}"
+                         data-child="{{ $case->is_child ? '1' : '0' }}"
+                         data-minority="{{ $case->is_minority ? '1' : '0' }}"
+                         data-disability="{{ $case->is_disability ? '1' : '0' }}">
 
-                        {{-- Row 1: Case UID + days badge --}}
+                        {{-- Row 1: Case UID (link) + days badge --}}
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-                            <span class="mono" style="font-size: 10px; color: var(--ink-4);">{{ $case->case_uid }}</span>
+                            <a href="{{ route('cases.show', $case) }}" class="mono" style="font-size: 10px; color: var(--ink-4); text-decoration: none;" onclick="event.stopPropagation()">{{ $case->case_uid }}</a>
                             <span class="mono" style="font-size: 10px; font-weight: 600; padding: 1px 6px; background: {{ $case->days_in_stage > 14 ? 'var(--burgundy-tint)' : 'var(--ochre-tint)' }}; color: {{ $case->days_in_stage > 14 ? 'var(--burgundy)' : 'var(--ochre)' }};">{{ $case->days_in_stage }}d</span>
                         </div>
 
@@ -264,10 +265,33 @@
 
                         {{-- Row 6: Assigned lawyer --}}
                         @if($case->assigned_to)
-                        <div style="font-size: 10px; color: var(--ink-3); margin-bottom: 4px;">
+                        <div style="font-size: 10px; color: var(--ink-3); margin-bottom: 6px;">
                             <x-lucide-user style="width: 9px; height: 9px; display: inline; vertical-align: -1px; color: var(--ink-4);" />
                             {{ $case->assigned_to }}
                         </div>
+                        @endif
+
+                        {{-- Stage dropdown --}}
+                        <div style="margin-bottom: 4px;" onclick="event.stopPropagation()">
+                            <select onchange="adrUpdateStage(this, {{ $case->id }})"
+                                style="width: 100%; padding: 4px 7px; font-size: 11px; font-family: inherit; border: 1px solid var(--rule); background: var(--parchment); color: var(--ink); cursor: pointer; border-radius: 2px;">
+                                @foreach($adrStages as $s)
+                                <option value="{{ $s }}" {{ $currentAdrStage === $s ? 'selected' : '' }}>{{ $s }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        {{-- Changed by / at --}}
+                        @if($case->adr_stage_changed_by)
+                        @php
+                            $changer = \App\Models\User::find($case->adr_stage_changed_by);
+                            $changedAt = $case->adr_stage_changed_at ? \Carbon\Carbon::parse($case->adr_stage_changed_at)->format('d M, H:i') : '';
+                        @endphp
+                        <div id="adr-stage-meta-{{ $case->id }}" style="font-size: 9.5px; color: var(--ink-4); margin-bottom: 4px;">
+                            {{ $changer?->name ?? '—' }} &middot; {{ $changedAt }}
+                        </div>
+                        @else
+                        <div id="adr-stage-meta-{{ $case->id }}" style="font-size: 9.5px; color: var(--ink-4); margin-bottom: 4px; display: none;"></div>
                         @endif
 
                         {{-- Vulnerability flags --}}
@@ -290,7 +314,7 @@
                             @endif
                         </div>
                         @endif
-                    </a>
+                    </div>
                     @empty
                     <div style="padding: 24px 14px; text-align: center; color: var(--ink-4); font-size: 11px; border: 1px dashed var(--rule);">
                         No cases in this stage
@@ -1027,6 +1051,30 @@
 
 {{-- ═══ Client-side filtering ═══ --}}
 <script>
+function adrUpdateStage(select, caseId) {
+    var stage = select.value;
+    var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    select.disabled = true;
+    fetch('/cases/' + caseId + '/adr-stage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
+        body: JSON.stringify({ stage: stage })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        select.disabled = false;
+        if (data.success) {
+            var meta = document.getElementById('adr-stage-meta-' + caseId);
+            if (meta) {
+                meta.textContent = data.changed_by + ' · ' + data.changed_at;
+                meta.style.display = '';
+            }
+            setTimeout(function() { location.reload(); }, 600);
+        }
+    })
+    .catch(function() { select.disabled = false; });
+}
+
 function filterKanban(type, btn) {
     // Update pill active states
     document.querySelectorAll('#kanbanFilters .jh-pill-filter').forEach(function(p) {

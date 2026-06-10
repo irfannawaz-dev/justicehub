@@ -56,7 +56,11 @@ class ServiceController extends Controller
             $c->days_in_stage = $daysInStage;
             $c->session_count = $c->serviceEncounters->count();
 
-            if ($c->status->value === 'Rejected' || str_contains(strtolower($lastType), 'litigation') || str_contains(strtolower($lastType), 'court')) {
+            // Use manual adr_stage if set, otherwise infer from encounters/status
+            $manualStage = $c->adr_stage ?? null;
+            if ($manualStage && array_key_exists($manualStage, $pipeline)) {
+                $pipeline[$manualStage][] = $c;
+            } elseif ($c->status->value === 'Rejected' || str_contains(strtolower($lastType), 'litigation') || str_contains(strtolower($lastType), 'court')) {
                 $pipeline['Escalated'][] = $c;
             } elseif (in_array($c->status->value, ['Closed', 'Settlement'])) {
                 $pipeline['Resolved'][] = $c;
@@ -485,6 +489,41 @@ class ServiceController extends Controller
             'totalCases', 'todayHearings', 'upcomingHearings',
             'missingNextHearing', 'activeCases', 'staff'
         ));
+    }
+
+    public function updateAdrStage(Request $request, CaseRecord $case)
+    {
+        $stages = ['ADR Intake', 'In Mediation', 'Settlement Draft', 'Resolved', 'Escalated'];
+        $request->validate(['stage' => 'required|in:' . implode(',', $stages)]);
+
+        $fromStage = $case->adr_stage ?? 'ADR Intake';
+        $toStage   = $request->stage;
+
+        if ($fromStage === $toStage) {
+            return response()->json(['success' => false, 'message' => 'No change']);
+        }
+
+        DB::table('cases')->where('id', $case->id)->update([
+            'adr_stage'            => $toStage,
+            'adr_stage_changed_by' => $request->user()->id,
+            'adr_stage_changed_at' => now(),
+        ]);
+
+        DB::table('adr_stage_logs')->insert([
+            'case_id'    => $case->id,
+            'from_stage' => $fromStage,
+            'to_stage'   => $toStage,
+            'changed_by' => $request->user()->id,
+            'changed_at' => now(),
+        ]);
+
+        return response()->json([
+            'success'    => true,
+            'from'       => $fromStage,
+            'to'         => $toStage,
+            'changed_by' => $request->user()->name,
+            'changed_at' => now()->format('d M Y, H:i'),
+        ]);
     }
 
     public function updateLitigationStage(Request $request, CaseRecord $case)
