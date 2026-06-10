@@ -175,8 +175,8 @@ class CaseController extends Controller
             'color' => 'var(--forest)',
         ]);
 
-        // 2. Service encounters
-        foreach ($case->serviceEncounters as $enc) {
+        // 2. Service encounters (skip "Intake" type — already shown from case fields above)
+        foreach ($case->serviceEncounters->reject(fn($e) => strtolower($e->type) === 'intake') as $enc) {
             $timeline->push([
                 'type'  => 'encounter',
                 'icon'  => 'message-square',
