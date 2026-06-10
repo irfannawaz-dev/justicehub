@@ -161,6 +161,52 @@ class CaseController extends Controller
 
         $pendingTransfer = $case->transfers->where('status', 'pending')->first();
 
+        // ── LAS CMS Program Data ─────────────────────────────────────────────
+        $cmsData     = null;
+        $cmsHistory  = collect();
+        $cmsHearings = collect();
+
+        if ($case->external_case_id) {
+            try {
+                $cmsDb = \Illuminate\Support\Facades\DB::connection('las_cms');
+
+                // Current record
+                $cmsData = $cmsDb->table('programs')
+                    ->where('id', $case->external_case_id)
+                    ->select([
+                        'approvalDate', 'vakalatnamaSubmissionDate', 'caseFileDate',
+                        'lawyer1', 'courtName', 'levelOfCourt', 'caseNumber',
+                        'firNumber', 'policeStation', 'natureOfCase', 'typeOfCase',
+                        'mainCaseCategory', 'caseFiledUnderAct', 'nextHearing',
+                        'currentCaseStatus', 'caseDecision', 'caseDisposalDate',
+                        'caseStage', 'UniqueNumber2',
+                    ])
+                    ->first();
+
+                // Change history from programs_detail
+                $cmsHistory = $cmsDb->table('programs_detail')
+                    ->where('programsid', $case->external_case_id)
+                    ->orderBy('created_at')
+                    ->get([
+                        'change_type', 'created_at', 'edited_by', 'username',
+                        'currentCaseStatus', 'caseStage', 'nextHearing',
+                        'lawyer1', 'courtName', 'caseNumber', 'reasonOfChange',
+                        'additionalComment',
+                    ]);
+
+                // Hearings from hearings table
+                $cmsHearings = $cmsDb->table('hearings')
+                    ->where('programsID', $case->external_case_id)
+                    ->orderBy('created_at')
+                    ->get([
+                        'id', 'date', 'nextHearing', 'hearingUpdate', 'caseNumber', 'created_at',
+                    ]);
+
+            } catch (\Exception $e) {
+                \Log::warning('LAS CMS data fetch failed for ' . $case->case_uid . ': ' . $e->getMessage());
+            }
+        }
+
         // ── Unified Activity Timeline ─────────────────────────────────────────
         $timeline = collect();
 
@@ -192,13 +238,14 @@ class CaseController extends Controller
         $litLogs = \Illuminate\Support\Facades\DB::table('litigation_stage_logs')
             ->where('case_id', $case->id)->orderBy('changed_at')->get();
         foreach ($litLogs as $log) {
-            $changer = \App\Models\User::find($log->changed_by);
+            $changer = $log->changed_by ? \App\Models\User::find($log->changed_by) : null;
+            $byLabel = $changer?->name ?? ($log->changed_by == 0 ? 'System · CMS Sync' : '—');
             $timeline->push([
                 'type'  => 'lit_stage',
                 'icon'  => 'gavel',
                 'label' => 'Litigation Stage Changed',
                 'text'  => "Stage moved from «{$log->from_stage}» → «{$log->to_stage}».",
-                'by'    => $changer?->name ?? '—',
+                'by'    => $byLabel,
                 'at'    => \Carbon\Carbon::parse($log->changed_at),
                 'color' => 'var(--burgundy)',
             ]);
@@ -312,10 +359,50 @@ class CaseController extends Controller
             ]);
         }
 
+        // 12. LAS CMS — programs_detail change history
+        foreach ($cmsHistory as $h) {
+            $isCreate = ($h->change_type ?? '') === 'create';
+            $by       = $h->edited_by ?: $h->username ?: 'LAS CMS';
+            $parts    = [];
+            if ($h->currentCaseStatus) $parts[] = "Status: {$h->currentCaseStatus}";
+            if ($h->caseStage)         $parts[] = "Stage: {$h->caseStage}";
+            if ($h->nextHearing)       $parts[] = "Next hearing: {$h->nextHearing}";
+            if ($h->lawyer1)           $parts[] = "Lawyer: {$h->lawyer1}";
+            if ($h->courtName)         $parts[] = "Court: {$h->courtName}";
+            if ($h->caseNumber)        $parts[] = "Case no: {$h->caseNumber}";
+            if ($h->reasonOfChange)    $parts[] = "Reason: {$h->reasonOfChange}";
+            if ($h->additionalComment) $parts[] = $h->additionalComment;
+
+            $timeline->push([
+                'type'  => $isCreate ? 'cms_create' : 'cms_update',
+                'icon'  => $isCreate ? 'database' : 'refresh-cw',
+                'label' => $isCreate ? 'LAS CMS — Case Created' : 'LAS CMS — Case Updated',
+                'text'  => implode(' · ', $parts) ?: 'Record saved in LAS CMS.',
+                'by'    => $by,
+                'at'    => \Carbon\Carbon::parse($h->created_at),
+                'color' => 'var(--ink-3)',
+            ]);
+        }
+
+        // 13. LAS CMS — court hearings
+        foreach ($cmsHearings as $h) {
+            $text = $h->hearingUpdate ?? '';
+            if ($h->nextHearing) $text .= ($text ? ' · ' : '') . "Next hearing: {$h->nextHearing}";
+            $timeline->push([
+                'type'  => 'cms_hearing',
+                'icon'  => 'scale',
+                'label' => 'LAS CMS — Court Hearing',
+                'text'  => $text ?: 'Hearing logged in LAS CMS.',
+                'by'    => 'LAS CMS',
+                'at'    => \Carbon\Carbon::parse($h->date ?: $h->created_at),
+                'color' => 'var(--burgundy)',
+            ]);
+        }
+
         // Sort newest first
         $timeline = $timeline->sortByDesc('at')->values();
 
-        return view('cases.show', compact('case', 'assignableUsers', 'pendingTransfer', 'timeline'));
+        return view('cases.show', compact('case', 'assignableUsers', 'pendingTransfer', 'timeline', 'cmsData'));
     }
 
     public function verifyDocument(Request $request, \App\Models\Document $document)

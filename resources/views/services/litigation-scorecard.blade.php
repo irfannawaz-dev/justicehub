@@ -224,7 +224,16 @@
                         </div>
                         @endif
 
-                        {{-- Row 6: Lawyer --}}
+                        {{-- Row 6: CMS case stage badge --}}
+                        @if(!empty($case->cms_case_stage))
+                        <div style="margin-bottom: 4px;">
+                            <span style="font-size: 9px; padding: 2px 6px; background: rgba(22,48,41,0.08); color: var(--forest); font-weight: 600; letter-spacing: 0.04em; border: 1px solid rgba(22,48,41,0.15); border-radius: 2px;">
+                                CMS: {{ $case->cms_case_stage }}
+                            </span>
+                        </div>
+                        @endif
+
+                        {{-- Row 7: Lawyer --}}
                         @if($case->assigned_to)
                         <div style="font-size: 10.5px; color: var(--ink-3);">{{ $case->assigned_to }}</div>
                         @endif
@@ -284,8 +293,13 @@
 
                         {{-- Stage change dropdown --}}
                         @php
-                            $changer   = $case->litigation_stage_changed_by ? \App\Models\User::find($case->litigation_stage_changed_by)?->name : null;
-                            $changedAt = $case->litigation_stage_changed_at ? \Carbon\Carbon::parse($case->litigation_stage_changed_at)->format('d M Y, H:i') : null;
+                            $isSystemChange = $case->litigation_stage_changed_by === null && $case->litigation_stage_changed_at;
+                            $changer   = $case->litigation_stage_changed_by
+                                ? \App\Models\User::find($case->litigation_stage_changed_by)?->name
+                                : ($isSystemChange ? 'System · CMS Sync' : null);
+                            $changedAt = $case->litigation_stage_changed_at
+                                ? \Carbon\Carbon::parse($case->litigation_stage_changed_at)->format('d M Y, H:i')
+                                : null;
                         @endphp
                         <div style="margin-top:8px; border-top:1px solid var(--rule-2); padding-top:8px;" onclick="event.stopPropagation()">
                             <label style="font-size:9px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--ink-3); display:block; margin-bottom:3px;">Move Stage</label>
@@ -296,9 +310,11 @@
                                 @endforeach
                             </select>
                             @if($changer)
-                            <div style="font-size:9px; color:var(--ink-4); margin-top:4px;">
+                            <div id="lit-stage-meta-{{ $case->id }}" style="font-size:9px; color:var(--ink-4); margin-top:4px;">
                                 <strong>{{ $changer }}</strong> · {{ $changedAt }}
                             </div>
+                            @else
+                            <div id="lit-stage-meta-{{ $case->id }}" style="font-size:9px; color:var(--ink-4); margin-top:4px; display:none;"></div>
                             @endif
                         </div>
 

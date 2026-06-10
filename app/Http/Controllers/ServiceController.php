@@ -291,6 +291,61 @@ class ServiceController extends Controller
             ->latest('intake_date')
             ->get();
 
+        // Bulk-fetch CMS caseStage for all linked cases (1 query, no N+1)
+        // keyed by external_case_id → caseStage
+        $linkedExternalIds = $cases->whereNotNull('external_case_id')->pluck('external_case_id', 'id');
+        $cmsStageMap = collect();
+        if ($linkedExternalIds->isNotEmpty()) {
+            try {
+                $cmsStageMap = DB::connection('las_cms')
+                    ->table('programs')
+                    ->whereIn('id', $linkedExternalIds->values())
+                    ->pluck('caseStage', 'id');
+            } catch (\Exception $e) {
+                \Log::warning('LAS CMS stage fetch failed: ' . $e->getMessage());
+            }
+        }
+
+        // Map LAS CMS caseStage values → JusticeHub pipeline stages
+        $cmsStageToJH = function (?string $stage): ?string {
+            if (!$stage) return null;
+            $s = strtolower(trim($stage));
+
+            // Resolved / disposed
+            if (in_array($s, ['disposed off', 'dismiss with direction', 'withdrawal of vakalatnama',
+                               'compliance', 'disposed', 'challan', 'challan '])) {
+                return 'Resolved';
+            }
+            // Awaiting Judgment
+            if (str_contains($s, 'judgement') || str_contains($s, 'judgment') ||
+                str_contains($s, 'final arguments') || str_contains($s, 'post trial') ||
+                str_contains($s, 'order') || str_contains($s, 'orders')) {
+                return 'Awaiting Judgment';
+            }
+            // In Hearings
+            if (str_contains($s, 'hearing') || str_contains($s, 'evidence') ||
+                str_contains($s, 'arguments') || str_contains($s, 'affidavit') ||
+                str_contains($s, 'ex-parte') || str_contains($s, 'bail') ||
+                str_contains($s, 'adjournment') || str_contains($s, 'misc') ||
+                str_contains($s, 'written statement') || str_contains($s, 'objection') ||
+                str_contains($s, 'framing') || str_contains($s, 'katcha') ||
+                str_contains($s, 'proceedings') || str_contains($s, 'plaintiff') ||
+                str_contains($s, 'defendant') || str_contains($s, 'investigation') ||
+                str_contains($s, '265-k') || str_contains($s, 'stop proceedings')) {
+                return 'In Hearings';
+            }
+            // Filed / pre-hearing stages
+            if (str_contains($s, 'institution') || str_contains($s, 'pre trial') ||
+                str_contains($s, 'pending') || str_contains($s, 'service') ||
+                str_contains($s, 'notice') || str_contains($s, 'challan') ||
+                str_contains($s, 'supply of copies') || str_contains($s, 'charge') ||
+                str_contains($s, 'issue notice') || str_contains($s, '87') ||
+                str_contains($s, '88')) {
+                return 'Filed';
+            }
+            return null; // unknown — fall back to other logic
+        };
+
         // 4-stage pipeline: Filed → In Hearings → Awaiting Judgment → Resolved
         $pipeline = ['Filed' => [], 'In Hearings' => [], 'Awaiting Judgment' => [], 'Resolved' => []];
         foreach ($cases as $c) {
@@ -323,10 +378,34 @@ class ServiceController extends Controller
                 $c->court_type = 'Civil';
             }
 
-            // Use manual litigation_stage if set, otherwise infer from encounters/status
-            $manualStage = $c->litigation_stage ?? null;
-            if ($manualStage && array_key_exists($manualStage, $pipeline)) {
-                $pipeline[$manualStage][] = $c;
+            // Stage: CMS is source of truth — auto-update JH if CMS differs
+            $externalId  = $c->external_case_id ?? null;
+            $cmsRaw      = $externalId ? ($cmsStageMap[$externalId] ?? null) : null;
+            $cmsStage    = $cmsStageToJH($cmsRaw);
+            $c->cms_case_stage = $cmsRaw;
+
+            // If CMS maps to a valid stage AND it differs from current litigation_stage → auto-update
+            if ($cmsStage && $cmsStage !== ($c->litigation_stage ?? null)) {
+                $fromStage = $c->litigation_stage ?? 'Filed';
+                DB::table('cases')->where('id', $c->id)->update([
+                    'litigation_stage'            => $cmsStage,
+                    'litigation_stage_changed_by' => null,
+                    'litigation_stage_changed_at' => now(),
+                ]);
+                DB::table('litigation_stage_logs')->insert([
+                    'case_id'    => $c->id,
+                    'from_stage' => $fromStage,
+                    'to_stage'   => $cmsStage,
+                    'changed_by' => 0, // 0 = system
+                    'changed_at' => now(),
+                ]);
+                $c->litigation_stage = $cmsStage; // update in-memory
+            }
+
+            $effectiveStage = $c->litigation_stage ?? null;
+
+            if ($effectiveStage && array_key_exists($effectiveStage, $pipeline)) {
+                $pipeline[$effectiveStage][] = $c;
             } elseif (in_array($c->status->value, ['Closed', 'Settlement'])) {
                 $pipeline['Resolved'][] = $c;
             } elseif (

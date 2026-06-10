@@ -517,6 +517,84 @@
                         </div>
                     </div>
 
+                    {{-- LAS CMS Litigation Data --}}
+                    @if($cmsData)
+                    @php
+                        // Helper to format date strings cleanly
+                        $fmtDate = function(?string $d): ?string {
+                            if (!$d || str_starts_with($d, '0000')) return null;
+                            try { return \Carbon\Carbon::parse($d)->format('d M Y'); } catch (\Exception $e) { return $d; }
+                        };
+                        $cmsRows = [
+                            ['label' => 'Case Number',          'value' => $cmsData->caseNumber,                        'icon' => 'hash'],
+                            ['label' => 'FIR Number',           'value' => $cmsData->firNumber,                         'icon' => 'file-badge'],
+                            ['label' => 'Police Station',       'value' => $cmsData->policeStation,                     'icon' => 'building-2'],
+                            ['label' => 'Court Name',           'value' => $cmsData->courtName,                         'icon' => 'landmark'],
+                            ['label' => 'Level of Court',       'value' => $cmsData->levelOfCourt,                      'icon' => 'layers'],
+                            ['label' => 'Nature of Case',       'value' => $cmsData->natureOfCase,                      'icon' => 'scale'],
+                            ['label' => 'Type of Case',         'value' => $cmsData->typeOfCase,                        'icon' => 'tag'],
+                            ['label' => 'Main Category',        'value' => $cmsData->mainCaseCategory,                  'icon' => 'folder'],
+                            ['label' => 'Filed Under Act',      'value' => $cmsData->caseFiledUnderAct,                 'icon' => 'book-open'],
+                            ['label' => 'Assigned Lawyer',      'value' => $cmsData->lawyer1,                           'icon' => 'user'],
+                            ['label' => 'Approval Date',        'value' => $fmtDate($cmsData->approvalDate),            'icon' => 'calendar-check'],
+                            ['label' => 'Vakalatnama Date',     'value' => $fmtDate($cmsData->vakalatnamaSubmissionDate),'icon' => 'calendar'],
+                            ['label' => 'Case File Date',       'value' => $fmtDate($cmsData->caseFileDate),            'icon' => 'calendar'],
+                            ['label' => 'Next Hearing',         'value' => $fmtDate($cmsData->nextHearing),             'icon' => 'calendar-clock'],
+                            ['label' => 'Case Stage',           'value' => $cmsData->caseStage,                         'icon' => 'git-branch'],
+                            ['label' => 'Current Status',       'value' => $cmsData->currentCaseStatus,                 'icon' => 'activity'],
+                            ['label' => 'Case Decision',        'value' => $cmsData->caseDecision,                      'icon' => 'gavel'],
+                            ['label' => 'Disposal Date',        'value' => $fmtDate($cmsData->caseDisposalDate),        'icon' => 'calendar-x'],
+                            ['label' => 'CMS Unique No.',       'value' => $cmsData->UniqueNumber2,                     'icon' => 'fingerprint'],
+                        ];
+                    @endphp
+                    <div class="card jh-anim-section" style="padding: 22px 26px; animation-delay: 0.24s;">
+
+                        {{-- Header --}}
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <x-lucide-gavel style="width: 15px; height: 15px; color: var(--burgundy);" />
+                                <div class="label-cap" style="font-size: 10px;">LAS CMS · Litigation Record</div>
+                            </div>
+                            <span style="font-size: 10px; color: var(--ink-4); font-family: monospace;">ID #{{ $case->external_case_id }}</span>
+                        </div>
+
+                        {{-- Highlight strip: Next Hearing + Status + Stage --}}
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px;">
+                            @foreach([
+                                ['label' => 'Next Hearing',    'value' => $fmtDate($cmsData->nextHearing) ?? '—',  'color' => 'var(--ochre)'],
+                                ['label' => 'Current Status',  'value' => $cmsData->currentCaseStatus  ?: '—',  'color' => 'var(--forest)'],
+                                ['label' => 'Case Stage',      'value' => $cmsData->caseStage          ?: '—',  'color' => 'var(--burgundy)'],
+                            ] as $h)
+                            <div style="padding: 10px 14px; background: var(--parchment); border: 1px solid var(--rule-2); border-top: 2px solid {{ $h['color'] }};">
+                                <div style="font-size: 10px; color: var(--ink-4); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px;">{{ $h['label'] }}</div>
+                                <div style="font-size: 13px; font-weight: 600; color: {{ $h['color'] }};">{{ $h['value'] ?: '—' }}</div>
+                            </div>
+                            @endforeach
+                        </div>
+
+                        {{-- Full field grid --}}
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--rule-2);">
+                            @foreach($cmsRows as $row)
+                            @if($row['value'])
+                            <div style="display: flex; align-items: flex-start; gap: 10px; padding: 9px 14px; border-bottom: 1px solid var(--rule-2); {{ $loop->iteration % 2 === 0 ? 'border-left: 1px solid var(--rule-2);' : '' }}">
+                                <x-dynamic-component :component="'lucide-' . $row['icon']" style="width: 13px; height: 13px; color: var(--ink-4); margin-top: 2px; flex-shrink: 0;" />
+                                <div>
+                                    <div style="font-size: 10px; color: var(--ink-4); text-transform: uppercase; letter-spacing: 0.05em;">{{ $row['label'] }}</div>
+                                    <div style="font-size: 12.5px; font-weight: 500; color: var(--ink); margin-top: 1px; word-break: break-word;">{{ $row['value'] }}</div>
+                                </div>
+                            </div>
+                            @endif
+                            @endforeach
+                        </div>
+
+                        <div style="margin-top: 10px; font-size: 10.5px; color: var(--ink-4); display: flex; align-items: center; gap: 5px;">
+                            <x-lucide-refresh-cw style="width: 10px; height: 10px;" />
+                            Synced from LAS CMS
+                            @if($case->external_synced_at) · {{ \Carbon\Carbon::parse($case->external_synced_at)->format('d M Y, H:i') }} @endif
+                        </div>
+                    </div>
+                    @endif
+
                     {{-- Activity Timeline --}}
                     <div class="card jh-anim-section" style="padding: 22px 26px; animation-delay: 0.26s;">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;">
@@ -560,6 +638,9 @@
                                     @elseif($ico === 'send')          <x-lucide-send            style="width:13px;height:13px;color:{{ $col }};" />
                                     @elseif($ico === 'check-circle-2')<x-lucide-check-circle-2  style="width:13px;height:13px;color:{{ $col }};" />
                                     @elseif($ico === 'x-circle')      <x-lucide-x-circle        style="width:13px;height:13px;color:{{ $col }};" />
+                                    @elseif($ico === 'database')      <x-lucide-database        style="width:13px;height:13px;color:{{ $col }};" />
+                                    @elseif($ico === 'refresh-cw')    <x-lucide-refresh-cw      style="width:13px;height:13px;color:{{ $col }};" />
+                                    @elseif($ico === 'scale')         <x-lucide-scale           style="width:13px;height:13px;color:{{ $col }};" />
                                     @else                             <x-lucide-arrow-right-left style="width:13px;height:13px;color:{{ $col }};" />
                                     @endif
                                 </div>
