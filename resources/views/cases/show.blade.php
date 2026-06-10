@@ -517,28 +517,73 @@
                         </div>
                     </div>
 
-                    {{-- Recent Activity --}}
+                    {{-- Activity Timeline --}}
                     <div class="card jh-anim-section" style="padding: 22px 26px; animation-delay: 0.26s;">
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
-                            <x-lucide-activity style="width: 15px; height: 15px; color: var(--forest);" />
-                            <div class="label-cap" style="font-size: 10px;">Recent Activity</div>
-                        </div>
-                        @forelse($case->serviceEncounters->sortByDesc('date')->take(3) as $enc)
-                        <div style="display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; {{ !$loop->last ? 'border-bottom: 1px solid var(--rule-2);' : '' }}">
-                            <div style="width: 32px; height: 32px; background: var(--parchment); border: 1px solid var(--rule); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                <x-lucide-message-square style="width: 13px; height: 13px; color: var(--forest);" />
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <x-lucide-activity style="width: 15px; height: 15px; color: var(--forest);" />
+                                <div class="label-cap" style="font-size: 10px;">Activity Timeline</div>
                             </div>
-                            <div style="flex: 1; min-width: 0;">
-                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 3px;">
-                                    <x-pill>{{ $enc->type }}</x-pill>
-                                    <span class="mono" style="font-size: 10px; color: var(--ink-4);">{{ $enc->date->format('M d, Y') }}</span>
+                            <span class="mono" style="font-size: 10px; color: var(--ink-4);">{{ $timeline->count() }} events</span>
+                        </div>
+
+                        @forelse($timeline as $event)
+                        @php
+                            $iconMap = [
+                                'clipboard'       => 'clipboard',
+                                'message-square'  => 'message-square',
+                                'gavel'           => 'gavel',
+                                'heart-handshake' => 'heart-handshake',
+                                'file-text'       => 'file-text',
+                                'alert-triangle'  => 'alert-triangle',
+                                'star'            => 'star',
+                                'send'            => 'send',
+                                'check-circle-2'  => 'check-circle-2',
+                                'x-circle'        => 'x-circle',
+                                'arrow-right-left'=> 'arrow-right-left',
+                            ];
+                            $ico = $event['icon'];
+                            $col = $event['color'];
+                        @endphp
+                        <div style="display: flex; align-items: flex-start; gap: 12px; padding: 11px 0; {{ !$loop->last ? 'border-bottom: 1px solid var(--rule-2);' : '' }}">
+
+                            {{-- Icon dot --}}
+                            <div style="display: flex; flex-direction: column; align-items: center; flex-shrink: 0;">
+                                <div style="width: 30px; height: 30px; background: var(--parchment); border: 1px solid var(--rule); display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                                    @if($ico === 'clipboard')         <x-lucide-clipboard       style="width:13px;height:13px;color:{{ $col }};" />
+                                    @elseif($ico === 'message-square')<x-lucide-message-square  style="width:13px;height:13px;color:{{ $col }};" />
+                                    @elseif($ico === 'gavel')         <x-lucide-gavel           style="width:13px;height:13px;color:{{ $col }};" />
+                                    @elseif($ico === 'heart-handshake')<x-lucide-heart-handshake style="width:13px;height:13px;color:{{ $col }};" />
+                                    @elseif($ico === 'file-text')     <x-lucide-file-text       style="width:13px;height:13px;color:{{ $col }};" />
+                                    @elseif($ico === 'alert-triangle')<x-lucide-alert-triangle  style="width:13px;height:13px;color:{{ $col }};" />
+                                    @elseif($ico === 'star')          <x-lucide-star            style="width:13px;height:13px;color:{{ $col }};" />
+                                    @elseif($ico === 'send')          <x-lucide-send            style="width:13px;height:13px;color:{{ $col }};" />
+                                    @elseif($ico === 'check-circle-2')<x-lucide-check-circle-2  style="width:13px;height:13px;color:{{ $col }};" />
+                                    @elseif($ico === 'x-circle')      <x-lucide-x-circle        style="width:13px;height:13px;color:{{ $col }};" />
+                                    @else                             <x-lucide-arrow-right-left style="width:13px;height:13px;color:{{ $col }};" />
+                                    @endif
                                 </div>
-                                <div style="font-size: 12.5px; color: var(--ink-2); line-height: 1.45; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ Str::limit($enc->note, 100) }}</div>
-                                <div style="font-size: 11px; color: var(--ink-4); margin-top: 2px;">by {{ $enc->performed_by }}</div>
+                                @if(!$loop->last)
+                                <div style="width: 1px; flex: 1; min-height: 12px; background: var(--rule-2); margin-top: 4px;"></div>
+                                @endif
+                            </div>
+
+                            {{-- Content --}}
+                            <div style="flex: 1; min-width: 0; padding-bottom: 4px;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 3px; flex-wrap: wrap;">
+                                    <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: {{ $col }};">{{ $event['label'] }}</span>
+                                    <span class="mono" style="font-size: 10px; color: var(--ink-4);">{{ $event['at']->format('d M Y') }}@if($event['at']->format('H:i') !== '09:00') · {{ $event['at']->format('H:i') }}@endif</span>
+                                </div>
+                                @if($event['text'])
+                                <div style="font-size: 12.5px; color: var(--ink-2); line-height: 1.5; word-break: break-word;">{{ $event['text'] }}</div>
+                                @endif
+                                @if($event['by'])
+                                <div style="font-size: 11px; color: var(--ink-4); margin-top: 3px;">by {{ $event['by'] }}</div>
+                                @endif
                             </div>
                         </div>
                         @empty
-                        <div style="font-size: 13px; color: var(--ink-4); font-style: italic;">No service encounters logged yet.</div>
+                        <div style="font-size: 13px; color: var(--ink-4); font-style: italic;">No activity recorded yet.</div>
                         @endforelse
                     </div>
 

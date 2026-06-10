@@ -161,7 +161,161 @@ class CaseController extends Controller
 
         $pendingTransfer = $case->transfers->where('status', 'pending')->first();
 
-        return view('cases.show', compact('case', 'assignableUsers', 'pendingTransfer'));
+        // ── Unified Activity Timeline ─────────────────────────────────────────
+        $timeline = collect();
+
+        // 1. Intake
+        $timeline->push([
+            'type'  => 'intake',
+            'icon'  => 'clipboard',
+            'label' => 'Intake',
+            'text'  => 'Client registered via intake form.' . ($case->referral_source ? ' Referral source: ' . $case->referral_source . '.' : ''),
+            'by'    => $case->staff_receiving,
+            'at'    => \Carbon\Carbon::parse($case->intake_date->toDateString() . ' ' . ($case->intake_time ?? '09:00:00')),
+            'color' => 'var(--forest)',
+        ]);
+
+        // 2. Service encounters
+        foreach ($case->serviceEncounters as $enc) {
+            $timeline->push([
+                'type'  => 'encounter',
+                'icon'  => 'message-square',
+                'label' => $enc->type,
+                'text'  => $enc->note,
+                'by'    => $enc->performed_by,
+                'at'    => $enc->date->startOfDay(),
+                'color' => 'var(--forest)',
+            ]);
+        }
+
+        // 3. Litigation stage changes
+        $litLogs = \Illuminate\Support\Facades\DB::table('litigation_stage_logs')
+            ->where('case_id', $case->id)->orderBy('changed_at')->get();
+        foreach ($litLogs as $log) {
+            $changer = \App\Models\User::find($log->changed_by);
+            $timeline->push([
+                'type'  => 'lit_stage',
+                'icon'  => 'gavel',
+                'label' => 'Litigation Stage Changed',
+                'text'  => "Stage moved from «{$log->from_stage}» → «{$log->to_stage}».",
+                'by'    => $changer?->name ?? '—',
+                'at'    => \Carbon\Carbon::parse($log->changed_at),
+                'color' => 'var(--burgundy)',
+            ]);
+        }
+
+        // 4. ADR stage changes
+        $adrLogs = \Illuminate\Support\Facades\DB::table('adr_stage_logs')
+            ->where('case_id', $case->id)->orderBy('changed_at')->get();
+        foreach ($adrLogs as $log) {
+            $changer = \App\Models\User::find($log->changed_by);
+            $timeline->push([
+                'type'  => 'adr_stage',
+                'icon'  => 'heart-handshake',
+                'label' => 'ADR Stage Changed',
+                'text'  => "Stage moved from «{$log->from_stage}» → «{$log->to_stage}».",
+                'by'    => $changer?->name ?? '—',
+                'at'    => \Carbon\Carbon::parse($log->changed_at),
+                'color' => 'var(--ochre)',
+            ]);
+        }
+
+        // 5. Documents
+        foreach ($case->documents as $doc) {
+            $timeline->push([
+                'type'  => 'document',
+                'icon'  => 'file-text',
+                'label' => 'Document Uploaded',
+                'text'  => "{$doc->name} ({$doc->type}) — {$doc->confidentiality}",
+                'by'    => $doc->added_by,
+                'at'    => $doc->added_date->startOfDay(),
+                'color' => 'var(--ochre)',
+            ]);
+        }
+
+        // 6. Complaints
+        foreach ($case->complaints as $complaint) {
+            $timeline->push([
+                'type'  => 'complaint',
+                'icon'  => 'alert-triangle',
+                'label' => 'Complaint Filed',
+                'text'  => $complaint->description ?? $complaint->category ?? 'Complaint recorded.',
+                'by'    => $complaint->is_anonymous ? 'Anonymous' : ($complaint->submitted_by ?? '—'),
+                'at'    => $complaint->submitted_date->startOfDay(),
+                'color' => 'var(--burgundy)',
+            ]);
+        }
+
+        // 7. Feedback
+        foreach ($case->feedback as $fb) {
+            $score = $fb->score_overall ? "Overall: {$fb->score_overall}/5." : '';
+            $timeline->push([
+                'type'  => 'feedback',
+                'icon'  => 'star',
+                'label' => 'Feedback Received',
+                'text'  => trim($score . ' ' . ($fb->comment ?? '')),
+                'by'    => $fb->is_anonymous ? 'Anonymous' : ($fb->client_name ?? '—'),
+                'at'    => $fb->date->startOfDay(),
+                'color' => 'var(--moss)',
+            ]);
+        }
+
+        // 8. Pathway approval request
+        if ($case->requested_at) {
+            $timeline->push([
+                'type'  => 'approval_request',
+                'icon'  => 'send',
+                'label' => 'Pathway Approval Requested',
+                'text'  => "Pathway «{$case->assigned_pathway}» submitted for manager approval.",
+                'by'    => $case->pathway_manager ?? '—',
+                'at'    => $case->requested_at,
+                'color' => 'var(--ochre)',
+            ]);
+        }
+
+        // 9. Pathway approved
+        if ($case->approval_decision === 'approved' && $case->requested_at) {
+            $timeline->push([
+                'type'  => 'approved',
+                'icon'  => 'check-circle-2',
+                'label' => 'Pathway Approved',
+                'text'  => "Pathway «{$case->assigned_pathway}» approved. Case set to Active.",
+                'by'    => $case->pathway_manager ?? '—',
+                'at'    => $case->requested_at->addMinute(),
+                'color' => 'var(--moss)',
+            ]);
+        }
+
+        // 10. Pathway rejected
+        if ($case->rejected_at) {
+            $timeline->push([
+                'type'  => 'rejected',
+                'icon'  => 'x-circle',
+                'label' => 'Pathway Rejected',
+                'text'  => $case->rejection_reason ?? 'No reason provided.',
+                'by'    => $case->rejected_by ?? '—',
+                'at'    => $case->rejected_at,
+                'color' => 'var(--burgundy)',
+            ]);
+        }
+
+        // 11. Transfers
+        foreach ($case->transfers as $transfer) {
+            $timeline->push([
+                'type'  => 'transfer',
+                'icon'  => 'arrow-right-left',
+                'label' => 'Case Transfer ' . ucfirst($transfer->status),
+                'text'  => "Transfer requested from hub {$transfer->from_hub_id} to {$transfer->to_hub_id}." . ($transfer->reason ? " Reason: {$transfer->reason}." : ''),
+                'by'    => $transfer->transferredBy?->name ?? '—',
+                'at'    => \Carbon\Carbon::parse($transfer->created_at),
+                'color' => 'var(--ink-3)',
+            ]);
+        }
+
+        // Sort newest first
+        $timeline = $timeline->sortByDesc('at')->values();
+
+        return view('cases.show', compact('case', 'assignableUsers', 'pendingTransfer', 'timeline'));
     }
 
     public function verifyDocument(Request $request, \App\Models\Document $document)
