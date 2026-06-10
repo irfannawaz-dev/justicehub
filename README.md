@@ -1,59 +1,163 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# JusticeHub CRM
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A comprehensive Case & Referral Management System built for legal aid hubs operating across Sindh, Pakistan. Developed for the Legal Aid Society (LAS) to digitize and streamline justice delivery services at the grassroots level.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Overview
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+JusticeHub CRM enables justice hub coordinators, lawyers, mediators, and administrators to manage client intake, case referrals, service delivery, SLA compliance, and impact reporting — all from a single platform.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+The system supports multiple justice hubs across Sindh with role-based access control, ensuring each hub operates independently while allowing central oversight by program management.
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## Key Features
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Case & Intake Management
+- Multi-step intake form capturing client demographics, location, legal issue, and service pathway
+- Auto-assignment of cases to lawyers, mediators, or hub coordinators based on pathway
+- Unique case ID generation per intake
+- Support for walk-in, referral, and returning clients
+- Full Sindh location cascade — District → Tehsil/Taluka/Town → Union Council (2,287 records from official dataset)
 
-## Laravel Sponsors
+### Service Pathways
+- Free Legal Advice / Consultation
+- Mediation & ADR / Dispute Resolution
+- Representation in Court (Litigation)
+- NADRA & Documentation (CNIC, FRC, BISP)
+- Government Department / Public Institution referrals
+- Civil Society / NGO / CSO referrals
+- Information & Awareness sessions
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### Role-Based Access Control
+- **Super Admin** — full system access across all hubs
+- **Program Manager** — cross-hub oversight and reporting
+- **Hub Coordinator** — manages cases within their hub, marks resolution
+- **Lawyer** — views and manages cases assigned to them
+- **Mediator** — manages ADR cases assigned to them
+- **Court Clerk** — manages litigation cases and court calendars
+- **Data Entry** — intake and data entry only
 
-### Premium Partners
+### SLA Compliance Tracking
+- Dynamic SLA deadlines based on case urgency (Immediate / High / Medium / Low)
+- Real-time SLA status on every case (Met / Pending / Breach)
+- Automatic hourly SLA breach notifications via in-app bell and email
+- SLA column in case list with visual pill badges
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### Notifications System
+- In-app bell notification with live badge counter
+- Notifications for: case assigned, case updated, case approved, case rejected, case resolved, SLA breach approaching
+- Email notifications via SMTP (configurable)
+- Mark individual or all notifications as read
 
-## Contributing
+### Case Reassignment & Transfer
+- Transfer cases between staff with mandatory reason, date, and approval trail
+- Full transfer history per case
+- Pending transfer banner with approve/reject actions
+- Audit log of all transfers
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Dashboards & Reporting
+- Command Center dashboard for program management
+- Litigation & ADR dashboard for court and mediation tracking
+- KPI cards, cohort filters, disposition breakdown
+- Service pathway counts with click-to-filter
+- Impact report with PDF export
 
-## Code of Conduct
+### Settings & Administration
+- Lookup management for all dropdown values
+- Hub management with district assignment
+- User management with role and hub assignment
+- Location management (District / Taluka / Union Council)
+- Staff directory with designation and staff UID
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+---
 
-## Security Vulnerabilities
+## Tech Stack
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+- **Backend:** Laravel 11 (PHP 8.2)
+- **Frontend:** Blade templates, Vanilla JS, Vite
+- **Database:** MySQL
+- **Auth:** Laravel Breeze with role-based middleware
+- **Permissions:** Spatie Laravel Permission
+- **Notifications:** Laravel Notifications (database + mail channels)
+- **File Processing:** PhpSpreadsheet (Excel import)
+- **Activity Log:** Spatie Activity Log
+
+---
+
+## Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/irfannawaz-dev/justicehub.git
+cd justicehub
+
+# Install PHP dependencies
+composer install
+
+# Install JS dependencies
+npm install
+
+# Copy environment file
+cp .env.example .env
+
+# Generate application key
+php artisan key:generate
+
+# Configure your database in .env, then run migrations
+php artisan migrate
+
+# Seed initial data
+php artisan db:seed
+
+# Import Sindh location data (requires MasterReferenceDatasetforSindh.xlsx in project root)
+php artisan locations:import-sindh --fresh
+
+# Build frontend assets
+npm run build
+
+# Start the development server
+php artisan serve
+```
+
+---
+
+## Environment Variables
+
+Key `.env` values to configure:
+
+```
+APP_NAME=JusticeHub
+APP_URL=https://yourdomain.com
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_DATABASE=justicehub
+DB_USERNAME=root
+DB_PASSWORD=
+
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your@gmail.com
+MAIL_PASSWORD=your-app-password
+MAIL_FROM_ADDRESS=your@gmail.com
+MAIL_FROM_NAME="JusticeHub"
+```
+
+---
+
+## Scheduled Tasks
+
+Add this to your server cron for SLA breach notifications:
+
+```
+* * * * * php /path/to/artisan schedule:run >> /dev/null 2>&1
+```
+
+---
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Proprietary — Legal Aid Society (LAS), Sindh, Pakistan. All rights reserved.
