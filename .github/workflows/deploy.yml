@@ -35,32 +35,6 @@ jobs:
       - name: Build frontend assets
         run: npm run build
 
-      - name: Deploy to server via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            cd ~/public_html/website_46a92717
-
-            # Pull latest code
-            git pull origin main
-
-            # Install PHP dependencies
-            /usr/local/bin/php /usr/local/bin/composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
-
-            # Run database migrations
-            /usr/local/bin/php artisan migrate --force
-
-            # Clear and cache config/routes/views
-            /usr/local/bin/php artisan config:clear
-            /usr/local/bin/php artisan route:clear
-            /usr/local/bin/php artisan view:clear
-            /usr/local/bin/php artisan config:cache
-            /usr/local/bin/php artisan route:cache
-
       - name: Upload built assets via SCP
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -71,3 +45,36 @@ jobs:
           source: "public/build/"
           target: "~/public_html/website_46a92717/public/"
           strip_components: 1
+
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            cd ~/public_html/website_46a92717
+
+            # Put app in maintenance mode — users see a clean "down" page instead of 500
+            /usr/local/bin/php artisan down --retry=10
+
+            # Pull latest code
+            git pull origin main
+
+            # Install PHP dependencies
+            /usr/local/bin/php /usr/local/bin/composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+            # Run database migrations
+            /usr/local/bin/php artisan migrate --force
+
+            # Rebuild all caches atomically
+            /usr/local/bin/php artisan config:clear
+            /usr/local/bin/php artisan route:clear
+            /usr/local/bin/php artisan view:clear
+            /usr/local/bin/php artisan config:cache
+            /usr/local/bin/php artisan route:cache
+            /usr/local/bin/php artisan view:cache
+
+            # Bring app back online
+            /usr/local/bin/php artisan up
