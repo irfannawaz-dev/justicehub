@@ -1,0 +1,392 @@
+/*
+ * Justice Hub CRM — Bootstrap 5 Integration
+ * Bootstrap is loaded first, then overridden with Justice Hub design tokens.
+ * justice-hub.css loads after this file and handles custom components.
+ */
+
+@import 'bootstrap/dist/css/bootstrap.min.css';
+
+/* ═══════════════════════════════════════════════════════════════
+   JUSTICE HUB THEME — Bootstrap CSS Variable Overrides
+   All --bs-* variables map to Justice Hub design tokens.
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+
+  /* ── Core palette ──────────────────────────────────────────── */
+  --bs-primary:              #163029;
+  --bs-primary-rgb:          22, 48, 41;
+  --bs-secondary:            #4a7a5c;
+  --bs-secondary-rgb:        74, 122, 92;
+  --bs-success:              #4a7a5c;
+  --bs-success-rgb:          74, 122, 92;
+  --bs-danger:               #8a2e1d;
+  --bs-danger-rgb:           138, 46, 29;
+  --bs-warning:              #b87319;
+  --bs-warning-rgb:          184, 115, 25;
+  --bs-info:                 #6b6a65;
+  --bs-info-rgb:             107, 106, 101;
+  --bs-light:                #f0ebe0;
+  --bs-light-rgb:            240, 235, 224;
+  --bs-dark:                 #181714;
+  --bs-dark-rgb:             24, 23, 20;
+
+  /* ── Typography ────────────────────────────────────────────── */
+  --bs-body-font-family:     'Instrument Sans', system-ui, -apple-system, sans-serif;
+  --bs-body-font-size:       13.5px;
+  --bs-body-font-weight:     400;
+  --bs-body-line-height:     1.55;
+  --bs-body-color:           #181714;
+  --bs-body-bg:              #fdfcf7;
+  --bs-emphasis-color:       #181714;
+  --bs-heading-color:        #181714;
+
+  /* ── Links ─────────────────────────────────────────────────── */
+  --bs-link-color:           #163029;
+  --bs-link-color-rgb:       22, 48, 41;
+  --bs-link-hover-color:     #4a7a5c;
+  --bs-link-hover-color-rgb: 74, 122, 92;
+  --bs-link-decoration:      none;
+
+  /* ── Borders ───────────────────────────────────────────────── */
+  --bs-border-color:         #d9d2c1;
+  --bs-border-color-translucent: rgba(217,210,193,.2);
+  --bs-border-radius:        0;
+  --bs-border-radius-sm:     0;
+  --bs-border-radius-lg:     0;
+  --bs-border-radius-xl:     0;
+  --bs-border-radius-2xl:    0;
+  --bs-border-radius-pill:   100px;
+
+  /* ── Shadows ───────────────────────────────────────────────── */
+  --bs-box-shadow:           0 2px 12px rgba(24,23,20,.08);
+  --bs-box-shadow-sm:        0 1px 4px rgba(24,23,20,.06);
+  --bs-box-shadow-lg:        0 4px 24px rgba(24,23,20,.12);
+  --bs-box-shadow-inset:     inset 0 1px 2px rgba(24,23,20,.08);
+
+  /* ── Buttons ───────────────────────────────────────────────── */
+  --bs-btn-font-family:      'Instrument Sans', sans-serif;
+  --bs-btn-font-size:        13px;
+  --bs-btn-font-weight:      500;
+  --bs-btn-border-radius:    0;
+  --bs-btn-border-radius-sm: 0;
+  --bs-btn-border-radius-lg: 0;
+  --bs-btn-padding-x:        16px;
+  --bs-btn-padding-y:        7px;
+
+  /* ── Cards ─────────────────────────────────────────────────── */
+  --bs-card-bg:              #fdfcf7;
+  --bs-card-border-color:    #d9d2c1;
+  --bs-card-border-radius:   0;
+  --bs-card-inner-border-radius: 0;
+  --bs-card-cap-bg:          rgba(0,0,0,.02);
+  --bs-card-spacer-y:        18px;
+  --bs-card-spacer-x:        20px;
+  --bs-card-title-spacer-y:  8px;
+  --bs-card-box-shadow:      0 1px 6px rgba(24,23,20,.06);
+
+  /* ── Dropdowns ─────────────────────────────────────────────── */
+  --bs-dropdown-bg:              #fdfcf7;
+  --bs-dropdown-border-color:    #d9d2c1;
+  --bs-dropdown-border-radius:   0;
+  --bs-dropdown-divider-bg:      #d9d2c1;
+  --bs-dropdown-box-shadow:      0 4px 16px rgba(24,23,20,.10);
+  --bs-dropdown-link-color:      #3a3832;
+  --bs-dropdown-link-hover-bg:   #f0ebe0;
+  --bs-dropdown-link-hover-color: #181714;
+  --bs-dropdown-link-active-bg:  #163029;
+  --bs-dropdown-link-active-color: #f7f3eb;
+  --bs-dropdown-item-padding-y:  8px;
+  --bs-dropdown-item-padding-x:  14px;
+  --bs-dropdown-font-size:       12.5px;
+  --bs-dropdown-padding-y:       4px;
+  --bs-dropdown-spacer:          4px;
+  --bs-dropdown-min-width:       160px;
+
+  /* ── Modals ────────────────────────────────────────────────── */
+  --bs-modal-bg:                 #fdfcf7;
+  --bs-modal-border-color:       #d9d2c1;
+  --bs-modal-border-radius:      0;
+  --bs-modal-inner-border-radius: 0;
+  --bs-modal-content-bg:         #fdfcf7;
+  --bs-modal-header-border-color: #d9d2c1;
+  --bs-modal-footer-border-color: #d9d2c1;
+  --bs-modal-header-padding:     18px 22px;
+  --bs-modal-padding:            22px;
+  --bs-modal-box-shadow:         0 8px 40px rgba(24,23,20,.16);
+  --bs-modal-backdrop-opacity:   0.5;
+
+  /* ── Tables ────────────────────────────────────────────────── */
+  --bs-table-bg:             transparent;
+  --bs-table-color:          #181714;
+  --bs-table-border-color:   #d9d2c1;
+  --bs-table-striped-bg:     rgba(22,48,41,.02);
+  --bs-table-striped-color:  #181714;
+  --bs-table-hover-bg:       rgba(22,48,41,.03);
+  --bs-table-hover-color:    #181714;
+  --bs-table-active-bg:      rgba(22,48,41,.05);
+
+  /* ── Forms ─────────────────────────────────────────────────── */
+  --bs-form-control-bg:           #fdfcf7;
+  --bs-form-control-disabled-bg:  #f0ebe0;
+  --bs-input-border-color:        #d9d2c1;
+  --bs-input-focus-border-color:  #163029;
+  --bs-input-focus-box-shadow:    0 0 0 3px rgba(22,48,41,.12);
+  --bs-form-select-bg:            #fdfcf7;
+  --bs-form-check-input-bg:       #fdfcf7;
+  --bs-form-check-input-border:   1px solid #d9d2c1;
+  --bs-form-check-input-checked-bg-color: #163029;
+  --bs-form-check-input-checked-border-color: #163029;
+
+  /* ── Badges ────────────────────────────────────────────────── */
+  --bs-badge-font-size:      10px;
+  --bs-badge-font-weight:    500;
+  --bs-badge-padding-y:      3px;
+  --bs-badge-padding-x:      7px;
+  --bs-badge-border-radius:  0;
+
+  /* ── Alerts ────────────────────────────────────────────────── */
+  --bs-alert-border-radius:  0;
+  --bs-alert-padding-y:      12px;
+  --bs-alert-padding-x:      16px;
+
+  /* ── Toasts ────────────────────────────────────────────────── */
+  --bs-toast-border-radius:  0;
+  --bs-toast-bg:             #fdfcf7;
+  --bs-toast-border-color:   #d9d2c1;
+
+  /* ── List groups ───────────────────────────────────────────── */
+  --bs-list-group-border-color:    #d9d2c1;
+  --bs-list-group-border-radius:   0;
+  --bs-list-group-active-bg:       #163029;
+  --bs-list-group-active-border-color: #163029;
+  --bs-list-group-hover-bg:        #f0ebe0;
+
+  /* ── Navbar ────────────────────────────────────────────────── */
+  --bs-navbar-toggler-border-radius: 0;
+
+  /* ── Pagination ────────────────────────────────────────────── */
+  --bs-pagination-border-radius:     0;
+  --bs-pagination-border-color:      #d9d2c1;
+  --bs-pagination-active-bg:         #163029;
+  --bs-pagination-active-border-color: #163029;
+  --bs-pagination-hover-bg:          #f0ebe0;
+  --bs-pagination-focus-box-shadow:  0 0 0 3px rgba(22,48,41,.12);
+
+  /* ── Progress ──────────────────────────────────────────────── */
+  --bs-progress-height:       6px;
+  --bs-progress-border-radius: 0;
+  --bs-progress-bg:           #ebe4d2;
+  --bs-progress-bar-bg:       #163029;
+
+  /* ── Offcanvas ─────────────────────────────────────────────── */
+  --bs-offcanvas-bg:          #fdfcf7;
+  --bs-offcanvas-border-color: #d9d2c1;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE — Bootstrap vars for data-theme="dark"
+   ═══════════════════════════════════════════════════════════════ */
+[data-theme="dark"] {
+  --bs-body-bg:              #181714;
+  --bs-body-color:           #f7f3eb;
+  --bs-emphasis-color:       #f7f3eb;
+  --bs-heading-color:        #f7f3eb;
+  --bs-border-color:         rgba(255,255,255,.12);
+  --bs-link-color:           #d9a05b;
+  --bs-link-hover-color:     #f7f3eb;
+  --bs-card-bg:              #1e1c19;
+  --bs-card-border-color:    rgba(255,255,255,.08);
+  --bs-dropdown-bg:          #1e1c19;
+  --bs-dropdown-border-color: rgba(255,255,255,.10);
+  --bs-dropdown-link-color:  rgba(247,243,235,.80);
+  --bs-dropdown-link-hover-bg: rgba(255,255,255,.06);
+  --bs-dropdown-link-hover-color: #f7f3eb;
+  --bs-modal-bg:             #1e1c19;
+  --bs-modal-content-bg:     #1e1c19;
+  --bs-modal-border-color:   rgba(255,255,255,.10);
+  --bs-modal-header-border-color: rgba(255,255,255,.10);
+  --bs-modal-footer-border-color: rgba(255,255,255,.10);
+  --bs-table-color:          #f7f3eb;
+  --bs-table-border-color:   rgba(255,255,255,.08);
+  --bs-table-striped-bg:     rgba(255,255,255,.02);
+  --bs-table-hover-bg:       rgba(255,255,255,.03);
+  --bs-form-control-bg:      #242220;
+  --bs-input-border-color:   rgba(255,255,255,.12);
+  --bs-toast-bg:             #1e1c19;
+  --bs-toast-border-color:   rgba(255,255,255,.10);
+  --bs-list-group-border-color: rgba(255,255,255,.08);
+  --bs-list-group-hover-bg:  rgba(255,255,255,.04);
+  --bs-progress-bg:          rgba(255,255,255,.08);
+  --bs-offcanvas-bg:         #1e1c19;
+  color-scheme: dark;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BOOTSTRAP COMPONENT FIXES for Justice Hub aesthetics
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Remove Bootstrap's default caret — JH uses Lucide chevron-down */
+.dropdown-toggle::after,
+.dropup .dropdown-toggle::after,
+.dropend .dropdown-toggle::after,
+.dropstart .dropdown-toggle::before { display: none !important; }
+
+/* btn-primary → forest green */
+.btn-primary {
+  background-color: #163029;
+  border-color:     #163029;
+  color:            #f7f3eb;
+}
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+  background-color: #1d3d34;
+  border-color:     #1d3d34;
+  color:            #f7f3eb;
+  box-shadow:       0 0 0 3px rgba(22,48,41,.25);
+}
+
+/* btn-secondary → moss green */
+.btn-secondary {
+  background-color: #4a7a5c;
+  border-color:     #4a7a5c;
+  color:            #f7f3eb;
+}
+.btn-secondary:hover { background-color: #3d6650; border-color: #3d6650; color: #f7f3eb; }
+
+/* btn-outline-primary */
+.btn-outline-primary {
+  color:         #163029;
+  border-color:  #163029;
+}
+.btn-outline-primary:hover {
+  background-color: #163029;
+  border-color:     #163029;
+  color:            #f7f3eb;
+}
+
+/* Focus ring color */
+.btn:focus-visible, .form-control:focus, .form-select:focus {
+  box-shadow: 0 0 0 3px rgba(22,48,41,.15);
+  border-color: #163029;
+  outline: none;
+}
+
+/* Form controls */
+.form-control, .form-select {
+  background-color: var(--bs-form-control-bg, #fdfcf7);
+  border-color:     #d9d2c1;
+  color:            #181714;
+  border-radius:    0;
+  font-size:        13.5px;
+  font-family:      'Instrument Sans', sans-serif;
+}
+.form-control:focus, .form-select:focus {
+  background-color: #fdfcf7;
+  border-color:     #163029;
+  color:            #181714;
+}
+
+/* Tables */
+.table { font-size: 13px; }
+.table thead th {
+  font-size:       10px;
+  font-weight:     600;
+  letter-spacing:  0.08em;
+  text-transform:  uppercase;
+  color:           #6b6a65;
+  border-bottom-width: 1px;
+}
+
+/* Cards */
+.card { box-shadow: 0 1px 6px rgba(24,23,20,.06); }
+
+/* Badge colors aligned to JH palette */
+.badge.bg-success,  .badge.text-bg-success  { background-color: #4a7a5c !important; }
+.badge.bg-danger,   .badge.text-bg-danger   { background-color: #8a2e1d !important; }
+.badge.bg-warning,  .badge.text-bg-warning  { background-color: #b87319 !important; color: #fff !important; }
+.badge.bg-primary,  .badge.text-bg-primary  { background-color: #163029 !important; }
+.badge.bg-secondary,.badge.text-bg-secondary{ background-color: #6b6a65 !important; }
+
+/* Alert colors */
+.alert-success { background: rgba(74,122,92,.08);  border-color: rgba(74,122,92,.22);  color: #2d5c3e; }
+.alert-danger  { background: rgba(138,46,29,.08);  border-color: rgba(138,46,29,.22);  color: #8a2e1d; }
+.alert-warning { background: rgba(184,115,25,.08); border-color: rgba(184,115,25,.22); color: #8a5210; }
+.alert-info    { background: rgba(22,48,41,.06);   border-color: rgba(22,48,41,.14);   color: #163029; }
+
+/* Pagination */
+.page-link { color: #163029; }
+.page-item.active .page-link { background-color: #163029; border-color: #163029; }
+
+/* Modal backdrop */
+.modal-backdrop { background-color: #181714; }
+
+/* Offcanvas */
+.offcanvas-header { border-bottom: 1px solid #d9d2c1; }
+.offcanvas-footer  { border-top:    1px solid #d9d2c1; }
+
+/* Spinner */
+.spinner-border { border-color: #163029; border-right-color: transparent; }
+.spinner-grow   { background-color: #163029; }
+
+/* Accordion */
+.accordion-button:not(.collapsed) {
+  color:            #163029;
+  background-color: rgba(22,48,41,.04);
+  box-shadow:       inset 0 -1px 0 #d9d2c1;
+}
+.accordion-button:focus { box-shadow: 0 0 0 3px rgba(22,48,41,.12); }
+
+/* Tooltip */
+.tooltip .tooltip-inner { background-color: #181714; font-size: 11.5px; border-radius: 0; }
+
+/* Popover */
+.popover { border-color: #d9d2c1; border-radius: 0; font-size: 13px; }
+.popover-header { background: rgba(22,48,41,.04); border-bottom-color: #d9d2c1; border-radius: 0; }
+
+/* Nav tabs */
+.nav-tabs { border-bottom-color: #d9d2c1; }
+.nav-tabs .nav-link {
+  color:         #6b6a65;
+  border-radius: 0;
+  font-size:     12.5px;
+  font-weight:   500;
+}
+.nav-tabs .nav-link:hover  { color: #163029; border-color: transparent; }
+.nav-tabs .nav-link.active { color: #163029; border-color: #d9d2c1 #d9d2c1 #fdfcf7; background: #fdfcf7; }
+
+/* Nav pills */
+.nav-pills .nav-link              { border-radius: 0; color: #6b6a65; font-size: 12.5px; }
+.nav-pills .nav-link.active,
+.nav-pills .show > .nav-link      { background-color: #163029; color: #f7f3eb; }
+
+/* Breadcrumb */
+.breadcrumb-item + .breadcrumb-item::before { color: #b0a892; }
+.breadcrumb-item.active { color: #6b6a65; }
+
+/* Dark mode overrides for components */
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select {
+  background-color: #242220;
+  border-color:     rgba(255,255,255,.12);
+  color:            #f7f3eb;
+}
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus {
+  background-color: #2a2724;
+  border-color:     #d9a05b;
+}
+[data-theme="dark"] .table { color: #f7f3eb; }
+[data-theme="dark"] .nav-tabs .nav-link.active {
+  background: #1e1c19;
+  border-color: rgba(255,255,255,.12) rgba(255,255,255,.12) #1e1c19;
+  color: #f7f3eb;
+}
+[data-theme="dark"] .nav-tabs { border-bottom-color: rgba(255,255,255,.12); }
+[data-theme="dark"] .accordion-button:not(.collapsed) {
+  background-color: rgba(255,255,255,.04);
+  color: #f7f3eb;
+}
+[data-theme="dark"] .list-group-item {
+  background-color: #1e1c19;
+  border-color:     rgba(255,255,255,.08);
+  color:            #f7f3eb;
+}

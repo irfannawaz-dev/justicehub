@@ -1,0 +1,1 @@
+<x-layouts.app><div style="padding: 24px 34px;"><h1 class="serif" style="font-size: 34px; font-weight: 400; margin: 0;">Show</h1><p style="color: var(--ink-3); margin-top: 8px;">This view will be implemented in a later phase.</p></div></x-layouts.app>
