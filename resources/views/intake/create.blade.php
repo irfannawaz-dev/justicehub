@@ -34,6 +34,30 @@
     @endif
 
     {{-- Form --}}
+    {{-- Submit overlay --}}
+    <div id="jh-submit-overlay" style="
+        display: flex; align-items: center; justify-content: center;
+        position: fixed; inset: 0; z-index: 9999;
+        background: rgba(15,25,20,0.55); backdrop-filter: blur(3px);
+        opacity: 0; pointer-events: none;
+        transition: opacity 0.25s ease;">
+        <div style="
+            background: #fff; border-radius: 12px; padding: 36px 48px;
+            text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+            min-width: 300px;">
+            <svg style="width:40px;height:40px;animation:jhSpin 0.9s linear infinite;color:var(--moss,#2d6a4f);margin:0 auto 16px;display:block;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            </svg>
+            <div style="font-size:17px;font-weight:700;color:#1a2e1f;margin-bottom:8px;">Registering Case…</div>
+            <div style="font-size:13px;color:#64748b;line-height:1.5;">
+                Saving case record and<br>sending notification emails.
+            </div>
+        </div>
+    </div>
+    <style>
+        @keyframes jhSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    </style>
+
     <form id="jh-intake-form" method="POST" action="{{ route('intake.store') }}" novalidate data-user-id="{{ auth()->id() }}">
         @csrf
         <div class="card" style="padding: 28px 32px;">
@@ -294,7 +318,15 @@
                         Continue <x-lucide-chevron-right style="width:12px;height:12px;" />
                     </button>
                     <button type="submit" id="intake-submit-btn" class="btn-primary" style="background:var(--moss);display:none;" disabled>
-                        <x-lucide-check-circle-2 style="width:13px;height:13px;" /> Register Intake
+                        <span id="intake-submit-idle" style="display:flex;align-items:center;gap:6px;">
+                            <x-lucide-check-circle-2 style="width:13px;height:13px;" /> Register Intake
+                        </span>
+                        <span id="intake-submit-loading" style="display:none;align-items:center;gap:8px;">
+                            <svg style="width:14px;height:14px;animation:jhSpin 0.8s linear infinite;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                            </svg>
+                            Registering…
+                        </span>
                     </button>
                 </div>
             </div>
@@ -358,6 +390,29 @@ function intakeLocationCascade(level) {
         });
     }
 }
+
+// ── Submit lock: prevent double-submit, show loading state ──
+document.getElementById('jh-intake-form').addEventListener('submit', function() {
+    var btn    = document.getElementById('intake-submit-btn');
+    var idle   = document.getElementById('intake-submit-idle');
+    var loading = document.getElementById('intake-submit-loading');
+    var overlay = document.getElementById('jh-submit-overlay');
+
+    // Swap button to loading state
+    idle.style.display    = 'none';
+    loading.style.display = 'flex';
+    btn.disabled          = true;
+    btn.style.opacity     = '0.85';
+    btn.style.cursor      = 'not-allowed';
+
+    // Show full-page overlay after a tiny delay (avoids flash if server is fast)
+    setTimeout(function() {
+        if (overlay) {
+            overlay.style.opacity       = '1';
+            overlay.style.pointerEvents = 'all';
+        }
+    }, 300);
+});
 
 // ── Populate district dropdown + wire hub change ──
 (function() {

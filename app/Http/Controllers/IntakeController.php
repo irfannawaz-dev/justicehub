@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\NewCaseIntake;
 use App\Models\CaseRecord;
 use App\Models\Hub;
 use App\Models\ServiceEncounter;
 use App\Services\LasCmsSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class IntakeController extends Controller
 {
@@ -186,7 +188,7 @@ class IntakeController extends Controller
             return $case;
         });
 
-        // Notify assigned user
+        // Notify assigned user (in-app)
         if ($case && ($assignedUser = $case->getAssignedUser())) {
             $assignedUser->notify(new \App\Notifications\CaseNotification(
                 title:      "New case assigned — {$case->case_uid}",
@@ -197,21 +199,61 @@ class IntakeController extends Controller
             ));
         }
 
+        // Send intake email to assigned user + CC to justice.hub@las.org.pk
+        $emailError = null;
+        if ($case) {
+            try {
+                $case->load('hub');
+                $mailable = new NewCaseIntake($case);
+                $assignedUser = $case->getAssignedUser();
+
+                if ($assignedUser && $assignedUser->email) {
+                    Mail::to($assignedUser->email)
+                        ->cc('justice.hub@las.org.pk')
+                        ->send($mailable);
+                } else {
+                    Mail::to('justice.hub@las.org.pk')->send($mailable);
+                }
+            } catch (\Exception $e) {
+                $emailError = $e->getMessage();
+                \Log::error('Intake email failed for ' . $case->case_uid . ': ' . $emailError);
+
+                // Notify all Head users via in-app notification (database only, not mail)
+                \App\Models\User::where('role', 'head')->get()->each(function ($admin) use ($case, $emailError) {
+                    $admin->notify(
+                        (new \App\Notifications\CaseNotification(
+                            title:   "Email delivery failed — {$case->case_uid}",
+                            message: "The intake notification email for case {$case->case_uid} (client: {$case->name}) could not be sent. Error: {$emailError}",
+                            type:    'info',
+                        ))->onConnection('sync')->onQueue('default')
+                    );
+                });
+            }
+        }
+
         // Push to LAS CMS if pathway is Court Representation
         if ($case && $case->assigned_pathway === 'Court Representation') {
             try {
                 $sync = new LasCmsSyncService();
                 $externalId = $sync->pushCase($case);
                 if ($externalId) {
-                    return redirect()->route('cases.index')
+                    $redirect = redirect()->route('cases.index')
                         ->with('success', "Intake registered: {$caseUid}. Case pushed to LAS CMS (ID: {$externalId}).");
+                    if ($emailError) {
+                        $redirect->with('warning', "Notification email could not be sent. Admins have been alerted.");
+                    }
+                    return $redirect;
                 }
             } catch (\Exception $e) {
                 \Log::error('LAS CMS push failed after intake: ' . $e->getMessage());
             }
         }
 
-        return redirect()->route('cases.index')->with('success', "Intake registered successfully. Case ID: {$caseUid}");
+        $redirect = redirect()->route('cases.index')->with('success', "Intake registered successfully. Case ID: {$caseUid}");
+        if ($emailError) {
+            $redirect->with('warning', "Notification email could not be sent. Admins have been alerted.");
+        }
+        return $redirect;
     }
 
     private function resolveAssignedTo(\Illuminate\Http\Request $request): string
