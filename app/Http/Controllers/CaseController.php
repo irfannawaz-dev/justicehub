@@ -17,7 +17,7 @@ class CaseController extends Controller
         $base = CaseRecord::query()->forHub($hubId);
 
         // Role-based case filtering
-        if ($user->isLawyer() || $user->isHubCoordinator()) {
+        if ($user->isLawyer()) {
             $base->where('assigned_to', $user->name);
         }
         if ($user->isCourtClerk()) {
