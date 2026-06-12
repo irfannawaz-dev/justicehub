@@ -63,7 +63,7 @@ class CaseController extends Controller
 
         // ── Unfiltered base (only hub scope) for pathway + disposition counts ──
         $hubBase = CaseRecord::query()->forHub($hubId);
-        if ($user->isLawyer() || $user->isHubCoordinator()) {
+        if ($user->isLawyer()) {
             $hubBase->where('assigned_to', $user->name);
         }
         if ($user->isCourtClerk()) {
