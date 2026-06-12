@@ -21,6 +21,8 @@ class DashboardMetricsService
     protected array $services = [];
     protected ?string $assignedTo = null;
     protected ?array $pathwayFilter = null;
+    protected ?string $dateFrom = null;
+    protected ?string $dateTo = null;
 
     public function __construct(?string $hubId = null, ?string $period = null, ?string $service = null)
     {
@@ -47,6 +49,14 @@ class DashboardMetricsService
     public function setPathwayFilter(?array $pathways): self
     {
         $this->pathwayFilter = $pathways;
+        return $this;
+    }
+
+    /** Apply a custom date range filter (overrides period). */
+    public function setDateRange(?string $from, ?string $to): self
+    {
+        $this->dateFrom = $from;
+        $this->dateTo   = $to;
         return $this;
     }
 
@@ -153,8 +163,20 @@ class DashboardMetricsService
     public function vulnerabilityFlags(): array
     {
         return [
-            'gbv'         => $this->caseQuery()->where('is_gbv', true)->count(),
-            'child'       => $this->caseQuery()->where('is_child', true)->count(),
+            'gbv' => $this->caseQuery()->where(fn($q) => $q
+                ->where('is_gbv', true)
+                ->orWhere('primary_issue', 'like', '%GBV%')
+                ->orWhere('secondary_issue', 'like', '%GBV%')
+            )->count(),
+
+            'child' => $this->caseQuery()->where(fn($q) => $q
+                ->where('is_child', true)
+                ->orWhere('primary_issue', 'like', '%Juvenile%')
+                ->orWhere('primary_issue', 'like', '%Child%')
+                ->orWhere('secondary_issue', 'like', '%Juvenile%')
+                ->orWhere('secondary_issue', 'like', '%Child%')
+            )->count(),
+
             'minority'    => $this->caseQuery()->where('is_minority', true)->count(),
             'disability'  => $this->caseQuery()->where('is_disability', true)->count(),
             'underserved' => $this->caseQuery()->where('is_underserved', true)->count(),
@@ -340,10 +362,11 @@ class DashboardMetricsService
 
     public function all(): array
     {
-        $hubPart = !empty($this->hubIds) ? implode(',', $this->hubIds) : ($this->hubId ?? 'all');
-        $svcPart = !empty($this->services) ? implode(',', $this->services) : ($this->service ?? 'all');
-        $userPart = $this->assignedTo ?? ($this->pathwayFilter ? implode(',', $this->pathwayFilter) : 'all');
-        $cacheKey = 'dashboard.metrics.' . $hubPart . '.' . ($this->period ?? 'all') . '.' . $svcPart . '.' . $userPart;
+        $hubPart   = !empty($this->hubIds) ? implode(',', $this->hubIds) : ($this->hubId ?? 'all');
+        $svcPart   = !empty($this->services) ? implode(',', $this->services) : ($this->service ?? 'all');
+        $userPart  = $this->assignedTo ?? ($this->pathwayFilter ? implode(',', $this->pathwayFilter) : 'all');
+        $datePart  = ($this->dateFrom ?? '') . '_' . ($this->dateTo ?? '');
+        $cacheKey  = 'dashboard.metrics.' . $hubPart . '.' . ($this->period ?? 'all') . '.' . $svcPart . '.' . $userPart . '.' . $datePart;
         $ttl = config('justice_hub.dashboard.metrics_cache_ttl', 300);
 
         return Cache::remember($cacheKey, $ttl, fn() => $this->compute());
@@ -411,8 +434,14 @@ class DashboardMetricsService
             $q->where('hub_id', $this->hubId);
         }
 
+        // Custom date range takes precedence over period
+        if ($this->dateFrom || $this->dateTo) {
+            if ($this->dateFrom) $q->where('intake_date', '>=', $this->dateFrom);
+            if ($this->dateTo)   $q->where('intake_date', '<=', $this->dateTo);
+        }
+
         // Period filter
-        if ($this->period) {
+        if (!$this->dateFrom && !$this->dateTo && $this->period) {
             $from = match ($this->period) {
                 'Today'        => now()->startOfDay(),
                 'Last 7 days'  => now()->subDays(7)->startOfDay(),

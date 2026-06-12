@@ -91,6 +91,41 @@
                 </ul>
             </div>
 
+            {{-- ── Custom Date Range ── --}}
+            @php $dateFrom = request('date_from'); $dateTo = request('date_to'); @endphp
+            <div class="dropdown" id="dd-daterange-wrap">
+                <button class="filter-btn{{ ($dateFrom || $dateTo) ? ' show' : '' }}" id="dd-daterange" data-bs-toggle="dropdown" aria-expanded="false">
+                    <x-lucide-calendar-range style="width:12px; height:12px; color:var(--ink-4); flex-shrink:0;" />
+                    <span id="cc-label-daterange">{{ ($dateFrom || $dateTo) ? (($dateFrom ?? '…') . ' → ' . ($dateTo ?? '…')) : 'Date Range' }}</span>
+                    <x-lucide-chevron-down class="filter-chevron" />
+                </button>
+                <div class="dropdown-menu filter-menu" style="min-width:260px; padding:14px 16px;" aria-labelledby="dd-daterange" onclick="event.stopPropagation()">
+                    <div style="font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.07em; color:var(--ink-4); margin-bottom:10px;">Custom Date Range</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+                        <div>
+                            <label style="font-size:10px; color:var(--ink-4); display:block; margin-bottom:4px;">From</label>
+                            <input type="date" id="cc-date-from" class="inp" style="font-size:12px; padding:5px 8px; width:100%;"
+                                value="{{ $dateFrom }}" max="{{ date('Y-m-d') }}">
+                        </div>
+                        <div>
+                            <label style="font-size:10px; color:var(--ink-4); display:block; margin-bottom:4px;">To</label>
+                            <input type="date" id="cc-date-to" class="inp" style="font-size:12px; padding:5px 8px; width:100%;"
+                                value="{{ $dateTo }}" max="{{ date('Y-m-d') }}">
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button onclick="ccApplyDateRange()"
+                            style="flex:1; padding:6px 0; background:var(--forest); color:var(--cream); border:none; font-size:11.5px; font-weight:600; cursor:pointer; font-family:inherit; border-radius:3px;">
+                            Apply
+                        </button>
+                        <button onclick="ccClearDateRange()"
+                            style="padding:6px 10px; background:none; color:var(--ink-3); border:1px solid var(--rule); font-size:11.5px; cursor:pointer; font-family:inherit; border-radius:3px;">
+                            Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             {{-- ── Province ── --}}
             <div class="dropdown">
                 <button class="filter-btn" id="dd-province" data-bs-toggle="dropdown" aria-expanded="false">
@@ -205,6 +240,9 @@
             <span id="cc-status-hub">{{ is_array($af['hub']) && count($af['hub']) ? implode(', ', $af['hub']) : 'All Hubs' }}</span> &middot;
             <span id="cc-status-service">{{ is_array($af['service']) && count($af['service']) ? implode(', ', $af['service']) : 'All Services' }}</span> &middot;
             <span id="cc-status-period">{{ $af['period'] }}</span>
+            @if($dateFrom || $dateTo)
+                &middot; <span style="color:var(--moss); font-weight:500;">{{ $dateFrom ?? '…' }} → {{ $dateTo ?? '…' }}</span>
+            @endif
         </span>
         <span style="color:var(--rule);">|</span>
         <span>Last updated: {{ now()->format('d M Y, H:i') }}</span>
@@ -973,10 +1011,35 @@
 (function () {
     var defaults = { period: 'All time', province: 'All Provinces', hub: [], service: [] };
 
+    window.ccApplyDateRange = function () {
+        var from = document.getElementById('cc-date-from').value;
+        var to   = document.getElementById('cc-date-to').value;
+        if (!from && !to) return;
+        // Clear the preset period when custom range is applied
+        document.getElementById('cc-label-period').textContent = 'All time';
+        document.querySelectorAll('#dd-period + .dropdown-menu .filter-opt').forEach(function(b) {
+            b.classList.toggle('active', b.textContent.trim() === 'All time');
+        });
+        applyFilters();
+    };
+
+    window.ccClearDateRange = function () {
+        document.getElementById('cc-date-from').value = '';
+        document.getElementById('cc-date-to').value = '';
+        document.getElementById('cc-label-daterange').textContent = 'Date Range';
+        applyFilters();
+    };
+
     function applyFilters() {
         var params = new URLSearchParams();
         var period = document.getElementById('cc-label-period').textContent.trim();
         if (period && period !== 'All time') params.set('period', period);
+
+        // Custom date range (takes precedence over period if set)
+        var from = document.getElementById('cc-date-from') ? document.getElementById('cc-date-from').value : '';
+        var to   = document.getElementById('cc-date-to')   ? document.getElementById('cc-date-to').value   : '';
+        if (from) params.set('date_from', from);
+        if (to)   params.set('date_to',   to);
 
         // Hub multiselect
         var hubs = getCheckedValues('hub');

@@ -6,6 +6,7 @@ use App\Mail\NewCaseIntake;
 use App\Models\CaseRecord;
 use App\Models\Hub;
 use App\Models\ServiceEncounter;
+use App\Services\DashboardMetricsService;
 use App\Services\LasCmsSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -161,6 +162,11 @@ class IntakeController extends Controller
                 'pathway_govt_dept'  => $request->pathwayGovernmentDept,
                 'pathway_ngo_name'   => $request->pathwayNgoName,
                 'pathway_other_details' => $request->pathwayOtherDetails,
+                'is_gbv'             => str_contains(strtolower($request->category ?? ''), 'gbv'),
+                'is_child'           => str_contains(strtolower($request->category ?? ''), 'juvenile') || str_contains(strtolower($request->category ?? ''), 'child'),
+                'is_minority'        => false,
+                'is_disability'      => false,
+                'is_underserved'     => false,
                 'assigned_to'        => $this->resolveAssignedTo($request),
                 'assigned_staff_id'  => (in_array($request->assignedPathway, ['Court Representation', 'Legal Advice / Consultation']) && $request->pathwaySpecific === 'Justice Hub Lawyer' && $request->assignedLawyer)
                                         ? \App\Models\Staff::where('user_id', $request->assignedLawyer)->value('id')
@@ -188,6 +194,10 @@ class IntakeController extends Controller
             return $case;
         });
 
+        // Flush dashboard cache so new case appears immediately
+        DashboardMetricsService::flush($hubId);
+        DashboardMetricsService::flush('all');
+
         // Notify assigned user (in-app)
         if ($case && ($assignedUser = $case->getAssignedUser())) {
             $assignedUser->notify(new \App\Notifications\CaseNotification(
@@ -199,7 +209,7 @@ class IntakeController extends Controller
             ));
         }
 
-        // Send intake email to assigned user + CC to justice.hub@las.org.pk
+        // Send intake email to assigned user + CC hub coordinator + justice.hub@las.org.pk
         $emailError = null;
         if ($case) {
             try {
@@ -207,12 +217,26 @@ class IntakeController extends Controller
                 $mailable = new NewCaseIntake($case);
                 $assignedUser = $case->getAssignedUser();
 
+                // Hub coordinator for this case's hub
+                $coordinator = \App\Models\User::where('role', 'hub-coordinator')
+                    ->where('hub_id', $case->hub_id)
+                    ->whereNotNull('email')
+                    ->first();
+
+                // Build CC list
+                $ccList = ['justice.hub@las.org.pk'];
+                if ($coordinator && $coordinator->email && $coordinator->email !== ($assignedUser->email ?? '')) {
+                    $ccList[] = $coordinator->email;
+                }
+
                 if ($assignedUser && $assignedUser->email) {
                     Mail::to($assignedUser->email)
-                        ->cc('justice.hub@las.org.pk')
+                        ->cc($ccList)
                         ->send($mailable);
                 } else {
-                    Mail::to('justice.hub@las.org.pk')->send($mailable);
+                    Mail::to('justice.hub@las.org.pk')
+                        ->cc(array_filter($ccList, fn($e) => $e !== 'justice.hub@las.org.pk'))
+                        ->send($mailable);
                 }
             } catch (\Exception $e) {
                 $emailError = $e->getMessage();

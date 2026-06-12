@@ -19,6 +19,8 @@ class DashboardController extends Controller
 
         $hubId    = $request->input('_active_hub', 'all');
         $period   = $request->input('period', 'All time');
+        $dateFrom = $request->input('date_from');
+        $dateTo   = $request->input('date_to');
         $hubNames = $request->input('hub', []);
         $services = $request->input('service', []);
 
@@ -44,8 +46,10 @@ class DashboardController extends Controller
             $period,
             count($services) === 1 ? $services[0] : null
         );
-        // Pass multi-hub and multi-service for caseQuery override
         $metrics->setMultiFilters($hubIds, $services);
+        if ($dateFrom || $dateTo) {
+            $metrics->setDateRange($dateFrom, $dateTo);
+        }
 
         // Role-based case filtering
         if ($user->isLawyer()) {
@@ -84,7 +88,10 @@ class DashboardController extends Controller
             $q->where(fn($sq) => $sq->where('disposition', 'litigation')
                 ->orWhereIn('assigned_pathway', ['Representation in Court', 'Court Representation']));
         }
-        if ($period && $period !== 'All time') {
+        if ($dateFrom || $dateTo) {
+            if ($dateFrom) $q->where('intake_date', '>=', $dateFrom);
+            if ($dateTo)   $q->where('intake_date', '<=', $dateTo);
+        } elseif ($period && $period !== 'All time') {
             $from = match ($period) {
                 'Today'        => now()->startOfDay(),
                 'Last 7 days'  => now()->subDays(7)->startOfDay(),
@@ -142,7 +149,7 @@ class DashboardController extends Controller
 
         return view('dashboards.command-center', compact(
             'm', 'greeting', 'highRisk', 'casesLast7', 'resolvedLast7', 'hubDist',
-            'referralSources', 'primaryIssues', 'activeFilters'
+            'referralSources', 'primaryIssues', 'activeFilters', 'dateFrom', 'dateTo'
         ));
     }
 

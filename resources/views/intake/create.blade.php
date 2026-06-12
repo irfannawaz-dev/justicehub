@@ -235,6 +235,7 @@
                     <x-form-select name="category" label="30. Category" required lookup-group="case.primary_issue" />
                     <x-form-select name="urgencyLevel" label="31. Urgency Level" required lookup-group="case.urgency" />
                 </div>
+
             </div>
 
             {{-- ═══ STEP 5: Pathway Assignment ═══ --}}
