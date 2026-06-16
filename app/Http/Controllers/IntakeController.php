@@ -103,17 +103,21 @@ class IntakeController extends Controller
             'assignedPathway'   => 'required|string',
         ]);
 
-        // Generate IDs — find highest numeric part across all case UIDs
-        $maxNum = CaseRecord::selectRaw("MAX(CAST(SUBSTRING(case_uid, 4) AS UNSIGNED)) as max_num")->value('max_num');
-        $nextNum = $maxNum ? $maxNum + 1 : 10001;
-        $caseUid = 'CL-' . str_pad($nextNum, 5, '0', STR_PAD_LEFT);
-        $caseRef = 'CA-' . str_pad($nextNum, 5, '0', STR_PAD_LEFT);
-        $encounterId = 'SE-' . str_pad(rand(10000, 99999), 5, '0', STR_PAD_LEFT);
-
         // Hub-scoped users can only create cases at their own hub
         $hubId = auth()->user()->canSeeAllHubs()
             ? $request->hubLocation
             : auth()->user()->hub_id;
+
+        // Generate case UID — LAS-{District}-{per_hub_sequence}
+        $hub = \App\Models\Hub::find($hubId);
+        $district = str_replace(' ', '-', $hub->district ?? $hubId);
+        $maxSeq = CaseRecord::where('hub_id', $hubId)
+            ->selectRaw("MAX(CAST(SUBSTRING_INDEX(case_uid, '-', -1) AS UNSIGNED)) as max_seq")
+            ->value('max_seq');
+        $hubSeq = ($maxSeq ?? 0) + 1;
+        $caseUid = 'LAS-' . $district . '-' . $hubSeq;
+        $caseRef = 'LAS-' . $district . '-REF-' . $hubSeq;
+        $encounterId = 'SE-' . str_pad(rand(10000, 99999), 5, '0', STR_PAD_LEFT);
 
         $case = DB::transaction(function () use ($request, $caseUid, $caseRef, $encounterId, $hubId) {
             $case = CaseRecord::create([
