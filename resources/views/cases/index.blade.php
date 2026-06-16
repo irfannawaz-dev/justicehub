@@ -168,8 +168,8 @@
                         <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Client</th>
                         <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Issue</th>
                         <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Status</th>
-                        <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Disposition</th>
-                        <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Assigned</th>
+                        <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Assigned To</th>
+                        <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Assigned By</th>
                         <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Hub</th>
                         <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">SLA</th>
                         <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Updated</th>
@@ -207,13 +207,11 @@
                                 {{ $case->status->value }}
                             </x-pill>
                         </td>
-                        <td style="padding: 12px 14px;">
-                            @if($case->disposition)
-                                <x-pill>{{ $case->disposition->label() }}</x-pill>
-                            @endif
-                        </td>
                         <td style="padding: 12px 14px; font-size: 12px; color: var(--ink-2);">
-                            {{ $case->assigned_to }}
+                            {{ $case->assigned_to ?? '—' }}
+                        </td>
+                        <td style="padding: 12px 14px; font-size: 12px; color: var(--ink-3);">
+                            {{ $case->staff_receiving ?? '—' }}
                         </td>
                         <td style="padding: 12px 14px;">
                             <span class="mono" style="font-size: 11px; color: var(--ink-3);">{{ $case->hub_id }}</span>

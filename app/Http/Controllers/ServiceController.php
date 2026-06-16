@@ -102,16 +102,28 @@ class ServiceController extends Controller
             ];
         })->sortByDesc('active')->values();
 
-        // All non-closed cases eligible to be routed to ADR (any disposition)
+        // Only ADR/Mediation pathway cases for the log service modal
         $activeCases = CaseRecord::query()
             ->when($hubId && $hubId !== 'all', fn($q) => $q->where('hub_id', $hubId))
             ->whereNotIn('status', ['Closed', 'Settlement', 'Rejected'])
+            ->where(fn($q) => $q
+                ->whereIn('assigned_pathway', ['Mediation', 'ADR / Dispute Resolution Support'])
+                ->orWhere('disposition', 'adr')
+            )
             ->orderBy('name')
             ->get(['id', 'case_uid', 'name', 'primary_issue', 'hub_id', 'disposition']);
 
+        // Provider dropdown — real users with service-delivering roles
+        $providerRoles = ['lawyer', 'hub-coordinator', 'court-clerk', 'operations-officer'];
+        $providersQuery = \App\Models\User::whereIn('role', $providerRoles)->where('is_active', true);
+        if ($hubId && $hubId !== 'all') {
+            $providersQuery->where(fn($q) => $q->where('hub_id', $hubId)->orWhereNull('hub_id'));
+        }
+        $providers = $providersQuery->orderBy('name')->get(['name', 'role']);
+
         return view('services.adr-scorecard', compact(
             'total', 'settled', 'active', 'gbv', 'female', 'minority', 'child', 'disability',
-            'rate', 'avgDays', 'pipeline', 'outcomes', 'servicesDelivered', 'staff', 'cases', 'activeCases'
+            'rate', 'avgDays', 'pipeline', 'outcomes', 'servicesDelivered', 'staff', 'cases', 'activeCases', 'providers'
         ));
     }
 
@@ -227,6 +239,10 @@ class ServiceController extends Controller
 
         $missingNextHearing = max(0, $activeCaseIds->count() - $hasFutureSession->count());
 
+        // Actual cases missing a next session (for drill-down list)
+        $missingCases = CaseRecord::whereIn('id', $activeCaseIds->diff($hasFutureSession))
+            ->get(['id', 'case_uid', 'name', 'primary_issue', 'hub_id', 'assigned_to']);
+
         // For the "Log service" modal on this page
         $activeCases = CaseRecord::query()
             ->when($hubId && $hubId !== 'all', fn($q) => $q->where('hub_id', $hubId))
@@ -239,9 +255,16 @@ class ServiceController extends Controller
             ->get()
             ->map(fn($s) => ['name' => $s->name, 'role' => $s->role]);
 
+        $providerRoles = ['lawyer', 'hub-coordinator', 'court-clerk', 'operations-officer'];
+        $providersQuery = \App\Models\User::whereIn('role', $providerRoles)->where('is_active', true);
+        if ($hubId && $hubId !== 'all') {
+            $providersQuery->where(fn($q) => $q->where('hub_id', $hubId)->orWhereNull('hub_id'));
+        }
+        $providers = $providersQuery->orderBy('name')->get(['name', 'role']);
+
         return view('services.adr-calendar', compact(
             'totalCases', 'todaySessions', 'upcomingSessions',
-            'missingNextHearing', 'activeCases', 'staff'
+            'missingNextHearing', 'missingCases', 'activeCases', 'staff', 'providers'
         ));
     }
 
@@ -564,9 +587,16 @@ class ServiceController extends Controller
             ->get()
             ->map(fn($s) => ['name' => $s->name, 'role' => $s->role]);
 
+        $providerRoles = ['lawyer', 'hub-coordinator', 'court-clerk', 'operations-officer'];
+        $providersQuery = \App\Models\User::whereIn('role', $providerRoles)->where('is_active', true);
+        if ($hubId && $hubId !== 'all') {
+            $providersQuery->where(fn($q) => $q->where('hub_id', $hubId)->orWhereNull('hub_id'));
+        }
+        $providers = $providersQuery->orderBy('name')->get(['name', 'role']);
+
         return view('services.litigation-calendar', compact(
             'totalCases', 'todayHearings', 'upcomingHearings',
-            'missingNextHearing', 'activeCases', 'staff'
+            'missingNextHearing', 'activeCases', 'staff', 'providers'
         ));
     }
 

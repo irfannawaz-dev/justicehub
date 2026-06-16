@@ -122,6 +122,9 @@
             <div style="display: flex; flex-direction: column; gap: 10px; align-items: flex-end;">
                 @if($canWrite && !$isResolved)
                 <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
+                    <a href="{{ route('cases.slip', $case) }}" target="_blank" class="btn-ghost" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;">
+                        <x-lucide-printer style="width:12px;height:12px;" /> Print Slip
+                    </a>
                     <button class="btn-ghost" onclick="jhOpenModal('log-encounter')"><x-lucide-plus style="width:12px;height:12px;" /> Log service</button>
                     @if($canEdit && !$pendingTransfer)
                     <button class="btn-ghost" onclick="jhOpenModal('reassign-case')">

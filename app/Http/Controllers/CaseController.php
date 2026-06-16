@@ -136,6 +136,12 @@ class CaseController extends Controller
         return view('cases.index', compact('cases', 'counts', 'dispositionCounts', 'pathwayCounts', 'hubs'));
     }
 
+    public function slip(CaseRecord $case)
+    {
+        $case->load('hub');
+        return view('cases.slip', compact('case'));
+    }
+
     public function show(CaseRecord $case)
     {
         // Hub scope enforced via Route::bind() in AppServiceProvider

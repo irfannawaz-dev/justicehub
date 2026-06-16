@@ -88,7 +88,8 @@
             </div>
         </div>
 
-        <div class="card jh-cal-anim" style="padding: 18px 20px; display: flex; align-items: center; gap: 14px; border-top: 3px solid {{ $missingNextHearing > 0 ? 'var(--burgundy)' : 'var(--rule)' }}; animation-delay: 0.2s;">
+        <div class="card jh-cal-anim" style="padding: 18px 20px; display: flex; align-items: center; gap: 14px; border-top: 3px solid {{ $missingNextHearing > 0 ? 'var(--burgundy)' : 'var(--rule)' }}; animation-delay: 0.2s; {{ $missingNextHearing > 0 ? 'cursor:pointer;' : '' }}"
+             {{ $missingNextHearing > 0 ? 'onclick=jhOpenModal(\'missing-hearing-modal\')' : '' }}>
             <div style="width: 38px; height: 38px; background: {{ $missingNextHearing > 0 ? 'rgba(138,46,29,0.08)' : 'var(--parchment)' }}; border: 1px solid {{ $missingNextHearing > 0 ? 'rgba(138,46,29,0.2)' : 'var(--rule-2)' }}; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                 <x-lucide-alert-triangle style="width: 15px; height: 15px; color: {{ $missingNextHearing > 0 ? 'var(--burgundy)' : 'var(--ink-4)' }};" />
             </div>
@@ -96,6 +97,9 @@
                 <div class="serif" style="font-size: 30px; font-weight: 400; line-height: 1; letter-spacing: -0.02em; color: {{ $missingNextHearing > 0 ? 'var(--burgundy)' : 'var(--ink)' }};">{{ $missingNextHearing }}</div>
                 <div style="font-size: 11px; color: var(--ink-4); margin-top: 3px; line-height: 1.3;">MISSING NEXT HEARING<br>active cases without next date</div>
             </div>
+            @if($missingNextHearing > 0)
+            <x-lucide-external-link style="width:12px;height:12px;color:var(--burgundy);margin-left:auto;flex-shrink:0;" />
+            @endif
         </div>
 
     </div>
@@ -266,6 +270,49 @@
 </div>
 
 {{-- ═══════════════════════════════════════════════════════════════════
+     MISSING NEXT HEARING MODAL
+     ═══════════════════════════════════════════════════════════════════ --}}
+<div class="modal fade" id="modal-missing-hearing-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog" style="max-width: 560px; margin: 1.75rem auto;">
+        <div class="modal-content" style="border-radius: 4px; background: var(--paper); box-shadow: 0 16px 48px rgba(0,0,0,0.18); border-top: 3px solid var(--burgundy);">
+
+            {{-- Header --}}
+            <div style="padding: 16px 22px 12px; border-bottom: 1px solid var(--rule); display:flex; align-items:center; justify-content:space-between;">
+                <div>
+                    <div class="label-cap" style="font-size:9px; color:var(--burgundy); margin-bottom:4px;">Action Required</div>
+                    <div style="font-size:15px; font-weight:600; color:var(--ink);">Cases Missing Next Session</div>
+                    <div style="font-size:11px; color:var(--ink-4); margin-top:2px;">{{ $missingNextHearing }} active ADR {{ $missingNextHearing === 1 ? 'case has' : 'cases have' }} no upcoming session scheduled</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            {{-- Case grid --}}
+            <div style="padding: 16px 22px; display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                @foreach($missingCases as $mc)
+                <a href="{{ route('cases.show', $mc) }}"
+                   style="display:block; padding:12px 14px; border:1px solid rgba(138,46,29,0.2); border-left:3px solid var(--burgundy); background:rgba(138,46,29,0.03); text-decoration:none; color:inherit; border-radius:3px; transition: box-shadow .15s;"
+                   onmouseenter="this.style.boxShadow='0 2px 8px rgba(138,46,29,0.12)'" onmouseleave="this.style.boxShadow=''">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
+                        <span class="mono" style="font-size:10px; color:var(--burgundy); font-weight:700;">{{ $mc->case_uid }}</span>
+                        <x-lucide-arrow-right style="width:11px;height:11px;color:var(--burgundy);" />
+                    </div>
+                    <div style="font-size:12.5px; font-weight:600; color:var(--ink); margin-bottom:3px;">{{ $mc->name }}</div>
+                    <div style="font-size:10px; color:var(--ink-4);">{{ $mc->primary_issue }}</div>
+                    <div style="font-size:10px; color:var(--ink-4);">{{ $mc->hub_id }}{{ $mc->assigned_to ? ' · ' . $mc->assigned_to : '' }}</div>
+                </a>
+                @endforeach
+            </div>
+
+            {{-- Footer --}}
+            <div style="padding:12px 22px 16px; border-top:1px solid var(--rule); font-size:11px; color:var(--ink-4);">
+                Click any case to open it and log the next session date.
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{{-- ═══════════════════════════════════════════════════════════════════
      LOG SERVICE ENCOUNTER MODAL (same as ADR scorecard)
      ═══════════════════════════════════════════════════════════════════ --}}
 <div class="modal fade" id="modal-cal-log-service" tabindex="-1" aria-hidden="true">
@@ -380,10 +427,13 @@
                             <label style="display: block; font-size: 10.5px; font-weight: 600; color: var(--ink-2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.06em;">Provider <span style="color: var(--burgundy);">*</span></label>
                             <div style="position: relative;">
                                 <select name="performed_by" required style="width: 100%; padding: 10px 36px 10px 12px; font-size: 13px; font-family: inherit; border: 1px solid var(--rule); background: var(--paper); color: var(--ink); appearance: none; cursor: pointer; outline: none;">
-                                    <option value="" disabled selected>Lawyer or paralegal</option>
-                                    @foreach($staff as $st)
-                                    <option value="{{ $st['name'] }}">{{ $st['name'] }} — {{ $st['role'] }}</option>
+                                    <option value="" disabled selected>Select provider</option>
+                                    @foreach($providers as $p)
+                                    <option value="{{ $p->name }}">{{ $p->name }} ({{ $p->role->label() }})</option>
                                     @endforeach
+                                    @if($providers->isEmpty())
+                                    <option value="" disabled>No staff found for this hub</option>
+                                    @endif
                                 </select>
                                 <x-lucide-chevron-down style="width: 14px; height: 14px; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--ink-3); pointer-events: none;" />
                             </div>

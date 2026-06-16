@@ -12,8 +12,8 @@ class Hub extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'id', 'name', 'district', 'province', 'tier',
-        'staff_count', 'is_active', 'meta',
+        'id', 'name', 'district', 'province', 'address', 'phone', 'phone2',
+        'tier', 'staff_count', 'is_active', 'meta',
     ];
 
     protected function casts(): array

@@ -226,7 +226,8 @@
                         $currentAdrStage = $case->adr_stage ?? 'ADR Intake';
                     @endphp
                     <div class="card jh-kanban-card"
-                         style="padding: 12px 13px; display: block;"
+                         style="padding: 12px 13px; display: block; cursor: pointer;"
+                         onclick="window.location='{{ route('cases.show', $case) }}'"
                          data-gbv="{{ $case->is_gbv ? '1' : '0' }}"
                          data-child="{{ $case->is_child ? '1' : '0' }}"
                          data-minority="{{ $case->is_minority ? '1' : '0' }}"
@@ -915,10 +916,13 @@
                         <div style="position: relative;">
                             <select name="performed_by" required
                                 style="width: 100%; padding: 10px 36px 10px 12px; font-size: 13px; font-family: inherit; border: 1px solid var(--rule); background: var(--paper); color: var(--ink); appearance: none; cursor: pointer; outline: none;">
-                                <option value="" disabled selected>Lawyer or paralegal</option>
-                                @foreach($staff as $s)
-                                <option value="{{ $s['name'] }}">{{ $s['name'] }} — {{ $s['role'] }}</option>
+                                <option value="" disabled selected>Select provider</option>
+                                @foreach($providers as $p)
+                                <option value="{{ $p->name }}">{{ $p->name }} ({{ $p->role->label() }})</option>
                                 @endforeach
+                                @if($providers->isEmpty())
+                                <option value="" disabled>No staff found for this hub</option>
+                                @endif
                             </select>
                             <x-lucide-chevron-down style="width: 14px; height: 14px; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--ink-3); pointer-events: none;" />
                         </div>

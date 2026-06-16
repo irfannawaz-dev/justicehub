@@ -319,12 +319,15 @@
                                style="width:100%; padding:9px 10px; border:1.5px solid var(--rule); background:var(--paper); color:var(--ink); font-size:13px; border-radius:3px; outline:none; box-sizing:border-box;">
                     </div>
                     <div>
-                        <label style="display:block; font-size:11px; font-weight:700; letter-spacing:.05em; color:var(--ink-3); text-transform:uppercase; margin-bottom:6px;">Lawyer / Paralegal</label>
+                        <label style="display:block; font-size:11px; font-weight:700; letter-spacing:.05em; color:var(--ink-3); text-transform:uppercase; margin-bottom:6px;">Provider</label>
                         <select name="performed_by" required style="width:100%; padding:9px 10px; border:1.5px solid var(--rule); background:var(--paper); color:var(--ink); font-size:13px; border-radius:3px; outline:none;">
-                            <option value="">Select…</option>
-                            @foreach($staff as $s)
-                            <option value="{{ $s['name'] }}">{{ $s['name'] }} ({{ $s['role'] }})</option>
+                            <option value="">Select provider</option>
+                            @foreach($providers as $p)
+                            <option value="{{ $p->name }}">{{ $p->name }} ({{ $p->role->label() }})</option>
                             @endforeach
+                            @if($providers->isEmpty())
+                            <option value="" disabled>No staff found for this hub</option>
+                            @endif
                         </select>
                     </div>
                 </div>

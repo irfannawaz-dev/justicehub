@@ -35,6 +35,7 @@ Route::middleware(['auth', 'hub.scope', 'can.write'])->group(function () {
 
     // ── Cases ────────────────────────────────────────────────────────
     Route::get('/cases', [CaseController::class, 'index'])->name('cases.index');
+    Route::get('/cases/{case}/slip', [CaseController::class, 'slip'])->name('cases.slip');
     Route::get('/cases/{case}', [CaseController::class, 'show'])->name('cases.show');
     Route::post('/cases/{case}/approve', [CaseController::class, 'approve'])->name('cases.approve');
     Route::post('/cases/{case}/reject', [CaseController::class, 'reject'])->name('cases.reject');
