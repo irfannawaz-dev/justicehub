@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 
 class LasCmsSyncService
 {
-    protected $db;
+    protected \Illuminate\Database\Connection $db;
 
     public function __construct()
     {
@@ -78,6 +78,40 @@ class LasCmsSyncService
         } catch (\Exception $e) {
             Log::error("LasCMS push failed for {$case->case_uid}: " . $e->getMessage());
             return null;
+        }
+    }
+
+    /**
+     * Update the status of an already-pushed case in LAS CMS.
+     */
+    public function updateStatus(CaseRecord $case): bool
+    {
+        if (!$case->external_case_id) {
+            Log::warning("LasCMS: updateStatus called on {$case->case_uid} but no external_case_id set — skipping.");
+            return false;
+        }
+
+        $newStatus = $this->mapStatus($case->status);
+
+        try {
+            $updated = $this->db->table('programs')
+                ->where('id', $case->external_case_id)
+                ->update([
+                    'currentCaseStatus' => $newStatus,
+                    'updated_at'        => now(),
+                ]);
+
+            if ($updated) {
+                Log::info("LasCMS: status updated for {$case->case_uid} (programs.id={$case->external_case_id}) → {$newStatus}");
+            } else {
+                Log::warning("LasCMS: updateStatus for {$case->case_uid} matched 0 rows in programs (id={$case->external_case_id})");
+            }
+
+            return (bool) $updated;
+
+        } catch (\Exception $e) {
+            Log::error("LasCMS: updateStatus failed for {$case->case_uid}: {$e->getMessage()}");
+            return false;
         }
     }
 

@@ -490,6 +490,10 @@ class CaseController extends Controller
             'status' => 'Active',
         ]);
 
+        if ($case->external_case_id) {
+            (new \App\Services\LasCmsSyncService())->updateStatus($case->fresh());
+        }
+
         if ($assignedUser = $case->getAssignedUser()) {
             $assignedUser->notify(new \App\Notifications\CaseNotification(
                 title:      "Case pathway approved — {$case->case_uid}",
@@ -515,6 +519,10 @@ class CaseController extends Controller
             'rejected_at' => now(),
             'status' => 'Rejected',
         ]);
+
+        if ($case->external_case_id) {
+            (new \App\Services\LasCmsSyncService())->updateStatus($case->fresh());
+        }
 
         if ($assignedUser = $case->getAssignedUser()) {
             $assignedUser->notify(new \App\Notifications\CaseNotification(
