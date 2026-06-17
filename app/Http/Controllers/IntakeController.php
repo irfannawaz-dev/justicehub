@@ -265,15 +265,12 @@ class IntakeController extends Controller
                 $sync = new LasCmsSyncService();
                 $externalId = $sync->pushCase($case);
                 if ($externalId) {
-                    $redirect = redirect()->route('cases.index')
-                        ->with('success', "Intake registered: {$caseUid}. Case pushed to LAS CMS (ID: {$externalId}).");
-                    if ($emailError) {
-                        $redirect->with('warning', "Notification email could not be sent. Admins have been alerted.");
-                    }
-                    return $redirect;
+                    \Log::info("LasCMS: case {$caseUid} (id={$case->id}) pushed successfully → programs.id={$externalId}");
+                } else {
+                    \Log::error("LasCMS: pushCase() returned null for {$caseUid} (id={$case->id}). Pathway={$case->assigned_pathway}. Check DB credentials and table structure.");
                 }
             } catch (\Exception $e) {
-                \Log::error('LAS CMS push failed after intake: ' . $e->getMessage());
+                \Log::error("LasCMS: exception pushing {$caseUid} (id={$case->id}): [{$e->getCode()}] {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
             }
         }
 
