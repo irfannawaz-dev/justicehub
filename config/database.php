@@ -66,16 +66,17 @@ return [
         ],
 
         'las_cms' => [
-            'driver' => 'mysql',
-            'host' => env('LAS_CMS_DB_HOST', '127.0.0.1'),
-            'port' => env('LAS_CMS_DB_PORT', '3306'),
-            'database' => env('LAS_CMS_DB_DATABASE', 'las-cm-2026-05-15'),
-            'username' => env('LAS_CMS_DB_USERNAME', 'root'),
-            'password' => env('LAS_CMS_DB_PASSWORD', ''),
-            'charset' => 'utf8mb4',
-            'collation' => 'utf8mb4_unicode_ci',
-            'prefix' => '',
-            'strict' => false,
+            'driver'      => 'mysql',
+            'host'        => env('LAS_CMS_DB_HOST', '127.0.0.1'),
+            'port'        => env('LAS_CMS_DB_PORT', '3306'),
+            'database'    => env('LAS_CMS_DB_DATABASE', ''),
+            'username'    => env('LAS_CMS_DB_USERNAME', ''),
+            'password'    => env('LAS_CMS_DB_PASSWORD', ''),
+            'unix_socket' => env('LAS_CMS_DB_SOCKET', ''),
+            'charset'     => 'utf8mb4',
+            'collation'   => 'utf8mb4_unicode_ci',
+            'prefix'      => '',
+            'strict'      => false,
         ],
 
         'mariadb' => [
