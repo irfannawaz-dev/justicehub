@@ -99,6 +99,23 @@ class LookupAdminController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────
+    // Hard-delete an option
+    // ─────────────────────────────────────────────────────────────
+
+    public function destroyOption(Request $request, Lookup $lookup)
+    {
+        $this->guard($request);
+
+        $groupKey = $lookup->group_key;
+        $label    = $lookup->label ?? $lookup->value;
+        $lookup->delete();
+
+        Lookup::clearCache($groupKey);
+
+        return back()->with('success', "Option \"{$label}\" deleted.");
+    }
+
+    // ─────────────────────────────────────────────────────────────
     // Create a brand-new group_key with its first option
     // ─────────────────────────────────────────────────────────────
 

@@ -135,6 +135,7 @@ Route::middleware(['auth', 'hub.scope', 'can.write'])->group(function () {
     Route::post('/settings/lookups/options', [LookupAdminController::class, 'storeOption'])->name('lookups.option.store');
     Route::patch('/settings/lookups/options/{lookup}', [LookupAdminController::class, 'updateOption'])->name('lookups.option.update');
     Route::post('/settings/lookups/options/{lookup}/toggle', [LookupAdminController::class, 'toggleOption'])->name('lookups.option.toggle');
+    Route::delete('/settings/lookups/options/{lookup}', [LookupAdminController::class, 'destroyOption'])->name('lookups.option.destroy');
     Route::post('/settings/lookups/reorder', [LookupAdminController::class, 'reorderGroup'])->name('lookups.reorder');
 
     // ── Training Course Management ──────────────────────────────

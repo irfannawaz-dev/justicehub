@@ -445,6 +445,19 @@
                                                 @endif
                                             </button>
                                         </form>
+
+                                        {{-- Delete option --}}
+                                        <form method="POST" action="{{ route('lookups.option.destroy', $opt) }}" style="display: inline;"
+                                              onsubmit="return confirm('Delete option \'{{ addslashes($opt->label ?? $opt->value) }}\'? This cannot be undone.')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit"
+                                                title="Delete permanently"
+                                                style="padding: 4px 8px; background: transparent; border: 1px solid var(--rule-2); cursor: pointer; color: var(--burgundy); font-family: inherit; font-size: 11px; transition: all 120ms;"
+                                                onmouseenter="this.style.borderColor='var(--burgundy)'"
+                                                onmouseleave="this.style.borderColor='var(--rule-2)'"
+                                            ><x-lucide-trash-2 style="width: 11px; height: 11px;" /></button>
+                                        </form>
                                     </td>
                                 </tr>
                                 @endforeach
