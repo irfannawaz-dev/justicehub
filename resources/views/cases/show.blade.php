@@ -1183,6 +1183,23 @@
                             <div style="font-size: 12px; font-weight: 500; color: var(--ink);">{{ $case->meta['external_status'] }}</div>
                         </div>
                         @endif
+                        @if($case->meta && ($case->meta['cms_approval_status'] ?? null))
+                        @php
+                            $approvalVal = $case->meta['cms_approval_status'];
+                            $approvalColor = match($approvalVal) {
+                                'Approved' => 'var(--moss)',
+                                'Rejected' => 'var(--burgundy)',
+                                default    => 'var(--ochre)',
+                            };
+                        @endphp
+                        <div style="grid-column: 1 / -1;">
+                            <div style="font-size: 10px; color: var(--ink-4); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px;">Case Approval Status</div>
+                            <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: color-mix(in srgb, {{ $approvalColor }} 12%, transparent); border-radius: 20px;">
+                                <span style="width: 7px; height: 7px; border-radius: 50%; background: {{ $approvalColor }}; display: inline-block;"></span>
+                                <span style="font-size: 12px; font-weight: 700; color: {{ $approvalColor }};">{{ $approvalVal }}</span>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                     @php
                         $courtHearings = $case->serviceEncounters->where('type', 'Court Hearing')->sortByDesc('date');

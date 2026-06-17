@@ -91,21 +91,29 @@ class LasCmsSyncService
             return false;
         }
 
-        $newStatus = $this->mapStatus($case->status);
+        $newCmsStatus    = $this->mapStatus($case->status);
+        $approvalStatus  = $this->mapApprovalStatus($case->status);
 
         try {
             $updated = $this->db->table('programs')
                 ->where('id', $case->external_case_id)
                 ->update([
-                    'currentCaseStatus' => $newStatus,
-                    'updated_at'        => now(),
+                    'currentCaseStatus'  => $newCmsStatus,
+                    'caseApprovalStatus' => $approvalStatus,
+                    'updated_at'         => now(),
                 ]);
 
             if ($updated) {
-                Log::info("LasCMS: status updated for {$case->case_uid} (programs.id={$case->external_case_id}) → {$newStatus}");
+                Log::info("LasCMS: status updated for {$case->case_uid} (programs.id={$case->external_case_id}) → currentCaseStatus={$newCmsStatus}, caseApprovalStatus={$approvalStatus}");
             } else {
                 Log::warning("LasCMS: updateStatus for {$case->case_uid} matched 0 rows in programs (id={$case->external_case_id})");
             }
+
+            // Cache approval status locally in case meta so it can be displayed in JusticeHub
+            $case->update([
+                'meta'               => array_merge($case->meta ?? [], ['cms_approval_status' => $approvalStatus]),
+                'external_synced_at' => now(),
+            ]);
 
             return (bool) $updated;
 
@@ -113,6 +121,19 @@ class LasCmsSyncService
             Log::error("LasCMS: updateStatus failed for {$case->case_uid}: {$e->getMessage()}");
             return false;
         }
+    }
+
+    /**
+     * Map JusticeHub status to LAS CMS caseApprovalStatus value.
+     */
+    protected function mapApprovalStatus(mixed $status): string
+    {
+        $val = $status instanceof \BackedEnum ? $status->value : (string) $status;
+        return match ($val) {
+            'Active'   => 'Approved',
+            'Rejected' => 'Rejected',
+            default    => 'Pending',
+        };
     }
 
     /**
