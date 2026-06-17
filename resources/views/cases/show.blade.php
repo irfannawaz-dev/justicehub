@@ -547,34 +547,15 @@
                     {{-- LAS CMS Litigation Data --}}
                     @if($cmsData)
                     @php
-                        // Helper to format date strings cleanly
                         $fmtDate = function(?string $d): ?string {
                             if (!$d || str_starts_with($d, '0000')) return null;
                             try { return \Carbon\Carbon::parse($d)->format('d M Y'); } catch (\Exception $e) { return $d; }
                         };
-                        $cmsRows = [
-                            ['label' => 'Case Number',          'value' => $cmsData->caseNumber,                        'icon' => 'hash'],
-                            ['label' => 'FIR Number',           'value' => $cmsData->firNumber,                         'icon' => 'file-badge'],
-                            ['label' => 'Police Station',       'value' => $cmsData->policeStation,                     'icon' => 'building-2'],
-                            ['label' => 'Court Name',           'value' => $cmsData->courtName,                         'icon' => 'landmark'],
-                            ['label' => 'Level of Court',       'value' => $cmsData->levelOfCourt,                      'icon' => 'layers'],
-                            ['label' => 'Nature of Case',       'value' => $cmsData->natureOfCase,                      'icon' => 'scale'],
-                            ['label' => 'Type of Case',         'value' => $cmsData->typeOfCase,                        'icon' => 'tag'],
-                            ['label' => 'Main Category',        'value' => $cmsData->mainCaseCategory,                  'icon' => 'folder'],
-                            ['label' => 'Filed Under Act',      'value' => $cmsData->caseFiledUnderAct,                 'icon' => 'book-open'],
-                            ['label' => 'Assigned Lawyer',      'value' => $cmsData->lawyer1,                           'icon' => 'user'],
-                            ['label' => 'Approval Date',        'value' => $fmtDate($cmsData->approvalDate),            'icon' => 'calendar-check'],
-                            ['label' => 'Vakalatnama Date',     'value' => $fmtDate($cmsData->vakalatnamaSubmissionDate),'icon' => 'calendar'],
-                            ['label' => 'Case File Date',       'value' => $fmtDate($cmsData->caseFileDate),            'icon' => 'calendar'],
-                            ['label' => 'Next Hearing',         'value' => $fmtDate($cmsData->nextHearing),             'icon' => 'calendar-clock'],
-                            ['label' => 'Case Stage',           'value' => $cmsData->caseStage,                         'icon' => 'git-branch'],
-                            ['label' => 'Current Status',       'value' => $cmsData->currentCaseStatus,                 'icon' => 'activity'],
-                            ['label' => 'Case Decision',        'value' => $cmsData->caseDecision,                      'icon' => 'gavel'],
-                            ['label' => 'Disposal Date',        'value' => $fmtDate($cmsData->caseDisposalDate),        'icon' => 'calendar-x'],
-                            ['label' => 'CMS Unique No.',       'value' => $cmsData->UniqueNumber2,                     'icon' => 'fingerprint'],
-                        ];
+                        $cmsApproval = $cmsData->caseApprovalStatus ?? 'Pending';
+                        $isApproved  = $cmsApproval === 'Approved';
+                        $isRejected  = $cmsApproval === 'Rejected';
                     @endphp
-                    <div class="card jh-anim-section" style="padding: 22px 26px; animation-delay: 0.24s;">
+                    <div class="card jh-anim-section" style="padding: 22px 26px; animation-delay: 0.24s; border-left: 3px solid {{ $isApproved ? 'var(--moss)' : ($isRejected ? 'var(--burgundy)' : 'var(--ochre)') }};">
 
                         {{-- Header --}}
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
@@ -582,24 +563,77 @@
                                 <x-lucide-gavel style="width: 15px; height: 15px; color: var(--burgundy);" />
                                 <div class="label-cap" style="font-size: 10px;">LAS CMS · Litigation Record</div>
                             </div>
-                            <span style="font-size: 10px; color: var(--ink-4); font-family: monospace;">ID #{{ $case->external_case_id }}</span>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                {{-- Approval status badge --}}
+                                <span style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+                                    background: {{ $isApproved ? 'color-mix(in srgb, var(--moss) 15%, transparent)' : ($isRejected ? 'color-mix(in srgb, var(--burgundy) 15%, transparent)' : 'color-mix(in srgb, var(--ochre) 15%, transparent)') }};
+                                    color: {{ $isApproved ? 'var(--moss)' : ($isRejected ? 'var(--burgundy)' : 'var(--ochre)') }};">
+                                    <span style="width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block;"></span>
+                                    {{ strtoupper($cmsApproval) }}
+                                </span>
+                                <span style="font-size: 10px; color: var(--ink-4); font-family: monospace;">ID #{{ $case->external_case_id }}</span>
+                            </div>
                         </div>
+
+                        @if($isRejected)
+                        {{-- Rejection notice --}}
+                        <div style="display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; background: color-mix(in srgb, var(--burgundy) 8%, transparent); border: 1px solid color-mix(in srgb, var(--burgundy) 25%, transparent); border-radius: 4px;">
+                            <x-lucide-circle-x style="width: 18px; height: 18px; color: var(--burgundy); flex-shrink: 0; margin-top: 1px;" />
+                            <div>
+                                <div style="font-size: 13px; font-weight: 700; color: var(--burgundy); margin-bottom: 4px;">Case Rejected in LAS CMS</div>
+                                <div style="font-size: 12px; color: var(--ink-2); line-height: 1.5;">
+                                    This case was reviewed by LAS CMS and marked as <strong>Rejected</strong>.
+                                    The case will not proceed to litigation in the CMS system.
+                                    @if($cmsData->currentCaseStatus) Current status: <strong>{{ $cmsData->currentCaseStatus }}</strong>. @endif
+                                </div>
+                            </div>
+                        </div>
+
+                        @else
+                        {{-- Approved or Pending: show full litigation data --}}
+
+                        @if(!$isApproved)
+                        <div style="display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: color-mix(in srgb, var(--ochre) 10%, transparent); border: 1px solid color-mix(in srgb, var(--ochre) 30%, transparent); border-radius: 4px; margin-bottom: 14px; font-size: 12px; color: var(--ochre);">
+                            <x-lucide-clock style="width: 14px; height: 14px; flex-shrink: 0;" />
+                            Awaiting approval in LAS CMS — litigation details will appear once approved.
+                        </div>
+                        @endif
 
                         {{-- Highlight strip: Next Hearing + Status + Stage --}}
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px;">
                             @foreach([
-                                ['label' => 'Next Hearing',    'value' => $fmtDate($cmsData->nextHearing) ?? '—',  'color' => 'var(--ochre)'],
-                                ['label' => 'Current Status',  'value' => $cmsData->currentCaseStatus  ?: '—',  'color' => 'var(--forest)'],
-                                ['label' => 'Case Stage',      'value' => $cmsData->caseStage          ?: '—',  'color' => 'var(--burgundy)'],
+                                ['label' => 'Next Hearing',   'value' => $fmtDate($cmsData->nextHearing) ?? '—', 'color' => 'var(--ochre)'],
+                                ['label' => 'Current Status', 'value' => $cmsData->currentCaseStatus ?: '—',     'color' => 'var(--forest)'],
+                                ['label' => 'Case Stage',     'value' => $cmsData->caseStage ?: '—',             'color' => 'var(--burgundy)'],
                             ] as $h)
                             <div style="padding: 10px 14px; background: var(--parchment); border: 1px solid var(--rule-2); border-top: 2px solid {{ $h['color'] }};">
                                 <div style="font-size: 10px; color: var(--ink-4); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px;">{{ $h['label'] }}</div>
-                                <div style="font-size: 13px; font-weight: 600; color: {{ $h['color'] }};">{{ $h['value'] ?: '—' }}</div>
+                                <div style="font-size: 13px; font-weight: 600; color: {{ $h['color'] }};">{{ $h['value'] }}</div>
                             </div>
                             @endforeach
                         </div>
 
                         {{-- Full field grid --}}
+                        @php
+                        $cmsRows = [
+                            ['label' => 'Case Number',      'value' => $cmsData->caseNumber,                         'icon' => 'hash'],
+                            ['label' => 'FIR Number',       'value' => $cmsData->firNumber,                          'icon' => 'file-badge'],
+                            ['label' => 'Police Station',   'value' => $cmsData->policeStation,                      'icon' => 'building-2'],
+                            ['label' => 'Court Name',       'value' => $cmsData->courtName,                          'icon' => 'landmark'],
+                            ['label' => 'Level of Court',   'value' => $cmsData->levelOfCourt,                       'icon' => 'layers'],
+                            ['label' => 'Nature of Case',   'value' => $cmsData->natureOfCase,                       'icon' => 'scale'],
+                            ['label' => 'Type of Case',     'value' => $cmsData->typeOfCase,                         'icon' => 'tag'],
+                            ['label' => 'Main Category',    'value' => $cmsData->mainCaseCategory,                   'icon' => 'folder'],
+                            ['label' => 'Filed Under Act',  'value' => $cmsData->caseFiledUnderAct,                  'icon' => 'book-open'],
+                            ['label' => 'Assigned Lawyer',  'value' => $cmsData->lawyer1,                            'icon' => 'user'],
+                            ['label' => 'Approval Date',    'value' => $fmtDate($cmsData->approvalDate),             'icon' => 'calendar-check'],
+                            ['label' => 'Vakalatnama Date', 'value' => $fmtDate($cmsData->vakalatnamaSubmissionDate),'icon' => 'calendar'],
+                            ['label' => 'Case File Date',   'value' => $fmtDate($cmsData->caseFileDate),             'icon' => 'calendar'],
+                            ['label' => 'Case Decision',    'value' => $cmsData->caseDecision,                       'icon' => 'gavel'],
+                            ['label' => 'Disposal Date',    'value' => $fmtDate($cmsData->caseDisposalDate),         'icon' => 'calendar-x'],
+                            ['label' => 'CMS Unique No.',   'value' => $cmsData->UniqueNumber2,                      'icon' => 'fingerprint'],
+                        ];
+                        @endphp
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--rule-2);">
                             @foreach($cmsRows as $row)
                             @if($row['value'])
@@ -613,6 +647,7 @@
                             @endif
                             @endforeach
                         </div>
+                        @endif {{-- end rejected/approved --}}
 
                         <div style="margin-top: 10px; font-size: 10.5px; color: var(--ink-4); display: flex; align-items: center; gap: 5px;">
                             <x-lucide-refresh-cw style="width: 10px; height: 10px;" />

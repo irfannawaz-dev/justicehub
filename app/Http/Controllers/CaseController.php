@@ -180,6 +180,7 @@ class CaseController extends Controller
                 $cmsData = $cmsDb->table('programs')
                     ->where('id', $case->external_case_id)
                     ->select([
+                        'caseApprovalStatus',
                         'approvalDate', 'vakalatnamaSubmissionDate', 'caseFileDate',
                         'lawyer1', 'courtName', 'levelOfCourt', 'caseNumber',
                         'firNumber', 'policeStation', 'natureOfCase', 'typeOfCase',
