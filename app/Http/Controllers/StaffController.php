@@ -12,7 +12,7 @@ class StaffController extends Controller
     public function index(Request $request)
     {
         $staff = Staff::forAuthUser()
-            ->with(['trainings', 'hub'])
+            ->with(['trainings', 'hub', 'user'])
             ->get()
             ->sortBy(['hub_id', 'name']);
 

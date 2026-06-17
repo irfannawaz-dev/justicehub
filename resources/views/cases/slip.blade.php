@@ -8,363 +8,562 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: Arial, sans-serif;
-            background: #f0f0f0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #d6dce4;
             display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            padding: 30px;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
             min-height: 100vh;
         }
 
-        .slip {
-            background: #fff;
-            width: 750px;
-            border: 1px solid #ccc;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+        /* ── Outer wrapper ── */
+        .slip-wrap {
+            width: 760px;
+            filter: drop-shadow(0 6px 28px rgba(0,0,0,0.18));
         }
 
-        /* ── Header ── */
+        /* ── Top accent bar ── */
+        .accent-bar {
+            height: 6px;
+            background: linear-gradient(90deg, #c9a227 0%, #e8c84a 40%, #c9a227 100%);
+            border-radius: 3px 3px 0 0;
+        }
+
+        /* ── Main card ── */
+        .slip {
+            background: #fff;
+            border: 1px solid #b0bac6;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+        }
+
+        /* ══════════════════════════════
+           HEADER
+        ══════════════════════════════ */
         .slip-header {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 18px 24px 14px;
-            border-bottom: 2px solid #1a2e4a;
+            padding: 20px 26px 16px;
+            border-bottom: 3px solid #1a2e4a;
+            gap: 16px;
+            background: linear-gradient(180deg, #f7f9fc 0%, #fff 100%);
         }
-        .slip-header .logo-las {
+
+        /* Left: LAS wordmark */
+        .hd-las {
             display: flex;
             flex-direction: column;
+            align-items: flex-start;
+            min-width: 90px;
         }
-        .slip-header .logo-las .las-box {
+        .hd-las .las-word {
+            font-size: 34px;
+            font-weight: 900;
+            color: #1a2e4a;
+            letter-spacing: 4px;
+            line-height: 1;
+        }
+        .hd-las .las-rule {
+            width: 100%;
+            height: 2px;
+            background: #c9a227;
+            margin: 4px 0 5px;
+        }
+        .hd-las .las-full {
+            font-size: 7.5px;
+            font-weight: 700;
+            color: #1a2e4a;
+            letter-spacing: 1.8px;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        /* Center: title block */
+        .hd-center {
+            flex: 1;
+            text-align: center;
+            padding: 0 10px;
+        }
+        .hd-center .hdc-eyebrow {
+            font-size: 8px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #c9a227;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        .hd-center h1 {
             font-size: 28px;
+            font-weight: 900;
+            color: #1a2e4a;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            line-height: 1;
+        }
+        .hd-center .hdc-tagline {
+            font-size: 9px;
+            color: #7a8a9a;
+            font-style: italic;
+            margin-top: 5px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Right: JH seal */
+        .hd-seal {
+            min-width: 72px;
+            width: 72px;
+            height: 72px;
+            border: 2.5px solid #1a2e4a;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            background: #f0f4f8;
+            position: relative;
+        }
+        .hd-seal::before {
+            content: '';
+            position: absolute;
+            inset: 4px;
+            border-radius: 50%;
+            border: 1px solid #c9a227;
+        }
+        .hd-seal .seal-jh {
+            font-size: 18px;
+            font-weight: 900;
+            color: #1a2e4a;
+            letter-spacing: 1px;
+            line-height: 1;
+        }
+        .hd-seal .seal-sub {
+            font-size: 6px;
+            color: #1a2e4a;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-top: 3px;
+        }
+
+        /* ══════════════════════════════
+           HUB STRIP
+        ══════════════════════════════ */
+        .hub-strip {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 9px 26px;
+            background: #1a2e4a;
+        }
+        .hub-strip .hs-left .hs-name {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 0.3px;
+        }
+        .hub-strip .hs-left .hs-addr {
+            font-size: 10px;
+            color: #a0b4c8;
+            margin-top: 2px;
+        }
+        .hub-strip .hs-phone {
+            font-size: 12px;
+            color: #c9a227;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        /* ══════════════════════════════
+           TOKEN HERO
+        ══════════════════════════════ */
+        .token-hero {
+            padding: 20px 26px;
+            background: #f7f9fc;
+            border-bottom: 1px solid #dde3ea;
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+        }
+        .th-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .th-left .th-eyebrow {
+            font-size: 7.5px;
+            font-weight: 700;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: #7a8a9a;
+            margin-bottom: 6px;
+        }
+        .th-left .th-number {
+            font-size: 32px;
             font-weight: 900;
             color: #1a2e4a;
             letter-spacing: 2px;
             line-height: 1;
         }
-        .slip-header .logo-las .las-sub {
-            font-size: 8px;
-            color: #1a2e4a;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            margin-top: 3px;
+        .th-left .th-date {
+            font-size: 11px;
+            color: #555;
+            margin-top: 7px;
+            letter-spacing: 0.3px;
         }
-        .slip-header .center-title {
-            text-align: center;
-            flex: 1;
-            padding: 0 20px;
-        }
-        .slip-header .center-title .token-label {
-            font-size: 8px;
-            letter-spacing: 2.5px;
-            text-transform: uppercase;
-            color: #b8860b;
-            margin-bottom: 4px;
-        }
-        .slip-header .center-title h1 {
-            font-size: 26px;
-            font-weight: 900;
-            color: #1a2e4a;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-        }
-        .slip-header .center-title .tagline {
-            font-size: 9px;
-            color: #888;
-            font-style: italic;
-            margin-top: 3px;
-        }
-        .slip-header .logo-jh img {
-            width: 60px;
-            height: 60px;
-            object-fit: contain;
-        }
-        .slip-header .logo-jh-placeholder {
-            width: 60px;
-            height: 60px;
-            border: 2px solid #1a2e4a;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 8px;
+        .th-left .th-date span {
             font-weight: 700;
             color: #1a2e4a;
-            text-align: center;
-            line-height: 1.2;
         }
 
-        /* ── Hub info strip ── */
-        .hub-strip {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 24px;
-            border-bottom: 1px solid #ddd;
-            background: #fafafa;
+        .th-divider {
+            width: 1px;
+            background: #dde3ea;
+            margin: 0 22px;
         }
-        .hub-strip .hub-name {
-            font-size: 13px;
+
+        .th-right {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 6px;
+        }
+        .th-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 9.5px;
             font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .th-badge.badge-hub {
+            background: #e8edf2;
             color: #1a2e4a;
         }
-        .hub-strip .hub-address {
-            font-size: 10.5px;
-            color: #555;
-            margin-top: 2px;
+        .th-badge.badge-status {
+            background: #e6f4ea;
+            color: #2e7d32;
         }
-        .hub-strip .hub-phones {
-            font-size: 11px;
-            color: #333;
-            font-weight: 600;
+        .th-badge .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        /* ══════════════════════════════
+           SECTION HEADER
+        ══════════════════════════════ */
+        .sec-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 26px 0;
+        }
+        .sec-head .sh-label {
+            font-size: 7.5px;
+            font-weight: 800;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: #1a2e4a;
             white-space: nowrap;
         }
-
-        /* ── Token banner ── */
-        .token-banner {
-            background: #1a2e4a;
-            color: #fff;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 24px;
-            margin: 0;
-        }
-        .token-banner .token-title {
-            font-size: 9px;
-            letter-spacing: 2.5px;
-            text-transform: uppercase;
-            color: #b8c8d8;
-        }
-        .token-banner .token-number {
-            font-size: 22px;
-            font-weight: 900;
-            letter-spacing: 1px;
-            color: #fff;
+        .sec-head .sh-rule {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, #c9a227, transparent);
         }
 
-        /* ── Fields grid ── */
+        /* ══════════════════════════════
+           FIELDS
+        ══════════════════════════════ */
         .fields-section {
-            padding: 16px 24px;
-            border-bottom: 1px solid #eee;
+            padding: 10px 26px 16px;
+            border-bottom: 1px solid #eaecf0;
         }
         .fields-row {
             display: flex;
             gap: 0;
-            margin-bottom: 14px;
+            margin-top: 12px;
         }
-        .fields-row:last-child { margin-bottom: 0; }
         .field-cell {
             flex: 1;
-            padding-right: 20px;
+            padding-right: 22px;
         }
         .field-cell:last-child { padding-right: 0; }
+        .field-cell.w2 { flex: 2; }
+        .field-cell.w3 { flex: 3; }
+
         .field-label {
-            font-size: 7.5px;
-            font-weight: 700;
+            font-size: 7px;
+            font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: #888;
-            margin-bottom: 4px;
+            letter-spacing: 1.8px;
+            color: #9aa5b2;
+            margin-bottom: 5px;
         }
         .field-value {
-            font-size: 12.5px;
+            font-size: 13px;
             color: #111;
-            font-weight: 500;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 4px;
-            min-height: 22px;
+            font-weight: 600;
+            border-bottom: 1.5px solid #d0d7df;
+            padding-bottom: 5px;
+            min-height: 23px;
+            letter-spacing: 0.2px;
         }
-        .field-cell.full { flex: 3; }
-        .field-cell.half { flex: 1.5; }
+        .field-value.monospace {
+            font-family: 'Courier New', monospace;
+            letter-spacing: 1px;
+        }
 
-        /* ── Referred section ── */
-        .referred-section {
+        /* ══════════════════════════════
+           PATHWAY SECTION
+        ══════════════════════════════ */
+        .pathway-section {
+            padding: 10px 26px 16px;
+            border-bottom: 1px solid #eaecf0;
+            background: #fafbfc;
+        }
+        .pathway-row {
             display: flex;
             gap: 0;
-            padding: 14px 24px;
-            border-bottom: 1px solid #eee;
+            margin-top: 12px;
         }
-        .referred-cell {
+        .pathway-cell {
             flex: 1;
             padding-right: 20px;
         }
-        .referred-cell:last-child { padding-right: 0; }
+        .pathway-cell:last-child { padding-right: 0; }
 
-        /* ── Footer ── */
+        /* highlight the assigned staff cell */
+        .pathway-cell.highlight .field-value {
+            color: #1a2e4a;
+            font-weight: 700;
+            border-bottom-color: #c9a227;
+        }
+
+        /* ══════════════════════════════
+           FOOTER
+        ══════════════════════════════ */
         .slip-footer {
             display: flex;
-            gap: 0;
-            border-top: 2px solid #1a2e4a;
+            background: #1a2e4a;
+            border-radius: 0 0 4px 4px;
         }
         .footer-cell {
             flex: 1;
-            padding: 14px 18px;
-            border-right: 1px solid #ddd;
+            padding: 14px 20px;
+            border-right: 1px solid rgba(255,255,255,0.1);
         }
         .footer-cell:last-child { border-right: none; }
+
+        .footer-icon {
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
         .footer-label {
             font-size: 7px;
-            font-weight: 700;
+            font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: #888;
-            margin-bottom: 5px;
+            letter-spacing: 2px;
+            color: #c9a227;
+            margin-bottom: 4px;
         }
         .footer-sub {
             font-size: 9px;
-            color: #555;
+            color: #8a9db5;
             line-height: 1.5;
             margin-bottom: 6px;
         }
         .footer-number {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 900;
-            color: #1a2e4a;
-            letter-spacing: 1px;
+            color: #fff;
+            letter-spacing: 1.5px;
         }
 
-        /* ── Print styles ── */
+        /* ── Print ── */
+        @page {
+            margin: 0;
+            size: auto;
+        }
         @media print {
-            body {
-                background: none;
-                padding: 0;
-            }
-            .slip {
-                box-shadow: none;
-                border: none;
-                width: 100%;
-            }
+            body { background: none; padding: 8mm; }
+            .slip-wrap { filter: none; width: 100%; }
+            .slip { border: none; }
+            .accent-bar { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .hub-strip, .slip-footer, .token-hero { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .no-print { display: none !important; }
         }
     </style>
 </head>
 <body>
 
-{{-- Print button (hidden on print) --}}
-<div class="no-print" style="position:fixed; top:20px; right:20px; display:flex; gap:8px; z-index:100;">
-    <button onclick="window.print()"
-        style="padding:8px 18px; background:#1a2e4a; color:#fff; border:none; font-size:13px; font-weight:600; cursor:pointer; border-radius:4px; font-family:Arial,sans-serif;">
-        🖨 Print Slip
-    </button>
+{{-- Print / Back buttons --}}
+<div class="no-print" style="display:flex; gap:10px; margin-bottom:24px; width:760px; justify-content:flex-end;">
     <button onclick="window.history.back()"
-        style="padding:8px 14px; background:#fff; color:#333; border:1px solid #ccc; font-size:13px; cursor:pointer; border-radius:4px; font-family:Arial,sans-serif;">
+        style="padding:9px 16px; background:#fff; color:#333; border:1px solid #bbb; font-size:13px; cursor:pointer; border-radius:6px; font-family:inherit;">
         ← Back
     </button>
+    <button onclick="window.print()"
+        style="padding:9px 20px; background:#1a2e4a; color:#fff; border:none; font-size:13px; font-weight:700; cursor:pointer; border-radius:6px; font-family:inherit; letter-spacing:0.5px;">
+        🖨&nbsp; Print Slip
+    </button>
 </div>
 
-<div class="slip">
+<div class="slip-wrap">
+    <div class="accent-bar"></div>
+    <div class="slip">
 
-    {{-- ── Header ── --}}
-    <div class="slip-header">
-        <div class="logo-las">
-            <div class="las-box">LAS</div>
-            <div class="las-sub">Legal Aid Society</div>
-        </div>
-
-        <div class="center-title">
-            <div class="token-label">Client Intake Token</div>
-            <h1>Justice Hub</h1>
-            <div class="tagline">A One-Stop Solution Closer to Communities</div>
-        </div>
-
-        <div class="logo-jh-placeholder">
-            JUSTICE<br>HUB
-        </div>
-    </div>
-
-    {{-- ── Hub info ── --}}
-    <div class="hub-strip">
-        <div>
-            <div class="hub-name">Justice Hub — {{ $case->hub?->name ?? $case->hub_id }}</div>
-            @if($case->hub?->address)
-            <div class="hub-address">{{ $case->hub->address }}</div>
-            @endif
-        </div>
-        <div class="hub-phones">
-            @if($case->hub?->phone)
-                {{ $case->hub->phone }}
-                @if($case->hub?->phone2) · {{ $case->hub->phone2 }} @endif
-            @endif
-        </div>
-    </div>
-
-    {{-- ── Token banner ── --}}
-    <div class="token-banner">
-        <span class="token-title">Client Intake Token</span>
-        <span class="token-number">LAS-{{ $case->hub?->district ?? $case->hub_id }}-{{ ltrim(substr($case->case_uid, 3), '0') ?: '0' }}</span>
-    </div>
-
-    {{-- ── Row 1: Date, Client Name, Father/Husband ── --}}
-    <div class="fields-section">
-        <div class="fields-row">
-            <div class="field-cell">
-                <div class="field-label">Date of Intake</div>
-                <div class="field-value">{{ $case->intake_date ? \Carbon\Carbon::parse($case->intake_date)->format('d – M – Y') : '—' }}</div>
+        {{-- ── Header ── --}}
+        <div class="slip-header">
+            <div class="hd-las">
+                <div class="las-word">LAS</div>
+                <div class="las-rule"></div>
+                <div class="las-full">Legal Aid Society</div>
             </div>
-            <div class="field-cell">
-                <div class="field-label">Client Name</div>
-                <div class="field-value">{{ $case->name }}</div>
+
+            <div class="hd-center">
+                <div class="hdc-eyebrow">Client Intake Token</div>
+                <h1>Justice Hub</h1>
+                <div class="hdc-tagline">A One-Stop Solution Closer to Communities</div>
             </div>
-            <div class="field-cell">
-                <div class="field-label">Father / Husband Name</div>
-                <div class="field-value">{{ $case->father_husband_name ?? '—' }}</div>
+
+            <div class="hd-seal">
+                <div class="seal-jh">JH</div>
+                <div class="seal-sub">Sindh</div>
             </div>
         </div>
 
-        {{-- ── Row 2: CNIC, Mobile, Alternate ── --}}
-        <div class="fields-row">
-            <div class="field-cell">
-                <div class="field-label">CNIC</div>
-                <div class="field-value">{{ $case->cnic ?? '—' }}</div>
+        {{-- ── Hub strip ── --}}
+        <div class="hub-strip">
+            <div class="hs-left">
+                <div class="hs-name">Justice Hub &mdash; {{ $case->hub?->name ?? $case->hub_id }}</div>
+                @if($case->hub?->address)
+                <div class="hs-addr">{{ $case->hub->address }}</div>
+                @endif
             </div>
-            <div class="field-cell">
-                <div class="field-label">Mobile Number</div>
-                <div class="field-value">{{ $case->primary_contact ?? '—' }}</div>
-            </div>
-            <div class="field-cell">
-                <div class="field-label">Alternate Number</div>
-                <div class="field-value">{{ $case->alternative_contact ?? '—' }}</div>
+            <div class="hs-phone">
+                @if($case->hub?->phone)
+                    📞 {{ $case->hub->phone }}
+                    @if($case->hub?->phone2) &nbsp;·&nbsp; {{ $case->hub->phone2 }} @endif
+                @endif
             </div>
         </div>
 
-        {{-- ── Row 3: Full Address ── --}}
-        <div class="fields-row" style="margin-bottom:0;">
-            <div class="field-cell full">
-                <div class="field-label">Client Address</div>
-                <div class="field-value">{{ $case->full_address ?? ($case->union_council ? $case->union_council . ', ' : '') . ($case->tehsil ?? '') . ($case->tehsil && $case->district ? ', ' : '') . ($case->district ?? '') }}</div>
+        {{-- ── Token hero ── --}}
+        <div class="token-hero">
+            <div class="th-left">
+                <div class="th-eyebrow">Intake Reference Number</div>
+                <div class="th-number">{{ $case->case_uid }}</div>
+                <div class="th-date">
+                    Date of Intake:&nbsp;
+                    <span>{{ $case->intake_date ? \Carbon\Carbon::parse($case->intake_date)->format('d M Y') : '—' }}</span>
+                </div>
+            </div>
+            <div class="th-divider"></div>
+            <div class="th-right">
+                <div class="th-badge badge-hub">
+                    <span class="dot"></span>
+                    {{ $case->hub?->district ?? $case->hub_id }}
+                </div>
+                <div class="th-badge badge-status">
+                    <span class="dot"></span>
+                    {{ ucfirst($case->status?->value ?? 'Registered') }}
+                </div>
             </div>
         </div>
-    </div>
 
-    {{-- ── Referred From / Referred To ── --}}
-    <div class="referred-section">
-        <div class="referred-cell">
-            <div class="field-label">Referred From</div>
-            <div class="field-value">Source: {{ $case->referral_source ?? '—' }}</div>
+        {{-- ── Client Information ── --}}
+        <div class="sec-head">
+            <div class="sh-label">Client Information</div>
+            <div class="sh-rule"></div>
         </div>
-        <div class="referred-cell">
-            <div class="field-label">Referred To</div>
-            <div class="field-value">{{ $case->assigned_pathway ?? '—' }}{{ $case->pathway_specific ? ' — ' . $case->pathway_specific : '' }}</div>
-        </div>
-    </div>
 
-    {{-- ── Footer ── --}}
-    <div class="slip-footer">
-        <div class="footer-cell">
-            <div class="footer-label">SLACC · 24/7 Toll-Free</div>
-            <div class="footer-sub">For free legal advice, call the Sindh Legal Advisory Call Centre (SLACC) — 24/7 Toll-Free</div>
-            <div class="footer-number">0800-70806</div>
-        </div>
-        <div class="footer-cell">
-            <div class="footer-label">LAS · Feedback &amp; Complaints</div>
-            <div class="footer-sub">Contact the Legal Aid Society for any further questions, feedback, or complaints.</div>
-            <div class="footer-number">0345-8270806</div>
-        </div>
-    </div>
+        <div class="fields-section">
+            {{-- Row 1: Name + Father/Husband --}}
+            <div class="fields-row">
+                <div class="field-cell w2">
+                    <div class="field-label">Full Name</div>
+                    <div class="field-value">{{ $case->name }}</div>
+                </div>
+                <div class="field-cell w2">
+                    <div class="field-label">Father / Husband Name</div>
+                    <div class="field-value">{{ $case->father_husband_name ?? '—' }}</div>
+                </div>
+            </div>
 
-</div>
+            {{-- Row 2: CNIC, Mobile, Alternate --}}
+            <div class="fields-row">
+                <div class="field-cell w2">
+                    <div class="field-label">CNIC Number</div>
+                    <div class="field-value monospace">{{ $case->cnic ?? '—' }}</div>
+                </div>
+                <div class="field-cell">
+                    <div class="field-label">Mobile Number</div>
+                    <div class="field-value monospace">{{ $case->primary_contact ?? '—' }}</div>
+                </div>
+                <div class="field-cell">
+                    <div class="field-label">Alternate Number</div>
+                    <div class="field-value monospace">{{ $case->alternative_contact ?? '—' }}</div>
+                </div>
+            </div>
+
+            {{-- Row 3: Address --}}
+            <div class="fields-row">
+                <div class="field-cell w3">
+                    <div class="field-label">Client Address</div>
+                    <div class="field-value">{{ $case->full_address ?? trim(implode(', ', array_filter([$case->union_council, $case->tehsil, $case->district])), ', ') ?: '—' }}</div>
+                </div>
+            </div>
+        </div>
+
+        {{-- ── Pathway & Assignment ── --}}
+        <div class="sec-head" style="padding-top:12px;">
+            <div class="sh-label">Pathway &amp; Assignment</div>
+            <div class="sh-rule"></div>
+        </div>
+
+        <div class="pathway-section">
+            <div class="pathway-row">
+                <div class="pathway-cell">
+                    <div class="field-label">Referred From</div>
+                    <div class="field-value">{{ $case->referral_source ?? '—' }}</div>
+                </div>
+                <div class="pathway-cell">
+                    <div class="field-label">Referred To / Pathway</div>
+                    <div class="field-value">{{ $case->assigned_pathway ?? '—' }}{{ $case->pathway_specific ? ' — ' . $case->pathway_specific : '' }}</div>
+                </div>
+                <div class="pathway-cell highlight">
+                    <div class="field-label">Assigned Lawyer / Staff</div>
+                    <div class="field-value">{{ $case->assigned_to ?? '—' }}</div>
+                </div>
+            </div>
+        </div>
+
+        {{-- ── Footer ── --}}
+        <div class="slip-footer">
+            <div class="footer-cell">
+                <div class="footer-label">SLACC &middot; 24/7 Toll-Free Legal Aid</div>
+                <div class="footer-sub">Call the Sindh Legal Advisory Call Centre for free legal advice, any time of day.</div>
+                <div class="footer-number">0800-70806</div>
+            </div>
+            <div class="footer-cell">
+                <div class="footer-label">LAS &middot; Feedback &amp; Complaints</div>
+                <div class="footer-sub">Contact the Legal Aid Society for questions, feedback, or to lodge a complaint.</div>
+                <div class="footer-number">0345-8270806</div>
+            </div>
+        </div>
+
+    </div>{{-- .slip --}}
+</div>{{-- .slip-wrap --}}
 
 </body>
 </html>

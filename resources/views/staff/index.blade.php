@@ -117,7 +117,7 @@
                                 </div>
                             </div>
                         </td>
-                        <td style="padding: 11px 14px; font-size: 11px; color: var(--ink-3);">{{ $s->role }}</td>
+                        <td style="padding: 11px 14px; font-size: 11px; color: var(--ink-3);">{{ $s->user?->designation ?: $s->role }}</td>
                         <td style="padding: 11px 8px; text-align: center;">
                             <span style="font-size: 11px; font-weight: 700; color: {{ $s->compliance_pct >= 100 ? 'var(--moss)' : ($s->compliance_pct >= 70 ? 'var(--ochre)' : 'var(--burgundy)') }};">
                                 {{ $s->compliance_pct }}%

@@ -738,13 +738,15 @@
                         <div style="display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: var(--parchment); border: 1px solid var(--rule);">
                             @php
                                 $staffInitials = collect(explode(' ', $case->assigned_to))->map(fn($n) => strtoupper(substr($n, 0, 1)))->take(2)->join('');
+                                $assignedUser  = \App\Models\User::where('name', $case->assigned_to)->first();
+                                $assignedTitle = $assignedUser ? ($assignedUser->designation ?: $assignedUser->role->label()) : 'Staff';
                             @endphp
                             <div style="width: 40px; height: 40px; background: var(--forest); color: var(--ochre-2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-radius: 50;">
                                 <span style="font-size: 14px; font-weight: 600;">{{ $staffInitials }}</span>
                             </div>
                             <div style="flex: 1;">
                                 <div style="font-size: 14px; font-weight: 600; color: var(--ink);">{{ $case->assigned_to }}</div>
-                                <div style="font-size: 11px; color: var(--ink-3);">Primary &mdash; Legal Officer</div>
+                                <div style="font-size: 11px; color: var(--ink-3);">Primary &mdash; {{ $assignedTitle }}</div>
                             </div>
                             <x-lucide-mail style="width: 15px; height: 15px; color: var(--ink-4); cursor: pointer;" />
                         </div>
@@ -1474,7 +1476,7 @@
                 <option value="">— Select staff member —</option>
                 @foreach($assignableUsers as $u)
                     @if($u->name !== $case->assigned_to)
-                    <option value="{{ $u->name }}">{{ $u->name }} ({{ $u->role->label() }})</option>
+                    <option value="{{ $u->name }}">{{ $u->name }} ({{ $u->designation ?: $u->role->label() }})</option>
                     @endif
                 @endforeach
             </select>

@@ -218,7 +218,7 @@ class DashboardController extends Controller
         )) : 0;
 
         // Staff workload — scoped by role
-        $staffQ = \App\Models\Staff::with(['hub'])->where('status', 'active');
+        $staffQ = \App\Models\Staff::with(['hub', 'user'])->where('status', 'active');
         if ($user->isLawyer()) {
             // Lawyer sees only themselves
             $staffQ->where('name', $user->name);
@@ -232,6 +232,7 @@ class DashboardController extends Controller
             $utilization = $capacity > 0 ? round(($load / $capacity) * 100) : 0;
             return [
                 'name' => $s->name, 'initials' => $s->initials, 'role' => $s->role,
+                'designation' => $s->user?->designation ?: $s->role,
                 'hub' => $s->hub?->name ?? $s->hub_id, 'active' => $load,
                 'capacity' => $capacity, 'utilization' => min($utilization, 100),
             ];

@@ -461,7 +461,7 @@
 
                         {{-- Role + Hub --}}
                         <td style="padding: 12px 14px;">
-                            <span style="font-size: 12px; color: var(--ink-2);">{{ $s['role'] }}</span>
+                            <span style="font-size: 12px; color: var(--ink-2);">{{ $s['designation'] ?: $s['role'] }}</span>
                             <span style="font-size: 12px; color: var(--ink-4);"> &middot; {{ $s['hub'] }}</span>
                         </td>
 
@@ -670,7 +670,7 @@
                                 <option value="">Select mediator (caseload shown)...</option>
                                 @foreach($staff as $s)
                                 <option value="{{ $s['name'] }}">
-                                    {{ $s['name'] }} — {{ $s['role'] }} · {{ $s['adr'] }} ADR cases ({{ $s['utilization'] }}% capacity)
+                                    {{ $s['name'] }} — {{ $s['designation'] ?: $s['role'] }} · {{ $s['adr'] }} ADR cases ({{ $s['utilization'] }}% capacity)
                                 </option>
                                 @endforeach
                             </select>

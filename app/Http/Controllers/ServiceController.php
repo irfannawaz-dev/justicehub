@@ -85,7 +85,7 @@ class ServiceController extends Controller
         ];
 
         // Staff workload for ADR
-        $staff = \App\Models\Staff::with(['hub'])->where('status', 'active')->get()->map(function ($s) {
+        $staff = \App\Models\Staff::with(['hub', 'user'])->where('status', 'active')->get()->map(function ($s) {
             $allActive = CaseRecord::where('assigned_to', $s->name)->where('status', 'Active');
             $adrCount = (clone $allActive)->where(fn($sq) => $sq->where('disposition', 'adr')->orWhere('assigned_pathway', 'Mediation & ADR'))->count();
             $courtCount = (clone $allActive)->where(fn($sq) => $sq->where('disposition', 'litigation')->orWhereIn('assigned_pathway', ['Representation in Court', 'Court Representation']))->count();
@@ -95,6 +95,7 @@ class ServiceController extends Controller
             $slaBreach = CaseRecord::where('assigned_to', $s->name)->where('sla_met', false)->count();
             return [
                 'name' => $s->name, 'initials' => $s->initials, 'role' => $s->role,
+                'designation' => $s->user?->designation ?: $s->role,
                 'hub' => $s->hub?->name ?? $s->hub_id, 'hub_id' => $s->hub_id,
                 'active' => $totalActive, 'adr' => $adrCount, 'court' => $courtCount,
                 'capacity' => $capacity, 'utilization' => min($utilization, 100),
@@ -478,7 +479,7 @@ class ServiceController extends Controller
             })->count();
 
         // Staff workload (sorted by court caseload)
-        $staff = \App\Models\Staff::with(['hub'])->where('status', 'active')->get()->map(function ($s) {
+        $staff = \App\Models\Staff::with(['hub', 'user'])->where('status', 'active')->get()->map(function ($s) {
             $allActive   = CaseRecord::where('assigned_to', $s->name)->whereNotIn('status', ['Closed', 'Settlement', 'Rejected']);
             $adrCount    = (clone $allActive)->where('disposition', 'adr')->count();
             $courtCount  = (clone $allActive)->where('disposition', 'litigation')->count();
@@ -488,6 +489,7 @@ class ServiceController extends Controller
             $slaBreach   = CaseRecord::where('assigned_to', $s->name)->where('sla_met', false)->count();
             return [
                 'name' => $s->name, 'initials' => $s->initials, 'role' => $s->role,
+                'designation' => $s->user?->designation ?: $s->role,
                 'hub' => $s->hub?->name ?? $s->hub_id, 'hub_id' => $s->hub_id,
                 'active' => $totalActive, 'adr' => $adrCount, 'court' => $courtCount,
                 'capacity' => $capacity, 'utilization' => min($utilization, 100),

@@ -475,7 +475,7 @@
                                 </div>
                                 <div>
                                     <div style="font-weight: 600; font-size: 13px; color: var(--ink);">{{ $s['name'] }}</div>
-                                    <div style="font-size: 11px; color: var(--ink-3); margin-top: 1px;">{{ $s['role'] }}</div>
+                                    <div style="font-size: 11px; color: var(--ink-3); margin-top: 1px;">{{ $s['designation'] ?: $s['role'] }}</div>
                                 </div>
                             </div>
                         </td>

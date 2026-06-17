@@ -285,7 +285,7 @@
                             </div>
                         </td>
                         <td style="padding: 12px 14px;">
-                            <x-pill>{{ $s['role'] }}</x-pill>
+                            <x-pill>{{ $s['designation'] ?: $s['role'] }}</x-pill>
                         </td>
                         <td style="padding: 12px 14px; font-size: 12px; color: var(--ink-3);">{{ $s['hub'] }}</td>
                         <td style="padding: 12px 14px; text-align: right;" class="mono">{{ $s['active'] }}</td>
