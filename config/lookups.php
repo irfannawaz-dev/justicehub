@@ -289,6 +289,8 @@ return [
         'Minority Affairs / Human Rights Department',
         'Zakat / Bait-ul-Mal / BISP',
         'Labour Department / SESSI / EOBI',
+        'Federal Ombudsman / Mohtasib',
+        'Provincial Ombudsman / Mohtasib',
         'Other Government Department',
     ],
 
