@@ -19,6 +19,7 @@ use App\Http\Controllers\ServiceEncounterController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\UserManagementController;
+use App\Http\Controllers\MediationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -65,6 +66,12 @@ Route::middleware(['auth', 'hub.scope', 'can.write'])->group(function () {
     Route::post('/cases/{case}/litigation-stage', [ServiceController::class, 'updateLitigationStage'])->name('cases.litigation-stage');
     Route::post('/cases/{case}/adr-stage', [ServiceController::class, 'updateAdrStage'])->name('cases.adr-stage');
     Route::post('/cases/{case}/set-outcome', [CaseController::class, 'setOutcome'])->name('cases.set-outcome');
+
+    // ── Mediation Workflow ───────────────────────────────────────────
+    Route::post('/cases/{case}/mediation/parties',              [MediationController::class, 'storeParty'])->name('mediation.party.store');
+    Route::delete('/cases/{case}/mediation/parties/{party}',    [MediationController::class, 'destroyParty'])->name('mediation.party.destroy');
+    Route::post('/cases/{case}/mediation/consent',              [MediationController::class, 'updateConsent'])->name('mediation.consent.update');
+    Route::post('/cases/{case}/mediation/diary',                [MediationController::class, 'storeDiary'])->name('mediation.diary.store');
 
     // ── Referrals ────────────────────────────────────────────────────
     Route::get('/referrals', [ReferralController::class, 'index'])->name('referrals.index');
@@ -133,6 +140,15 @@ Route::middleware(['auth', 'hub.scope', 'can.write'])->group(function () {
     // ── Training Course Management ──────────────────────────────
     Route::post('/settings/training', [SettingsController::class, 'storeTraining'])->name('settings.training.store');
     Route::delete('/settings/training/{training}', [SettingsController::class, 'deleteTraining'])->name('settings.training.delete');
+
+    // ── Module Toggle ────────────────────────────────────────────────
+    Route::post('/settings/modules/{key}/toggle', [SettingsController::class, 'toggleModule'])->name('settings.module.toggle');
+
+    // ── Partner Organisations ────────────────────────────────────────
+    Route::post('/settings/partners/category',    [SettingsController::class, 'storePartnerCategory'])->name('settings.partner.category.store');
+    Route::post('/settings/partners',             [SettingsController::class, 'storePartner'])->name('settings.partner.store');
+    Route::patch('/settings/partners/{partner}',  [SettingsController::class, 'updatePartner'])->name('settings.partner.update');
+    Route::delete('/settings/partners/{partner}', [SettingsController::class, 'destroyPartner'])->name('settings.partner.destroy');
 
     // ── Location Management ─────────────────────────────────────
     Route::get('/settings/locations/details', [SettingsController::class, 'locationDetails'])->name('locations.details');

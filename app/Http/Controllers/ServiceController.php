@@ -119,7 +119,7 @@ class ServiceController extends Controller
         if ($hubId && $hubId !== 'all') {
             $providersQuery->where(fn($q) => $q->where('hub_id', $hubId)->orWhereNull('hub_id'));
         }
-        $providers = $providersQuery->orderBy('name')->get(['name', 'role']);
+        $providers = $providersQuery->orderBy('name')->get(['name', 'role', 'designation']);
 
         return view('services.adr-scorecard', compact(
             'total', 'settled', 'active', 'gbv', 'female', 'minority', 'child', 'disability',
@@ -260,7 +260,7 @@ class ServiceController extends Controller
         if ($hubId && $hubId !== 'all') {
             $providersQuery->where(fn($q) => $q->where('hub_id', $hubId)->orWhereNull('hub_id'));
         }
-        $providers = $providersQuery->orderBy('name')->get(['name', 'role']);
+        $providers = $providersQuery->orderBy('name')->get(['name', 'role', 'designation']);
 
         return view('services.adr-calendar', compact(
             'totalCases', 'todaySessions', 'upcomingSessions',
@@ -592,7 +592,7 @@ class ServiceController extends Controller
         if ($hubId && $hubId !== 'all') {
             $providersQuery->where(fn($q) => $q->where('hub_id', $hubId)->orWhereNull('hub_id'));
         }
-        $providers = $providersQuery->orderBy('name')->get(['name', 'role']);
+        $providers = $providersQuery->orderBy('name')->get(['name', 'role', 'designation']);
 
         return view('services.litigation-calendar', compact(
             'totalCases', 'todayHearings', 'upcomingHearings',

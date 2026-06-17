@@ -36,6 +36,12 @@
         ],
     ];
 
+    // Module on/off states
+    $moduleStates = \Illuminate\Support\Facades\DB::table('settings')
+        ->where('key', 'like', 'module_%')
+        ->pluck('value', 'key');
+    $moduleOff = fn(string $key) => ($moduleStates['module_' . $key] ?? 'on') === 'off';
+
     $complaintsOpen = \App\Models\Complaint::where('status', '!=', 'resolved')->count();
     $hubs = \App\Models\Hub::where('is_active', true)->get();
     $activeHubId   = $activeHub ?? session('active_hub', 'all');
@@ -119,7 +125,32 @@
     {{-- Navigation groups --}}
     <nav style="flex: 1; padding: 14px 0;">
         @foreach($navGroups as $groupLabel => $items)
-            @php $visibleItems = array_filter($items, fn($item) => $user->can($item['permission'])); @endphp
+            @php
+                // Map route → module key for offline check
+                $routeModuleMap = [
+                    'cases.index'                  => 'cases',
+                    'intake.create'                => 'intake',
+                    'services.adr'                 => 'adr',
+                    'services.adr-calendar'        => 'adr',
+                    'services.litigation'          => 'litigation',
+                    'services.litigation-calendar' => 'litigation',
+                    'referrals.index'              => 'referrals',
+                    'outreach.index'               => 'outreach',
+                    'complaints.index'             => 'complaints',
+                    'indicators.index'             => 'indicators',
+                    'evidence.index'               => 'evidence',
+                    'feedback.index'               => 'feedback',
+                    'staff.index'                  => 'staff',
+                    'learning.index'               => 'learning',
+                    'impact.index'                 => 'impact',
+                ];
+                $visibleItems = array_filter($items, function($item) use ($user, $moduleOff, $routeModuleMap) {
+                    if (!$user->can($item['permission'])) return false;
+                    $modKey = $routeModuleMap[$item['route']] ?? null;
+                    if ($modKey && $moduleOff($modKey)) return false;
+                    return true;
+                });
+            @endphp
             @if(count($visibleItems) > 0)
             <div style="margin-bottom: 18px;">
                 <div class="label-cap" style="color: rgba(247,243,235,0.4); padding: 6px 22px 10px; font-size: 9.5px;">{{ $groupLabel }}</div>
@@ -155,7 +186,7 @@
             </div>
             <div style="flex: 1; min-width: 0;">
                 <div style="font-size: 12.5px; font-weight: 500;">{{ $user->name }}</div>
-                <div style="font-size: 10.5px; opacity: 0.55; margin-top: 1px;">{{ $user->role->label() }}</div>
+                <div style="font-size: 10.5px; opacity: 0.55; margin-top: 1px;">{{ $user->designation ?: $user->role->label() }}</div>
             </div>
             @if($user->can('settings.view'))
             <a href="{{ route('settings.index') }}" style="color: var(--cream); opacity: 0.55;">

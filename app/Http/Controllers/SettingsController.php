@@ -31,7 +31,19 @@ class SettingsController extends Controller
                 ->get();
         }
 
-        return view('settings.index', compact('lookupData', 'locationData'));
+        $partners = \App\Models\Partner::orderBy('category')->orderBy('name')->get();
+
+        $partnerCategories = DB::table('lookups')
+            ->where('group_key', 'partner_category')
+            ->where('is_active', 1)
+            ->orderBy('sort_order')
+            ->pluck('label');
+
+        $moduleSettings = DB::table('settings')
+            ->where('key', 'like', 'module_%')
+            ->pluck('value', 'key');
+
+        return view('settings.index', compact('lookupData', 'locationData', 'partners', 'partnerCategories', 'moduleSettings'));
     }
 
     public function setHub(Request $request)
@@ -118,6 +130,110 @@ class SettingsController extends Controller
     {
         $training->delete();
         return back()->with('success', "Training course {$training->code} deleted.");
+    }
+
+    // ── Module Toggle ────────────────────────────────────────────
+
+    public function toggleModule(string $key)
+    {
+        $settingKey = 'module_' . $key;
+        $current = DB::table('settings')->where('key', $settingKey)->value('value');
+        $newValue = ($current === 'off') ? 'on' : 'off';
+
+        DB::table('settings')->updateOrInsert(
+            ['key' => $settingKey],
+            ['value' => $newValue, 'updated_at' => now(), 'created_at' => now()]
+        );
+
+        return back()->with('success', "Module updated.");
+    }
+
+    // ── Partner Organisation Management ─────────────────────────
+
+    public function storePartnerCategory(Request $request)
+    {
+        $request->validate(['category' => 'required|string|max:100']);
+
+        $label = trim($request->category);
+
+        $exists = DB::table('lookups')
+            ->where('group_key', 'partner_category')
+            ->whereRaw('LOWER(label) = ?', [strtolower($label)])
+            ->exists();
+
+        if ($exists) {
+            return back()->with('error', "Category '{$label}' already exists.");
+        }
+
+        $maxOrder = DB::table('lookups')->where('group_key', 'partner_category')->max('sort_order') ?? 0;
+
+        DB::table('lookups')->insert([
+            'group_key'  => 'partner_category',
+            'value'      => $label,
+            'label'      => $label,
+            'sort_order' => $maxOrder + 1,
+            'is_active'  => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return back()->with('success', "Category '{$label}' added.");
+    }
+
+    public function storePartner(Request $request)
+    {
+        $request->validate([
+            'name'         => 'required|string|max:255',
+            'category'     => 'required|string',
+            'focal_person' => 'nullable|string|max:255',
+            'type'         => 'nullable|string|max:100',
+            'mou_expires'  => 'nullable|date',
+        ]);
+
+        $lastId = \App\Models\Partner::orderByRaw("CAST(SUBSTRING(id, 3) AS UNSIGNED) DESC")->value('id');
+        $nextNum = $lastId ? ((int) substr($lastId, 2)) + 1 : 1;
+        $newId = 'P-' . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
+
+        \App\Models\Partner::create([
+            'id'           => $newId,
+            'name'         => $request->name,
+            'category'     => $request->category,
+            'focal_person' => $request->focal_person,
+            'type'         => $request->type,
+            'mou_expires'  => $request->mou_expires ?: null,
+            'mou_status'   => $request->mou_expires ? 'active' : null,
+        ]);
+
+        return back()->with('success', "Partner '{$request->name}' added.");
+    }
+
+    public function updatePartner(Request $request, \App\Models\Partner $partner)
+    {
+        $request->validate([
+            'name'         => 'required|string|max:255',
+            'category'     => 'required|string',
+            'focal_person' => 'nullable|string|max:255',
+            'type'         => 'nullable|string|max:100',
+            'mou_expires'  => 'nullable|date',
+        ]);
+
+        $partner->update([
+            'name'         => $request->name,
+            'category'     => $request->category,
+            'focal_person' => $request->focal_person,
+            'type'         => $request->type,
+            'mou_expires'  => $request->mou_expires ?: null,
+            'mou_status'   => $request->mou_expires ? 'active' : null,
+        ]);
+
+        return back()->with('success', "Partner '{$partner->name}' updated.");
+    }
+
+    public function destroyPartner(\App\Models\Partner $partner)
+    {
+        $name = $partner->name;
+        $partner->delete();
+        return back()->with('success', "Partner '{$name}' removed.");
     }
 
     // ── Location Management ─────────────────────────────────────

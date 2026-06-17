@@ -33,16 +33,16 @@ class CaseController extends Controller
         if ($request->filled('pathway') && $request->pathway !== 'all') {
             $pw = $request->pathway;
             $base->where(function ($q) use ($pw) {
-                if ($pw === 'mediation_adr') {
-                    $q->whereIn('assigned_pathway', ['Mediation', 'ADR / Dispute Resolution Support']);
+                if ($pw === 'mediation') {
+                    $q->where('assigned_pathway', 'Mediation');
+                } elseif ($pw === 'adr') {
+                    $q->where('assigned_pathway', 'ADR / Dispute Resolution Support');
                 } elseif ($pw === 'court') {
                     $q->whereIn('assigned_pathway', ['Court Representation', 'Representation in Court']);
                 } elseif ($pw === 'referred') {
                     $q->whereIn('assigned_pathway', ['Referral', 'Government Department / Public Institution', 'Civil Society / NGO / CSO / NPO']);
                 } elseif ($pw === 'legal_advice') {
                     $q->where('assigned_pathway', 'Legal Advice / Consultation');
-                } elseif ($pw === 'documentation') {
-                    $q->where('assigned_pathway', 'NADRA & Documentation');
                 } elseif ($pw === 'info_awareness') {
                     $q->where('assigned_pathway', 'Information & Awareness');
                 } else {
@@ -89,12 +89,12 @@ class CaseController extends Controller
 
         // Service pathway counts — matching actual lookup values stored in DB
         $pathwayCounts = [
-            'legal_advice'    => (clone $hubBase)->where('assigned_pathway', 'Legal Advice / Consultation')->count(),
-            'mediation_adr'   => (clone $hubBase)->whereIn('assigned_pathway', ['Mediation', 'ADR / Dispute Resolution Support'])->count(),
-            'documentation'   => (clone $hubBase)->where('assigned_pathway', 'NADRA & Documentation')->count(),
-            'court'           => (clone $hubBase)->whereIn('assigned_pathway', ['Court Representation', 'Representation in Court'])->count(),
-            'referred'        => (clone $hubBase)->whereIn('assigned_pathway', ['Referral', 'Government Department / Public Institution', 'Civil Society / NGO / CSO / NPO'])->count(),
-            'info_awareness'  => (clone $hubBase)->where('assigned_pathway', 'Information & Awareness')->count(),
+            'legal_advice'  => (clone $hubBase)->where('assigned_pathway', 'Legal Advice / Consultation')->count(),
+            'mediation'     => (clone $hubBase)->where('assigned_pathway', 'Mediation')->count(),
+            'adr'           => (clone $hubBase)->where('assigned_pathway', 'ADR / Dispute Resolution Support')->count(),
+            'court'         => (clone $hubBase)->whereIn('assigned_pathway', ['Court Representation', 'Representation in Court'])->count(),
+            'referred'      => (clone $hubBase)->whereIn('assigned_pathway', ['Referral', 'Government Department / Public Institution', 'Civil Society / NGO / CSO / NPO'])->count(),
+            'info_awareness'=> (clone $hubBase)->where('assigned_pathway', 'Information & Awareness')->count(),
         ];
 
         // ── Cohort & status counts from filtered base ──
@@ -145,7 +145,7 @@ class CaseController extends Controller
     public function show(CaseRecord $case)
     {
         // Hub scope enforced via Route::bind() in AppServiceProvider
-        $case->load(['serviceEncounters', 'documents', 'complaints', 'feedback', 'hub', 'transfers.transferredBy', 'transfers.approvedBy']);
+        $case->load(['serviceEncounters', 'documents', 'complaints', 'feedback', 'hub', 'transfers.transferredBy', 'transfers.approvedBy', 'mediationParties', 'mediationDiary']);
 
         // Auto-fetch hearings from LAS CMS if case is linked
         if ($case->external_case_id) {
@@ -408,7 +408,15 @@ class CaseController extends Controller
         // Sort newest first
         $timeline = $timeline->sortByDesc('at')->values();
 
-        return view('cases.show', compact('case', 'assignableUsers', 'pendingTransfer', 'timeline', 'cmsData'));
+        // Mediation stepper step (restored from flash)
+        $mstep = session('flash_mstep', 1);
+        if ($case->mediationParties->where('consent_status', 'agreed')->count() > 0) {
+            $mstep = max($mstep, 3);
+        } elseif ($case->mediationParties->count() > 0) {
+            $mstep = max($mstep, 1);
+        }
+
+        return view('cases.show', compact('case', 'assignableUsers', 'pendingTransfer', 'timeline', 'cmsData', 'mstep'));
     }
 
     public function verifyDocument(Request $request, \App\Models\Document $document)

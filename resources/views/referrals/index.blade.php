@@ -149,14 +149,13 @@
                 </div>
             </div>
             <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end;">
-                @foreach([
-                    ['id' => 'all',            'label' => 'All partners',     'count' => $partners->count()],
-                    ['id' => 'Shelter',        'label' => 'Shelters',         'count' => $filterCounts['Shelter'] ?? 0],
-                    ['id' => 'Government',     'label' => 'Government',       'count' => $filterCounts['Government'] ?? 0],
-                    ['id' => 'Law Enforcement','label' => 'Law Enforcement',  'count' => $filterCounts['Law Enforcement'] ?? 0],
-                    ['id' => 'Health',         'label' => 'Health',           'count' => $filterCounts['Health'] ?? 0],
-                    ['id' => 'NGO',            'label' => 'NGO',              'count' => $filterCounts['NGO'] ?? 0],
-                ] as $f)
+                @php
+                    $filterTabs = collect([['id' => 'all', 'label' => 'All partners', 'count' => $partners->count()]]);
+                    foreach(array_keys($categoryConfig) as $cat) {
+                        $filterTabs->push(['id' => $cat, 'label' => $cat, 'count' => $filterCounts[$cat] ?? 0]);
+                    }
+                @endphp
+                @foreach($filterTabs as $f)
                 <button onclick="pdFilter('{{ $f['id'] }}', this)"
                         data-pd-filter="{{ $f['id'] }}"
                         style="padding: 6px 10px; font-size: 11.5px; font-weight: 500; cursor: pointer; font-family: inherit;

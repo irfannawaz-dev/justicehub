@@ -44,12 +44,12 @@
     <div class="label-cap" style="font-size: 9.5px; margin-bottom: 8px;">Service Pathways &middot; at a glance &middot; click to filter cases</div>
     <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 20px;">
         @foreach([
-            ['key' => 'legal_advice',   'label' => 'Free Legal Advice',        'sub' => 'counsel sessions delivered',   'icon' => 'file-text',      'indicator' => 'O2.1', 'color' => 'var(--forest)',  'bg' => 'rgba(22,48,41,0.08)', 'filter' => 'legal_advice'],
-            ['key' => 'mediation_adr',  'label' => 'Mediation & ADR',          'sub' => 'cases on mediation pathway',   'icon' => 'heart-handshake','indicator' => 'O2.2', 'color' => 'var(--moss)',    'bg' => 'var(--moss-tint)',     'filter' => 'mediation_adr'],
-            ['key' => 'documentation',  'label' => 'NADRA & Documentation',    'sub' => 'CNIC, FRC, BISP, certificates','icon' => 'file-badge',    'indicator' => 'O2.3', 'color' => 'var(--ochre)',   'bg' => 'var(--ochre-tint)',    'filter' => 'documentation'],
-            ['key' => 'court',          'label' => 'Representation in Court',  'sub' => 'litigation in progress',       'icon' => 'gavel',         'indicator' => 'O2.4', 'color' => 'var(--burgundy)','bg' => 'var(--burgundy-tint)','filter' => 'court'],
-            ['key' => 'referred',       'label' => 'Referred (loop)',          'sub' => 'partner referrals made',       'icon' => 'share-2',       'indicator' => 'O3.2', 'color' => 'var(--forest)',  'bg' => 'rgba(22,48,41,0.08)', 'filter' => 'referred'],
-            ['key' => 'info_awareness', 'label' => 'Information & Awareness',  'sub' => 'legal awareness sessions',     'icon' => 'megaphone',     'indicator' => 'O2.5', 'color' => '#7e57c2',       'bg' => 'rgba(126,87,194,0.08)','filter' => 'info_awareness'],
+            ['key' => 'legal_advice',   'label' => 'Free Legal Advice',       'sub' => 'counsel sessions delivered',  'icon' => 'file-text',      'indicator' => 'O2.1', 'color' => 'var(--forest)',   'bg' => 'rgba(22,48,41,0.08)',  'filter' => 'legal_advice'],
+            ['key' => 'mediation',      'label' => 'Mediation',               'sub' => 'cases on mediation pathway',  'icon' => 'heart-handshake','indicator' => 'O2.2', 'color' => 'var(--moss)',     'bg' => 'var(--moss-tint)',     'filter' => 'mediation'],
+            ['key' => 'adr',            'label' => 'ADR',                     'sub' => 'dispute resolution support',  'icon' => 'scale',          'indicator' => 'O2.2', 'color' => 'var(--ochre)',    'bg' => 'var(--ochre-tint)',    'filter' => 'adr'],
+            ['key' => 'court',          'label' => 'Representation in Court', 'sub' => 'litigation in progress',      'icon' => 'gavel',          'indicator' => 'O2.4', 'color' => 'var(--burgundy)', 'bg' => 'var(--burgundy-tint)', 'filter' => 'court'],
+            ['key' => 'referred',       'label' => 'Referred (loop)',         'sub' => 'partner referrals made',      'icon' => 'share-2',        'indicator' => 'O3.2', 'color' => 'var(--forest)',   'bg' => 'rgba(22,48,41,0.08)', 'filter' => 'referred'],
+            ['key' => 'info_awareness', 'label' => 'Information & Awareness', 'sub' => 'legal awareness sessions',    'icon' => 'megaphone',      'indicator' => 'O2.5', 'color' => '#7e57c2',        'bg' => 'rgba(126,87,194,0.08)','filter' => 'info_awareness'],
         ] as $pw)
         @php
             $pwCount = $pathwayCounts[$pw['key']] ?? 0;

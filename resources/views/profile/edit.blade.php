@@ -8,7 +8,7 @@
         <div class="label-cap" style="font-size: 9.5px; margin-bottom: 6px;">Account</div>
         <h1 class="serif" style="font-size: 32px; font-weight: 400; margin: 0;">My Profile</h1>
         <div style="font-size: 13px; color: var(--ink-3); margin-top: 6px;">
-            {{ $user->role->label() }} · {{ $user->hub_id ?: 'All Hubs' }}
+            {{ $user->designation ?: $user->role->label() }} · {{ $user->hub_id ?: 'All Hubs' }}
         </div>
     </div>
 
@@ -114,7 +114,7 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div>
                 <div style="font-size:10px; color:var(--ink-4); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:3px;">Role</div>
-                <div style="font-size:13px; font-weight:500; color:var(--ink);">{{ $user->role->label() }}</div>
+                <div style="font-size:13px; font-weight:500; color:var(--ink);">{{ $user->designation ?: $user->role->label() }}</div>
             </div>
             <div>
                 <div style="font-size:10px; color:var(--ink-4); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:3px;">Hub</div>

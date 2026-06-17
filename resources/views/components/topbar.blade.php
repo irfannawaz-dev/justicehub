@@ -118,7 +118,7 @@
         <ul class="dropdown-menu dropdown-menu-end" style="min-width: 180px; padding: 0; border: 1px solid var(--rule); border-radius: 4px; background: var(--paper); box-shadow: 0 6px 20px rgba(0,0,0,.12); margin-top: 8px;">
             <li style="padding: 12px 16px; border-bottom: 1px solid var(--rule-2);">
                 <div style="font-size: 13px; font-weight: 500; color: var(--ink);">{{ auth()->user()->name }}</div>
-                <div style="font-size: 11px; color: var(--ink-3); margin-top: 2px;">{{ auth()->user()->role->label() }}</div>
+                <div style="font-size: 11px; color: var(--ink-3); margin-top: 2px;">{{ auth()->user()->designation ?: auth()->user()->role->label() }}</div>
             </li>
             <li>
                 <a href="{{ route('profile.edit') }}" class="dropdown-item tr-hover"

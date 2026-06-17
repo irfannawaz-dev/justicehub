@@ -206,28 +206,38 @@
 
         {{-- Active modules --}}
         <div class="card" style="padding: 22px 24px; margin-top: 14px; max-width: 920px;">
-            <div class="label-cap" style="font-size: 9px; margin-bottom: 12px;">Active modules</div>
+            <div class="label-cap" style="font-size: 9px; margin-bottom: 12px;">Active modules · click toggle to enable / disable</div>
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
                 @foreach([
-                    ['name' => 'Cases',              'route' => 'cases.index',      'icon' => 'folder'],
-                    ['name' => 'Intake',             'route' => 'intake.create',    'icon' => 'file-plus'],
-                    ['name' => 'ADR Scorecard',      'route' => 'services.adr',     'icon' => 'heart-handshake'],
-                    ['name' => 'Litigation Scorecard','route' => 'services.litigation','icon' => 'gavel'],
-                    ['name' => 'Referrals',          'route' => 'referrals.index',  'icon' => 'share-2'],
-                    ['name' => 'Outreach',           'route' => 'outreach.index',   'icon' => 'megaphone'],
-                    ['name' => 'Complaints',         'route' => 'complaints.index', 'icon' => 'alert-triangle'],
-                    ['name' => 'Indicators',         'route' => 'indicators.index', 'icon' => 'bar-chart-3'],
-                    ['name' => 'Evidence Register',  'route' => 'evidence.index',   'icon' => 'book-open'],
-                    ['name' => 'Client Feedback',    'route' => 'feedback.index',   'icon' => 'heart-handshake'],
-                    ['name' => 'Staff & Training',   'route' => 'staff.index',      'icon' => 'user-check'],
-                    ['name' => 'Learning & VfM',     'route' => 'learning.index',   'icon' => 'graduation-cap'],
-                    ['name' => 'Impact Reports',     'route' => 'impact.index',     'icon' => 'flag'],
+                    ['key' => 'cases',        'name' => 'Cases',               'route' => 'cases.index',         'icon' => 'folder'],
+                    ['key' => 'intake',       'name' => 'Intake',              'route' => 'intake.create',       'icon' => 'file-plus'],
+                    ['key' => 'adr',          'name' => 'ADR Scorecard',       'route' => 'services.adr',        'icon' => 'heart-handshake'],
+                    ['key' => 'litigation',   'name' => 'Litigation Scorecard','route' => 'services.litigation', 'icon' => 'gavel'],
+                    ['key' => 'referrals',    'name' => 'Referrals',           'route' => 'referrals.index',     'icon' => 'share-2'],
+                    ['key' => 'outreach',     'name' => 'Outreach',            'route' => 'outreach.index',      'icon' => 'megaphone'],
+                    ['key' => 'complaints',   'name' => 'Complaints',          'route' => 'complaints.index',    'icon' => 'alert-triangle'],
+                    ['key' => 'indicators',   'name' => 'Indicators',          'route' => 'indicators.index',    'icon' => 'bar-chart-3'],
+                    ['key' => 'evidence',     'name' => 'Evidence Register',   'route' => 'evidence.index',      'icon' => 'book-open'],
+                    ['key' => 'feedback',     'name' => 'Client Feedback',     'route' => 'feedback.index',      'icon' => 'heart-handshake'],
+                    ['key' => 'staff',        'name' => 'Staff & Training',    'route' => 'staff.index',         'icon' => 'user-check'],
+                    ['key' => 'learning',     'name' => 'Learning & VfM',      'route' => 'learning.index',      'icon' => 'graduation-cap'],
+                    ['key' => 'impact',       'name' => 'Impact Reports',      'route' => 'impact.index',        'icon' => 'flag'],
                 ] as $mod)
-                <a href="{{ route($mod['route']) }}" style="background: var(--parchment); border: 1px solid var(--rule-2); padding: 10px 12px; display: flex; align-items: center; gap: 9px; text-decoration: none; transition: all 120ms;" onmouseenter="this.style.borderColor='var(--forest)';this.style.background='var(--paper)'" onmouseleave="this.style.borderColor='var(--rule-2)';this.style.background='var(--parchment)'">
-                    <x-dynamic-component :component="'lucide-' . $mod['icon']" style="width: 13px; height: 13px; color: var(--forest); flex-shrink: 0;" />
-                    <span style="font-size: 12px; color: var(--ink-2); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $mod['name'] }}</span>
-                    <span style="font-size: 8.5px; font-weight: 600; letter-spacing: 0.04em; padding: 1px 5px; border-radius: 2px; background: rgba(74,122,92,0.14); color: var(--moss); text-transform: uppercase; flex-shrink: 0;">live</span>
-                </a>
+                @php
+                    $isOff = ($moduleSettings['module_' . $mod['key']] ?? 'on') === 'off';
+                @endphp
+                <div style="background: {{ $isOff ? 'var(--rule-2)' : 'var(--parchment)' }}; border: 1px solid var(--rule-2); padding: 10px 12px; display: flex; align-items: center; gap: 9px; transition: all 120ms; {{ $isOff ? 'opacity: 0.6;' : '' }}">
+                    <x-dynamic-component :component="'lucide-' . $mod['icon']" style="width: 13px; height: 13px; color: {{ $isOff ? 'var(--ink-4)' : 'var(--forest)' }}; flex-shrink: 0;" />
+                    <a href="{{ route($mod['route']) }}" style="font-size: 12px; color: {{ $isOff ? 'var(--ink-4)' : 'var(--ink-2)' }}; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: none;">{{ $mod['name'] }}</a>
+                    <form method="POST" action="{{ route('settings.module.toggle', $mod['key']) }}" style="margin: 0;">
+                        @csrf
+                        <button type="submit" title="{{ $isOff ? 'Enable module' : 'Disable module' }}"
+                            style="display: inline-flex; align-items: center; gap: 4px; font-size: 8.5px; font-weight: 600; letter-spacing: 0.04em; padding: 2px 7px; border-radius: 2px; cursor: pointer; font-family: inherit; border: none; text-transform: uppercase;
+                            {{ $isOff ? 'background: rgba(180,30,30,0.1); color: var(--burgundy);' : 'background: rgba(74,122,92,0.14); color: var(--moss);' }}">
+                            {{ $isOff ? 'Offline' : 'Live' }}
+                        </button>
+                    </form>
+                </div>
                 @endforeach
             </div>
         </div>
@@ -639,6 +649,181 @@
             </div>
         </div>
     </div>
+
+    {{-- ═══ Partner Organisations ═══ --}}
+    @if(auth()->user()->can('settings.view'))
+    <div style="margin-bottom: 32px; max-width: 920px;">
+        <div style="margin-bottom: 16px;">
+            <div class="label-cap" style="font-size: 9.5px; margin-bottom: 4px;">Partner Organisations</div>
+            <h3 class="serif" style="font-size: 19px; font-weight: 500; margin: 0; color: var(--ink);">Partner Network</h3>
+            <p style="font-size: 12.5px; color: var(--ink-3); margin: 6px 0 0 0; line-height: 1.55; max-width: 680px;">
+                Manage the organisations the Hub refers clients to. These appear in the referral log modal.
+            </p>
+        </div>
+
+        {{-- Partner table --}}
+        <div class="card" style="padding: 0; overflow: hidden; margin-bottom: 16px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                <thead>
+                    <tr style="border-bottom: 1px solid var(--rule);">
+                        <th style="padding: 10px 16px; text-align: left; font-size: 10px; font-weight: 700; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.05em;">ID</th>
+                        <th style="padding: 10px 16px; text-align: left; font-size: 10px; font-weight: 700; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.05em;">Name</th>
+                        <th style="padding: 10px 16px; text-align: left; font-size: 10px; font-weight: 700; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.05em;">Category</th>
+                        <th style="padding: 10px 16px; text-align: left; font-size: 10px; font-weight: 700; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.05em;">Focal Person</th>
+                        <th style="padding: 10px 16px; text-align: left; font-size: 10px; font-weight: 700; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.05em;">MOU Expires</th>
+                        <th style="padding: 10px 16px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($partners as $p)
+                    <tr style="border-bottom: 1px solid var(--rule-2);" id="partner-row-{{ $p->id }}">
+                        <td style="padding: 10px 16px;" class="mono" style="font-size: 11px; color: var(--ink-4);">{{ $p->id }}</td>
+                        <td style="padding: 10px 16px; font-weight: 500;">{{ $p->name }}</td>
+                        <td style="padding: 10px 16px; color: var(--ink-3);">{{ $p->category }}</td>
+                        <td style="padding: 10px 16px; color: var(--ink-3);">{{ $p->focal_person ?? '—' }}</td>
+                        <td style="padding: 10px 16px; color: var(--ink-3);">
+                            @if($p->mou_expires)
+                                <span style="color: {{ $p->mou_expires->isPast() ? 'var(--burgundy)' : ($p->mou_expires->diffInDays() < 60 ? 'var(--ochre)' : 'var(--moss)') }};">
+                                    {{ $p->mou_expires->format('d M Y') }}
+                                </span>
+                            @else —
+                            @endif
+                        </td>
+                        <td style="padding: 10px 16px; text-align: right; white-space: nowrap;">
+                            <button onclick="jhEditPartner('{{ $p->id }}','{{ addslashes($p->name) }}','{{ $p->category }}','{{ addslashes($p->focal_person ?? '') }}','{{ addslashes($p->type ?? '') }}','{{ $p->mou_expires?->format('Y-m-d') ?? '' }}')"
+                                style="font-size: 11.5px; padding: 4px 10px; background: none; border: 1px solid var(--rule); color: var(--ink-2); cursor: pointer; margin-right: 6px;">Edit</button>
+                            <form method="POST" action="{{ route('settings.partner.destroy', $p) }}" style="display: inline;" onsubmit="return confirm('Remove {{ addslashes($p->name) }}?')">
+                                @csrf @method('DELETE')
+                                <button type="submit" style="font-size: 11.5px; padding: 4px 10px; background: none; border: 1px solid var(--rule); color: var(--burgundy); cursor: pointer;">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr><td colspan="6" style="padding: 20px 16px; text-align: center; color: var(--ink-4); font-size: 13px;">No partner organisations yet.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        {{-- Categories management --}}
+        <div class="card" style="padding: 16px 20px; margin-bottom: 12px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                <div style="font-size: 11px; font-weight: 600; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.05em;">Partner Categories</div>
+                <button type="button" onclick="document.getElementById('new-category-form').style.display = document.getElementById('new-category-form').style.display === 'none' ? 'flex' : 'none'"
+                    style="font-size: 12px; padding: 4px 12px; background: none; border: 1px solid var(--rule); color: var(--ink-2); cursor: pointer; font-family: inherit;">+ Add category</button>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;">
+                @foreach($partnerCategories as $cat)
+                <span style="font-size: 12px; padding: 4px 10px; background: var(--parchment); border: 1px solid var(--rule-2); color: var(--ink-2);">{{ $cat }}</span>
+                @endforeach
+            </div>
+            <form id="new-category-form" method="POST" action="{{ route('settings.partner.category.store') }}"
+                style="display: none; align-items: center; gap: 8px; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--rule-2);">
+                @csrf
+                <input type="text" name="category" placeholder="e.g. Education, Mental Health, Housing…" required
+                    class="inp" style="flex: 1; font-size: 13px; max-width: 320px;" />
+                <button type="submit" style="padding: 8px 18px; background: var(--forest); color: var(--cream); border: none; font-size: 13px; font-family: inherit; font-weight: 600; cursor: pointer;">Save</button>
+                <button type="button" onclick="document.getElementById('new-category-form').style.display='none'"
+                    style="padding: 8px 14px; background: none; border: 1px solid var(--rule); color: var(--ink-3); font-size: 13px; font-family: inherit; cursor: pointer;">Cancel</button>
+            </form>
+        </div>
+
+        {{-- Add partner form --}}
+        <div class="card" style="padding: 18px 20px;">
+            <div style="font-size: 11px; font-weight: 600; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">Add New Partner</div>
+            <form method="POST" action="{{ route('settings.partner.store') }}">
+                @csrf
+                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 10px; align-items: end; flex-wrap: wrap;">
+                    <div>
+                        <label style="display:block; font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin-bottom:5px;">Organisation Name *</label>
+                        <input type="text" name="name" required placeholder="e.g. Rozan Counselling" class="inp" style="width:100%; font-size:12.5px; box-sizing:border-box;" />
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin-bottom:5px;">Category *</label>
+                        <select name="category" required class="inp" style="width:100%; font-size:12.5px; box-sizing:border-box;">
+                            <option value="">Select…</option>
+                            @foreach($partnerCategories as $cat)
+                            <option>{{ $cat }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin-bottom:5px;">Focal Person</label>
+                        <input type="text" name="focal_person" placeholder="Contact name" class="inp" style="width:100%; font-size:12.5px; box-sizing:border-box;" />
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin-bottom:5px;">Type</label>
+                        <input type="text" name="type" placeholder="e.g. NGO, Clinic" class="inp" style="width:100%; font-size:12.5px; box-sizing:border-box;" />
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin-bottom:5px;">MOU Expires</label>
+                        <input type="date" name="mou_expires" class="inp" style="width:100%; font-size:12.5px; box-sizing:border-box;" />
+                    </div>
+                </div>
+                <button type="submit" style="margin-top: 12px; padding: 8px 20px; background: var(--forest); color: var(--cream); border: none; font-size: 13px; font-family: inherit; font-weight: 600; cursor: pointer;">+ Add partner</button>
+            </form>
+        </div>
+    </div>
+    @endif
+
+    {{-- Edit Partner Modal --}}
+    <div class="modal fade" id="modal-edit-partner" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog" style="max-width: 520px; margin: 1.75rem auto;">
+            <div class="modal-content" style="border: 1px solid var(--rule); border-radius: 4px; background: var(--parchment); box-shadow: 0 16px 48px rgba(0,0,0,.18);">
+                <div style="padding: 20px 24px; border-bottom: 1px solid var(--rule-2); display: flex; justify-content: space-between; align-items: center;">
+                    <div style="font-size: 15px; font-weight: 600; color: var(--ink);">Edit Partner</div>
+                    <button type="button" data-bs-dismiss="modal" style="background: none; border: none; color: var(--ink-3); font-size: 18px; cursor: pointer; line-height: 1;">×</button>
+                </div>
+                <form id="form-edit-partner" method="POST" action="">
+                    @csrf @method('PATCH')
+                    <div style="padding: 20px 24px; display: flex; flex-direction: column; gap: 14px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div style="grid-column: 1/-1;">
+                                <label style="display:block; font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin-bottom:5px;">Organisation Name *</label>
+                                <input type="text" id="ep-name" name="name" required class="inp" style="width:100%; font-size:13px; box-sizing:border-box;" />
+                            </div>
+                            <div>
+                                <label style="display:block; font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin-bottom:5px;">Category *</label>
+                                <select id="ep-category" name="category" required class="inp" style="width:100%; font-size:13px; box-sizing:border-box;">
+                                    @foreach($partnerCategories as $cat)
+                                    <option>{{ $cat }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display:block; font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin-bottom:5px;">Focal Person</label>
+                                <input type="text" id="ep-focal" name="focal_person" class="inp" style="width:100%; font-size:13px; box-sizing:border-box;" />
+                            </div>
+                            <div>
+                                <label style="display:block; font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin-bottom:5px;">Type</label>
+                                <input type="text" id="ep-type" name="type" placeholder="e.g. NGO, Clinic" class="inp" style="width:100%; font-size:13px; box-sizing:border-box;" />
+                            </div>
+                            <div>
+                                <label style="display:block; font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin-bottom:5px;">MOU Expires</label>
+                                <input type="date" id="ep-mou" name="mou_expires" class="inp" style="width:100%; font-size:13px; box-sizing:border-box;" />
+                            </div>
+                        </div>
+                    </div>
+                    <div style="padding: 14px 24px; border-top: 1px solid var(--rule-2); display: flex; gap: 10px; justify-content: flex-end;">
+                        <button type="button" data-bs-dismiss="modal" style="padding: 8px 18px; background: none; border: 1px solid var(--rule); color: var(--ink-2); font-size: 13px; font-family: inherit; cursor: pointer;">Cancel</button>
+                        <button type="submit" style="padding: 8px 18px; background: var(--forest); color: var(--cream); border: none; font-size: 13px; font-family: inherit; font-weight: 600; cursor: pointer;">Save changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+    function jhEditPartner(id, name, category, focal, type, mou) {
+        document.getElementById('ep-name').value     = name;
+        document.getElementById('ep-category').value = category;
+        document.getElementById('ep-focal').value    = focal;
+        document.getElementById('ep-type').value     = type;
+        document.getElementById('ep-mou').value      = mou;
+        document.getElementById('form-edit-partner').action = '/settings/partners/' + id;
+        var modal = new bootstrap.Modal(document.getElementById('modal-edit-partner'));
+        modal.show();
+    }
+    </script>
 
     {{-- Add Location Modal --}}
     <div class="modal fade" id="modal-add-location" tabindex="-1" aria-hidden="true">

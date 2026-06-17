@@ -26,14 +26,24 @@ class ReferralController extends Controller
         $weightedCount = $partners->sum(fn ($p) => $p->active_referrals + $p->completed_referrals);
         $avgResponseHrs = $weightedCount > 0 ? round($weightedSum / $weightedCount) : 0;
 
-        // Category stats for loop-closure chart
-        $categoryConfig = [
+        // Category config — built from lookups table, with fallback colours/icons
+        $defaultStyles = [
             'Shelter'         => ['color' => 'var(--burgundy)', 'tint' => 'var(--burgundy-tint)', 'icon' => 'home'],
             'Government'      => ['color' => 'var(--forest)',   'tint' => 'rgba(22,48,41,0.08)',  'icon' => 'building-2'],
             'Law Enforcement' => ['color' => 'var(--ink-1)',    'tint' => 'rgba(36,40,45,0.08)',  'icon' => 'shield'],
             'Health'          => ['color' => 'var(--moss)',     'tint' => 'var(--moss-tint)',     'icon' => 'heart-handshake'],
             'NGO'             => ['color' => 'var(--ochre)',    'tint' => 'var(--ochre-tint)',    'icon' => 'users'],
+            'Legal Aid'       => ['color' => 'var(--forest)',   'tint' => 'rgba(22,48,41,0.08)',  'icon' => 'scale'],
+            'Other'           => ['color' => 'var(--ink-3)',    'tint' => 'var(--rule-2)',        'icon' => 'circle-dot'],
         ];
+        $dbCategories = \DB::table('lookups')
+            ->where('group_key', 'partner_category')
+            ->where('is_active', 1)
+            ->orderBy('sort_order')
+            ->pluck('label');
+        $categoryConfig = $dbCategories->mapWithKeys(fn($cat) => [
+            $cat => $defaultStyles[$cat] ?? ['color' => 'var(--ink-3)', 'tint' => 'var(--rule-2)', 'icon' => 'circle-dot'],
+        ])->toArray();
 
         $categoryStats = collect($categoryConfig)->map(function ($cfg, $cat) use ($partners) {
             $cps = $partners->where('category', $cat);

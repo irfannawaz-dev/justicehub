@@ -429,7 +429,7 @@
                                 <select name="performed_by" required style="width: 100%; padding: 10px 36px 10px 12px; font-size: 13px; font-family: inherit; border: 1px solid var(--rule); background: var(--paper); color: var(--ink); appearance: none; cursor: pointer; outline: none;">
                                     <option value="" disabled selected>Select provider</option>
                                     @foreach($providers as $p)
-                                    <option value="{{ $p->name }}">{{ $p->name }} ({{ $p->role->label() }})</option>
+                                    <option value="{{ $p->name }}">{{ $p->name }} ({{ $p->designation ?: $p->role->label() }})</option>
                                     @endforeach
                                     @if($providers->isEmpty())
                                     <option value="" disabled>No staff found for this hub</option>

@@ -116,6 +116,16 @@ class CaseRecord extends Model
         return $this->hasMany(Feedback::class, 'case_id');
     }
 
+    public function mediationParties(): HasMany
+    {
+        return $this->hasMany(MediationParty::class, 'case_id')->latest();
+    }
+
+    public function mediationDiary(): HasMany
+    {
+        return $this->hasMany(MediationDiary::class, 'case_id')->latest();
+    }
+
     public function caseStudies(): HasMany
     {
         return $this->hasMany(CaseStudy::class, 'case_id');

@@ -372,17 +372,16 @@
     @endif
 
     {{-- ═══════════════════════════════════════════════════════════
-         4. ENHANCED TAB NAVIGATION (7 tabs)
+         4. ENHANCED TAB NAVIGATION (6 tabs)
          ═══════════════════════════════════════════════════════════ --}}
     <ul class="nav" role="tablist" style="display: flex; gap: 0; border-bottom: 1px solid var(--rule); margin-bottom: 22px; padding: 0; list-style: none;">
         @foreach([
-            ['id' => 'overview',   'label' => 'Overview',              'icon' => 'layout-dashboard'],
-            ['id' => 'timeline',   'label' => 'Timeline & Services',   'icon' => 'clock'],
-            ['id' => 'referrals',  'label' => 'Referrals',             'icon' => 'arrow-right-left', 'count' => $pathways->count()],
-            ['id' => 'documents',  'label' => 'Documents',             'icon' => 'file-text',        'count' => $case->documents->count()],
-            ['id' => 'notes',      'label' => 'Case Notes',            'icon' => 'notebook-pen'],
-            ['id' => 'feedback',   'label' => 'Feedback',              'icon' => 'heart-handshake',  'count' => $case->feedback->count()],
-            ['id' => 'complaints', 'label' => 'Complaints',            'icon' => 'alert-triangle',   'count' => $case->complaints->count()],
+            ['id' => 'overview',   'label' => 'Overview',    'icon' => 'layout-dashboard'],
+            ['id' => 'referrals',  'label' => 'Pathway',     'icon' => 'git-branch',       'count' => $pathways->count()],
+            ['id' => 'documents',  'label' => 'Documents',   'icon' => 'file-text',        'count' => $case->documents->count()],
+            ['id' => 'notes',      'label' => 'Case Notes',  'icon' => 'notebook-pen'],
+            ['id' => 'feedback',   'label' => 'Feedback',    'icon' => 'heart-handshake',  'count' => $case->feedback->count()],
+            ['id' => 'complaints', 'label' => 'Complaints',  'icon' => 'alert-triangle',   'count' => $case->complaints->count()],
         ] as $i => $t)
         <li class="nav-item" role="presentation">
             <button
@@ -415,6 +414,31 @@
             });
         });
     });
+
+    // Mediation stepper
+    function jhMstep(step) {
+        [1,2,3].forEach(function(n) {
+            var panel  = document.getElementById('mstep-panel-' + n);
+            var circle = document.getElementById('mstep-circle-' + n);
+            if (!panel) return;
+            panel.style.display = (n === step) ? '' : 'none';
+        });
+    }
+
+    // Consent radio button visual toggle
+    function jhConsentStyle(radio) {
+        var name = radio.name;
+        document.querySelectorAll('input[name="' + name + '"]').forEach(function(r) {
+            var span = r.nextElementSibling;
+            span.style.background   = '';
+            span.style.color        = '';
+            span.style.borderColor  = 'var(--rule)';
+        });
+        var active = radio.nextElementSibling;
+        if (radio.value === 'agreed')   { active.style.background = 'var(--forest)';   active.style.color = 'var(--cream)'; active.style.borderColor = 'var(--forest)'; }
+        if (radio.value === 'declined') { active.style.background = 'var(--burgundy)'; active.style.color = '#fff';         active.style.borderColor = 'var(--burgundy)'; }
+        if (radio.value === 'awaiting') { active.style.background = 'var(--ochre)';    active.style.color = '#fff';         active.style.borderColor = 'var(--ochre)'; }
+    }
     </script>
 
     {{-- ═══════════════════════════════════════════════════════════
@@ -844,32 +868,230 @@
         </div>
 
         {{-- ─────────────────────────────────────────────────────
-             TAB 2: TIMELINE & SERVICES
-             ───────────────────────────────────────────────────── --}}
-        <div class="tab-pane fade" id="tab-timeline" role="tabpanel">
-            <div class="label-cap" style="font-size: 9.5px; margin-bottom: 12px;">Service encounter timeline</div>
-            @forelse($case->serviceEncounters as $enc)
-            <div style="display: flex; gap: 16px; margin-bottom: 0; position: relative; padding-left: 24px;">
-                <div style="position: absolute; left: 7px; top: 0; bottom: 0; width: 2px; background: var(--rule);"></div>
-                <div style="position: absolute; left: 2px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: var(--paper); border: 2px solid var(--forest); z-index: 1;"></div>
-                <div class="card" style="padding: 14px 18px; margin-bottom: 12px; flex: 1;">
-                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
-                        <span class="mono" style="font-size: 11px; color: var(--ink-3);">{{ $enc->date->format('M d, Y') }}</span>
-                        <x-pill>{{ $enc->type }}</x-pill>
-                        <span style="font-size: 12px; color: var(--ink-3);">by {{ $enc->performed_by }}</span>
-                    </div>
-                    <div style="font-size: 13px; color: var(--ink-2); line-height: 1.55;">{{ $enc->note }}</div>
-                </div>
-            </div>
-            @empty
-            <x-empty-state icon="clock" message="No service encounters logged yet." />
-            @endforelse
-        </div>
-
-        {{-- ─────────────────────────────────────────────────────
-             TAB 3: REFERRALS (NEW)
+             TAB 2: PATHWAY
              ───────────────────────────────────────────────────── --}}
         <div class="tab-pane fade" id="tab-referrals" role="tabpanel">
+
+            @php
+                $isMediationCase = in_array($case->assigned_pathway, ['Mediation', 'ADR / Dispute Resolution Support']);
+                $parties         = $case->mediationParties;
+                $diary           = $case->mediationDiary;
+                $anyAgreed       = $parties->where('consent_status', 'agreed')->count() > 0;
+                $activeMstep     = $mstep ?? 1;
+            @endphp
+
+            @if($isMediationCase)
+            {{-- ── Mediation Stepper ── --}}
+            <div style="margin-bottom: 28px;">
+
+                {{-- Step progress bar --}}
+                <div style="display: flex; align-items: center; gap: 0; margin-bottom: 24px;">
+                    @php
+                        $steps = [1 => 'Opposing party', 2 => 'Consent to mediate', 3 => 'Mediation diary'];
+                    @endphp
+                    @foreach($steps as $num => $label)
+                    <div style="display: flex; align-items: center; flex: 1;">
+                        <button onclick="jhMstep({{ $num }})"
+                            id="mstep-btn-{{ $num }}"
+                            style="display: flex; align-items: center; gap: 10px; background: none; border: none; cursor: pointer; padding: 0; font-family: inherit;"
+                            @if($num === 3 && !$anyAgreed) disabled title="Locked until a party agrees" @endif>
+                            <div id="mstep-circle-{{ $num }}"
+                                style="width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; transition: all 0.2s;
+                                {{ $num < $activeMstep ? 'background: var(--moss); color: var(--cream);' : ($num == $activeMstep ? 'background: var(--forest); color: var(--cream);' : ($num === 3 && !$anyAgreed ? 'background: var(--rule-2); color: var(--ink-4);' : 'background: var(--rule-2); color: var(--ink-3);')) }}">
+                                @if($num < $activeMstep)
+                                <x-lucide-check style="width: 14px; height: 14px;" />
+                                @elseif($num === 3 && !$anyAgreed)
+                                <x-lucide-lock style="width: 12px; height: 12px;" />
+                                @else
+                                {{ $num }}
+                                @endif
+                            </div>
+                            <span style="font-size: 13px; font-weight: {{ $num == $activeMstep ? '600' : '400' }}; color: {{ $num == $activeMstep ? 'var(--ink)' : 'var(--ink-3)' }};">{{ $label }}</span>
+                        </button>
+                        @if($num < 3)
+                        <div style="flex: 1; height: 1px; background: {{ $num < $activeMstep ? 'var(--moss)' : 'var(--rule)' }}; margin: 0 12px;"></div>
+                        @endif
+                    </div>
+                    @endforeach
+                </div>
+
+                {{-- ── STEP 1: Opposing Parties ── --}}
+                <div id="mstep-panel-1" style="{{ $activeMstep == 1 ? '' : 'display:none;' }}">
+                    <div class="card" style="padding: 26px 30px; max-width: 640px;">
+                        <h3 class="serif" style="font-size: 20px; font-weight: 500; margin: 0 0 6px;">Who needs to be contacted for mediation?</h3>
+                        <p style="font-size: 13px; color: var(--ink-3); margin: 0 0 22px; line-height: 1.5;">Record the opposing party (or parties) you'll invite to mediation.</p>
+
+                        <form method="POST" action="{{ route('mediation.party.store', $case) }}">
+                            @csrf
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                                <div>
+                                    <label style="font-size: 11px; font-weight: 600; color: var(--ink-3); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em;">Full name</label>
+                                    <input type="text" name="name" placeholder="Party name" required class="inp" style="width: 100%; font-size: 13px; box-sizing: border-box;" />
+                                </div>
+                                <div>
+                                    <label style="font-size: 11px; font-weight: 600; color: var(--ink-3); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em;">Role</label>
+                                    <select name="role" class="inp" style="width: 100%; font-size: 13px; box-sizing: border-box;">
+                                        <option>Respondent</option>
+                                        <option>Applicant</option>
+                                        <option>Witness</option>
+                                        <option>Representative</option>
+                                        <option>Other</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="font-size: 11px; font-weight: 600; color: var(--ink-3); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em;">Phone</label>
+                                    <input type="text" name="phone" placeholder="+92 ..." class="inp" style="width: 100%; font-size: 13px; box-sizing: border-box;" />
+                                </div>
+                                <div>
+                                    <label style="font-size: 11px; font-weight: 600; color: var(--ink-3); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em;">Note (optional)</label>
+                                    <input type="text" name="note" placeholder="How to reach them, preferred time..." class="inp" style="width: 100%; font-size: 13px; box-sizing: border-box;" />
+                                </div>
+                            </div>
+                            <button type="submit" style="padding: 8px 18px; background: none; border: 1.5px solid var(--rule); color: var(--ink-2); font-size: 13px; font-family: inherit; cursor: pointer;">+ Add party</button>
+                        </form>
+
+                        {{-- Parties list --}}
+                        @if($parties->count())
+                        <div style="margin-top: 18px; display: flex; flex-direction: column; gap: 8px;">
+                            @foreach($parties as $party)
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--paper); border: 1px solid var(--rule); border-radius: 4px;">
+                                <div>
+                                    <div style="font-size: 13px; font-weight: 600; color: var(--ink);">{{ $party->name }}</div>
+                                    <div style="font-size: 12px; color: var(--ink-3); margin-top: 2px;">{{ $party->role }}{{ $party->phone ? ' · ' . $party->phone : '' }}</div>
+                                </div>
+                                <form method="POST" action="{{ route('mediation.party.destroy', [$case, $party]) }}" onsubmit="return confirm('Remove this party?')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" style="background: none; border: none; color: var(--ink-4); cursor: pointer; padding: 4px;">×</button>
+                                </form>
+                            </div>
+                            @endforeach
+                        </div>
+                        @endif
+
+                        <div style="margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rule-2);">
+                            <button onclick="jhMstep(2)" {{ $parties->count() ? '' : 'disabled' }}
+                                style="padding: 10px 28px; background: var(--forest); color: var(--cream); border: none; font-size: 13px; font-family: inherit; font-weight: 600; cursor: pointer; {{ !$parties->count() ? 'opacity: 0.4;' : '' }}">
+                                Continue
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- ── STEP 2: Consent ── --}}
+                <div id="mstep-panel-2" style="{{ $activeMstep == 2 ? '' : 'display:none;' }}">
+                    <div class="card" style="padding: 26px 30px; max-width: 640px;">
+                        <h3 class="serif" style="font-size: 20px; font-weight: 500; margin: 0 0 6px;">Have the parties agreed to mediation?</h3>
+                        <p style="font-size: 13px; color: var(--ink-3); margin: 0 0 22px; line-height: 1.5;">Contact each party and record their answer. The mediation diary opens once at least one party agrees.</p>
+
+                        <form method="POST" action="{{ route('mediation.consent.update', $case) }}">
+                            @csrf
+                            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px;">
+                                @foreach($parties as $party)
+                                <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: var(--paper); border: 1px solid var(--rule); border-radius: 4px;">
+                                    <div>
+                                        <div style="font-size: 13px; font-weight: 600; color: var(--ink);">{{ $party->name }}</div>
+                                        <div style="font-size: 12px; color: var(--ink-3); margin-top: 1px;">{{ $party->role }}{{ $party->phone ? ' · ' . $party->phone : '' }}</div>
+                                    </div>
+                                    <div style="display: flex; gap: 6px;">
+                                        @foreach(['agreed' => 'Agreed', 'declined' => 'Declined', 'awaiting' => 'Awaiting'] as $val => $lbl)
+                                        <label style="cursor: pointer;">
+                                            <input type="radio" name="consent[{{ $party->id }}]" value="{{ $val }}"
+                                                {{ $party->consent_status === $val ? 'checked' : '' }}
+                                                style="display:none;" onchange="jhConsentStyle(this)">
+                                            <span class="consent-btn consent-{{ $val }} {{ $party->consent_status === $val ? 'consent-active-'.$val : '' }}"
+                                                style="display: inline-block; padding: 6px 14px; font-size: 12px; font-weight: 500; border: 1.5px solid var(--rule); cursor: pointer; user-select: none;
+                                                {{ $party->consent_status === $val ? ($val === 'agreed' ? 'background: var(--forest); color: var(--cream); border-color: var(--forest);' : ($val === 'declined' ? 'background: var(--burgundy); color: #fff; border-color: var(--burgundy);' : 'background: var(--ochre); color: #fff; border-color: var(--ochre);')) : '' }}">
+                                                {{ $lbl }}
+                                            </span>
+                                        </label>
+                                        @endforeach
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
+
+                            @if(!$anyAgreed)
+                            <div style="padding: 12px 16px; background: var(--ochre-tint); border: 1px solid rgba(196,130,57,0.25); color: var(--ochre); font-size: 12.5px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                                <x-lucide-lock style="width: 13px; height: 13px; flex-shrink: 0;" />
+                                Mediation stays locked until a party agrees.
+                            </div>
+                            @endif
+
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <button type="button" onclick="jhMstep(1)" style="padding: 9px 20px; background: none; border: 1.5px solid var(--rule); color: var(--ink-2); font-size: 13px; font-family: inherit; cursor: pointer;">Back</button>
+                                <button type="submit" style="padding: 9px 20px; background: {{ $anyAgreed ? 'var(--forest)' : 'var(--rule-2)' }}; color: {{ $anyAgreed ? 'var(--cream)' : 'var(--ink-4)' }}; border: none; font-size: 13px; font-family: inherit; font-weight: 600; cursor: {{ $anyAgreed ? 'pointer' : 'default' }};">
+                                    Open mediation diary
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                {{-- ── STEP 3: Mediation Diary ── --}}
+                <div id="mstep-panel-3" style="{{ $activeMstep == 3 ? '' : 'display:none;' }}">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;">
+
+                        {{-- Add diary entry form --}}
+                        <div class="card" style="padding: 26px 30px;">
+                            <h3 class="serif" style="font-size: 20px; font-weight: 500; margin: 0 0 6px;">Mediation diary</h3>
+                            <p style="font-size: 13px; color: var(--ink-3); margin: 0 0 20px; line-height: 1.5;">Log each session and set the next date.</p>
+
+                            <form method="POST" action="{{ route('mediation.diary.store', $case) }}">
+                                @csrf
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                                    <div>
+                                        <label style="font-size: 11px; font-weight: 600; color: var(--ink-3); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em;">Date</label>
+                                        <input type="date" name="session_date" value="{{ date('Y-m-d') }}" required class="inp" style="width: 100%; font-size: 13px; box-sizing: border-box;" />
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 11px; font-weight: 600; color: var(--ink-3); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em;">Next session (optional)</label>
+                                        <input type="date" name="next_session_date" class="inp" style="width: 100%; font-size: 13px; box-sizing: border-box;" />
+                                    </div>
+                                </div>
+                                <div style="margin-bottom: 14px;">
+                                    <label style="font-size: 11px; font-weight: 600; color: var(--ink-3); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em;">What happened</label>
+                                    <textarea name="what_happened" rows="4" required placeholder="Outcome of the session, points agreed, follow-ups." class="inp" style="width: 100%; font-size: 13px; resize: vertical; box-sizing: border-box; line-height: 1.5;"></textarea>
+                                </div>
+                                <div style="margin-bottom: 20px;">
+                                    <label style="font-size: 11px; font-weight: 600; color: var(--ink-3); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em;">Note for next session (optional)</label>
+                                    <input type="text" name="note_for_next_session" placeholder="What to prepare or confirm." class="inp" style="width: 100%; font-size: 13px; box-sizing: border-box;" />
+                                </div>
+                                <div style="display: flex; gap: 10px;">
+                                    <button type="submit" style="padding: 10px 24px; background: var(--forest); color: var(--cream); border: none; font-size: 13px; font-family: inherit; font-weight: 600; cursor: pointer;">Add diary entry</button>
+                                    <button type="button" onclick="jhMstep(2)" style="padding: 10px 20px; background: none; border: 1.5px solid var(--rule); color: var(--ink-2); font-size: 13px; font-family: inherit; cursor: pointer;">Back</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        {{-- Diary history --}}
+                        <div>
+                            <div class="label-cap" style="font-size: 9.5px; margin-bottom: 12px;">Session history ({{ $diary->count() }})</div>
+                            @forelse($diary as $entry)
+                            <div class="card" style="padding: 16px 20px; margin-bottom: 10px; border-left: 3px solid var(--moss);">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                                    <span class="mono" style="font-size: 12px; font-weight: 600; color: var(--forest);">{{ $entry->session_date->format('d M Y') }}</span>
+                                    @if($entry->next_session_date)
+                                    <span style="font-size: 11px; color: var(--ochre);">Next: {{ $entry->next_session_date->format('d M Y') }}</span>
+                                    @endif
+                                </div>
+                                <div style="font-size: 13px; color: var(--ink-2); line-height: 1.55; margin-bottom: 6px;">{{ $entry->what_happened }}</div>
+                                @if($entry->note_for_next_session)
+                                <div style="font-size: 11.5px; color: var(--ink-3); font-style: italic; padding: 6px 10px; background: var(--rule-2); margin-top: 8px;">{{ $entry->note_for_next_session }}</div>
+                                @endif
+                                <div style="font-size: 10.5px; color: var(--ink-4); margin-top: 8px;">Logged by {{ $entry->logged_by ?? 'unknown' }}</div>
+                            </div>
+                            @empty
+                            <div style="padding: 24px; text-align: center; color: var(--ink-4); font-size: 13px; border: 1px dashed var(--rule); border-radius: 4px;">No diary entries yet. Add the first session above.</div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+
+            </div>{{-- end mediation stepper --}}
+
+            <hr style="border: none; border-top: 1px solid var(--rule); margin: 8px 0 22px;">
+            @endif
+
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
 
                 {{-- Pathway Assignment --}}
