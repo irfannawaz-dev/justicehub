@@ -436,6 +436,18 @@
         if (radio.value === 'agreed')   { active.style.background = 'var(--forest)';   active.style.color = 'var(--cream)'; active.style.borderColor = 'var(--forest)'; }
         if (radio.value === 'declined') { active.style.background = 'var(--burgundy)'; active.style.color = '#fff';         active.style.borderColor = 'var(--burgundy)'; }
         if (radio.value === 'awaiting') { active.style.background = 'var(--ochre)';    active.style.color = '#fff';         active.style.borderColor = 'var(--ochre)'; }
+
+        // Instantly unlock "Open mediation diary" if any party agreed
+        var anyAgreed = document.querySelectorAll('input[value="agreed"]:checked').length > 0;
+        var diaryBtn  = document.getElementById('jh-open-diary-btn');
+        var lockNotice = document.getElementById('jh-consent-lock-notice');
+        if (diaryBtn) {
+            diaryBtn.style.background = anyAgreed ? 'var(--forest)' : 'var(--rule-2)';
+            diaryBtn.style.color      = anyAgreed ? 'var(--cream)'  : 'var(--ink-4)';
+            diaryBtn.style.cursor     = anyAgreed ? 'pointer'       : 'default';
+            diaryBtn.disabled         = !anyAgreed;
+        }
+        if (lockNotice) lockNotice.style.display = anyAgreed ? 'none' : 'flex';
     }
     </script>
 
@@ -1063,16 +1075,14 @@
                                 @endforeach
                             </div>
 
-                            @if(!$anyAgreed)
-                            <div style="padding: 12px 16px; background: var(--ochre-tint); border: 1px solid rgba(196,130,57,0.25); color: var(--ochre); font-size: 12.5px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                            <div id="jh-consent-lock-notice" style="padding: 12px 16px; background: var(--ochre-tint); border: 1px solid rgba(196,130,57,0.25); color: var(--ochre); font-size: 12.5px; margin-bottom: 16px; display: {{ $anyAgreed ? 'none' : 'flex' }}; align-items: center; gap: 8px;">
                                 <x-lucide-lock style="width: 13px; height: 13px; flex-shrink: 0;" />
                                 Mediation stays locked until a party agrees.
                             </div>
-                            @endif
 
                             <div style="display: flex; gap: 10px; align-items: center;">
                                 <button type="button" onclick="jhMstep(1)" style="padding: 9px 20px; background: none; border: 1.5px solid var(--rule); color: var(--ink-2); font-size: 13px; font-family: inherit; cursor: pointer;">Back</button>
-                                <button type="submit" style="padding: 9px 20px; background: {{ $anyAgreed ? 'var(--forest)' : 'var(--rule-2)' }}; color: {{ $anyAgreed ? 'var(--cream)' : 'var(--ink-4)' }}; border: none; font-size: 13px; font-family: inherit; font-weight: 600; cursor: {{ $anyAgreed ? 'pointer' : 'default' }};">
+                                <button id="jh-open-diary-btn" type="submit" {{ $anyAgreed ? '' : 'disabled' }} style="padding: 9px 20px; background: {{ $anyAgreed ? 'var(--forest)' : 'var(--rule-2)' }}; color: {{ $anyAgreed ? 'var(--cream)' : 'var(--ink-4)' }}; border: none; font-size: 13px; font-family: inherit; font-weight: 600; cursor: {{ $anyAgreed ? 'pointer' : 'default' }};">
                                     Open mediation diary
                                 </button>
                             </div>
