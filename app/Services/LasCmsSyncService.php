@@ -60,11 +60,18 @@ class LasCmsSyncService
 
             $externalId = $this->db->table('programs')->insertGetId($sharedData);
 
-            // Also insert into programs_detail as the initial record
-            $this->db->table('programs_detail')->insert(array_merge($sharedData, [
-                'programsid'  => $externalId,
-                'change_type' => 'create',
-            ]));
+            // Insert into programs_detail only if no create record exists yet
+            $alreadyHasCreate = $this->db->table('programs_detail')
+                ->where('programsid', $externalId)
+                ->where('change_type', 'create')
+                ->exists();
+
+            if (!$alreadyHasCreate) {
+                $this->db->table('programs_detail')->insert(array_merge($sharedData, [
+                    'programsid'  => $externalId,
+                    'change_type' => 'create',
+                ]));
+            }
 
             // Update JusticeHub case with external reference
             $case->update([

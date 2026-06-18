@@ -78,10 +78,10 @@ class ServiceController extends Controller
         $withdrawn = 0; // No withdrawn status currently
         $ongoingAdr = $active;
         $outcomes = [
-            'Settled via ADR' => $settled,
-            'Ongoing ADR'     => $ongoingAdr,
-            'Escalated'       => $escalated,
-            'Withdrawn'       => $withdrawn,
+            'Settled via Mediation' => $settled,
+            'Ongoing Mediation'     => $ongoingAdr,
+            'Escalated'             => $escalated,
+            'Withdrawn'             => $withdrawn,
         ];
 
         // Staff workload for ADR

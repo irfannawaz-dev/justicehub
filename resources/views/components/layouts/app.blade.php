@@ -45,6 +45,52 @@
     </script>
     @endif
 
+    @if(session('open_slip'))
+    <script>
+        window.open({{ Js::from(session('open_slip')) }}, '_blank');
+    </script>
+    @endif
+
     @stack('scripts')
+
+    {{-- Sidebar toggle --}}
+    <style>
+        #jh-sidebar.jh-sidebar-collapsed {
+            width: 0 !important;
+            opacity: 0;
+            overflow: hidden;
+            border-right: none;
+        }
+        #jh-sidebar-toggle.jh-sidebar-collapsed {
+            background: var(--parchment-2) !important;
+            color: var(--ink) !important;
+        }
+    </style>
+    <script>
+    (function () {
+        var sidebar = document.getElementById('jh-sidebar');
+        var btn     = document.getElementById('jh-sidebar-toggle');
+
+        function apply(collapsed) {
+            if (!sidebar) return;
+            if (collapsed) {
+                sidebar.classList.add('jh-sidebar-collapsed');
+                btn && btn.classList.add('jh-sidebar-collapsed');
+            } else {
+                sidebar.classList.remove('jh-sidebar-collapsed');
+                btn && btn.classList.remove('jh-sidebar-collapsed');
+            }
+        }
+
+        // Restore preference on load
+        apply(localStorage.getItem('jh_sidebar_collapsed') === '1');
+
+        window.jhToggleSidebar = function () {
+            var collapsed = sidebar.classList.contains('jh-sidebar-collapsed');
+            apply(!collapsed);
+            localStorage.setItem('jh_sidebar_collapsed', collapsed ? '0' : '1');
+        };
+    }());
+    </script>
 </body>
 </html>

@@ -28,7 +28,7 @@
         <div style="margin-bottom: 14px; animation: jh-fade-up 0.5s ease both;">
             <div class="label-cap" style="font-size: 9.5px; margin-bottom: 4px;">Mediation & Dispute Resolution</div>
             <h2 class="serif" style="font-size: 26px; font-weight: 400; letter-spacing: -0.015em; margin: 0; line-height: 1.1;">
-                ADR <em style="color: var(--ochre);">scorecard</em>
+                Mediation <em style="color: var(--ochre);">scorecard</em>
             </h2>
             <div style="font-size: 12.5px; color: var(--ink-3); margin-top: 6px;">
                 Mediation pathway performance · indicators O2.1 + O2.2 · this quarter
@@ -36,10 +36,10 @@
         </div>
 
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
-            {{-- ADR Resolution Rate — Radial Gauge --}}
+            {{-- Mediation Resolution Rate — Radial Gauge --}}
             <div class="card jh-scorecard jh-anim-card" style="padding: 20px 22px; border-top: 3px solid var(--ochre); display: flex; flex-direction: column; gap: 6px; min-height: 160px;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <div class="label-cap" style="font-size: 9.5px; line-height: 1.4;">O2.1 ADR Resolution Rate</div>
+                    <div class="label-cap" style="font-size: 9.5px; line-height: 1.4;">O2.1 Mediation Resolution Rate</div>
                     <x-lucide-heart-handshake style="width: 13px; height: 13px; color: var(--ink-4);" />
                 </div>
                 <div style="display: flex; align-items: center; gap: 16px; flex: 1;">
@@ -100,10 +100,10 @@
                 </div>
             </div>
 
-            {{-- Total ADR Cases --}}
+            {{-- Total Mediation Cases --}}
             <div class="card jh-scorecard jh-anim-card" style="padding: 20px 22px; border-top: 3px solid var(--moss); display: flex; flex-direction: column; gap: 10px; min-height: 160px;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <div class="label-cap" style="font-size: 9.5px; line-height: 1.4;">Total ADR Cases</div>
+                    <div class="label-cap" style="font-size: 9.5px; line-height: 1.4;">Total Mediation Cases</div>
                     <x-lucide-activity style="width: 13px; height: 13px; color: var(--ink-4);" />
                 </div>
                 <div class="serif jh-anim-num" style="font-size: 44px; font-weight: 400; line-height: 1; letter-spacing: -0.02em;">{{ $adrTotal }}</div>
@@ -119,7 +119,7 @@
         {{-- ADR Breakdown Mini Charts --}}
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px;">
             <div class="card jh-anim-card" style="padding: 18px 20px; animation-delay: 0.35s;">
-                <div class="label-cap" style="font-size: 9px; margin-bottom: 12px;">ADR Case Outcome Split</div>
+                <div class="label-cap" style="font-size: 9px; margin-bottom: 12px;">Mediation Case Outcome Split</div>
                 @php
                     $adrOther = $adrTotal - $adrSettled - $adrActive;
                     $chartAdrSplit = ['labels' => ['Settled','Active','Other'], 'values' => [$adrSettled, $adrActive, max($adrOther,0)], 'colors' => ['#4a7a5c','#b87319','#6b6a65']];
@@ -127,7 +127,7 @@
                 <div data-chart="serviceMixPie" data-chart-config='{{ json_encode($chartAdrSplit) }}' style="height: 180px;"><canvas></canvas></div>
             </div>
             <div class="card jh-anim-card" style="padding: 18px 20px; animation-delay: 0.4s;">
-                <div class="label-cap" style="font-size: 9px; margin-bottom: 12px;">ADR Performance vs Target</div>
+                <div class="label-cap" style="font-size: 9px; margin-bottom: 12px;">Mediation Performance vs Target</div>
                 @php
                     $chartAdrPerf = ['labels' => ['Resolution Rate','Target'], 'values' => [$adrRate, 70], 'colors' => ['#b87319','#ebe4d2']];
                 @endphp

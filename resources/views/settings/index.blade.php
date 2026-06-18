@@ -211,7 +211,7 @@
                 @foreach([
                     ['key' => 'cases',        'name' => 'Cases',               'route' => 'cases.index',         'icon' => 'folder'],
                     ['key' => 'intake',       'name' => 'Intake',              'route' => 'intake.create',       'icon' => 'file-plus'],
-                    ['key' => 'adr',          'name' => 'ADR Scorecard',       'route' => 'services.adr',        'icon' => 'heart-handshake'],
+                    ['key' => 'adr',          'name' => 'Mediation Scorecard', 'route' => 'services.adr',        'icon' => 'heart-handshake'],
                     ['key' => 'litigation',   'name' => 'Litigation Scorecard','route' => 'services.litigation', 'icon' => 'gavel'],
                     ['key' => 'referrals',    'name' => 'Referrals',           'route' => 'referrals.index',     'icon' => 'share-2'],
                     ['key' => 'outreach',     'name' => 'Outreach',            'route' => 'outreach.index',      'icon' => 'megaphone'],

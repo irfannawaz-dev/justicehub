@@ -19,6 +19,7 @@ class DashboardMetricsService
     protected ?string $service;
     protected array $hubIds = [];
     protected array $services = [];
+    protected array $districts = [];
     protected ?string $assignedTo = null;
     protected ?array $pathwayFilter = null;
     protected ?string $dateFrom = null;
@@ -35,6 +36,12 @@ class DashboardMetricsService
     {
         $this->hubIds   = $hubIds;
         $this->services = $services;
+        return $this;
+    }
+
+    public function setDistricts(array $districts): self
+    {
+        $this->districts = $districts;
         return $this;
     }
 
@@ -462,6 +469,11 @@ class DashboardMetricsService
             });
         } elseif ($this->service) {
             $q->where('assigned_pathway', 'like', '%' . $this->service . '%');
+        }
+
+        // District filter
+        if (!empty($this->districts)) {
+            $q->whereIn('district', $this->districts);
         }
 
         // Lawyer: only their assigned cases

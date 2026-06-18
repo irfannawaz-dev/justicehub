@@ -41,7 +41,7 @@
                 SERVICE DELIVERY &middot; ADR SESSIONS
             </div>
             <h1 class="serif" style="font-size: 32px; font-weight: 400; letter-spacing: -0.02em; margin: 0; line-height: 1.15; color: var(--ink);">
-                ADR Calendar &amp; <em style="color: var(--ochre); font-style: italic;">Upcoming Sessions</em>
+                Mediation Calendar &amp; <em style="color: var(--ochre); font-style: italic;">Upcoming Sessions</em>
             </h1>
             <p style="margin: 7px 0 0 0; font-size: 13px; color: var(--ink-3); line-height: 1.45; max-width: 520px;">
                 Mediation sessions, ADR appointments and pathway milestones

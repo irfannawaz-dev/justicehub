@@ -5,15 +5,15 @@
     $navGroups = [
         'Dashboards' => [
             ['route' => 'dashboard',               'label' => 'Main Dashboard',              'icon' => 'activity',         'permission' => 'cases.view'],
-            ['route' => 'dashboard.litigation-adr', 'label' => 'Litigation & ADR Dashboard',  'icon' => 'gavel',            'permission' => 'cases.view'],
+            ['route' => 'dashboard.litigation-adr', 'label' => 'Litigation & Mediation Dashboard', 'icon' => 'gavel', 'permission' => 'cases.view'],
         ],
         'Work' => [
             ['route' => 'cases.index',  'label' => 'Cases',      'icon' => 'folder',    'permission' => 'cases.view'],
             ['route' => 'intake.create','label' => 'New Intake',  'icon' => 'file-plus', 'permission' => 'cases.create'],
         ],
         'Service Delivery' => [
-            ['route' => 'services.adr',              'label' => 'ADR Scorecard',        'icon' => 'heart-handshake', 'permission' => 'cases.view'],
-            ['route' => 'services.adr-calendar',     'label' => 'ADR Calendar',         'icon' => 'calendar',        'permission' => 'cases.view'],
+            ['route' => 'services.adr',              'label' => 'Mediation Scorecard',  'icon' => 'heart-handshake', 'permission' => 'cases.view'],
+            ['route' => 'services.adr-calendar',     'label' => 'Mediation Calendar',   'icon' => 'calendar',        'permission' => 'cases.view'],
             ['route' => 'services.litigation',       'label' => 'Litigation Scorecard',  'icon' => 'gavel',           'permission' => 'cases.view'],
             ['route' => 'services.litigation-calendar','label' => 'Litigation Calendar', 'icon' => 'calendar',        'permission' => 'cases.view'],
             ['route' => 'referrals.index',           'label' => 'Referrals',            'icon' => 'share-2',         'permission' => 'cases.view'],
@@ -49,7 +49,7 @@
     $activeHubCode = $activeHubId === 'all' ? $hubs->count() . ' hubs · Sindh' : $activeHubId;
 @endphp
 
-<aside class="jh-scroll grain-dark" style="width: 250px; background: var(--forest); color: var(--cream); border-right: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0;">
+<aside id="jh-sidebar" class="jh-scroll grain-dark" style="width: 250px; background: var(--forest); color: var(--cream); border-right: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0; transition: width 0.22s ease, opacity 0.22s ease;">
 
     {{-- Wordmark --}}
     <div style="padding: 26px 22px 22px; border-bottom: 1px solid rgba(255,255,255,0.08);">

@@ -17,16 +17,17 @@ class DashboardController extends Controller
             return redirect()->route('cases.index');
         }
 
-        $hubId    = $request->input('_active_hub', 'all');
         $period   = $request->input('period', 'All time');
         $dateFrom = $request->input('date_from');
         $dateTo   = $request->input('date_to');
         $hubNames = $request->input('hub', []);
         $services = $request->input('service', []);
+        $districts = $request->input('district', []);
 
         // Normalise to arrays
         if (is_string($hubNames)) $hubNames = $hubNames === 'All Hubs' ? [] : [$hubNames];
         if (is_string($services)) $services = $services === 'All Services' ? [] : [$services];
+        if (is_string($districts)) $districts = $districts === 'All Districts' ? [] : [$districts];
 
         // Resolve hub names to hub_ids
         $hubIds = [];
@@ -38,7 +39,6 @@ class DashboardController extends Controller
         $user = $request->user();
         if (! $user->canSeeAllHubs()) {
             $hubIds = [$user->hub_id];
-            $hubId  = $user->hub_id;
         }
 
         $metrics = new DashboardMetricsService(
@@ -47,6 +47,7 @@ class DashboardController extends Controller
             count($services) === 1 ? $services[0] : null
         );
         $metrics->setMultiFilters($hubIds, $services);
+        $metrics->setDistricts($districts);
         if ($dateFrom || $dateTo) {
             $metrics->setDateRange($dateFrom, $dateTo);
         }
@@ -63,9 +64,10 @@ class DashboardController extends Controller
 
         // Active filter state for view
         $activeFilters = [
-            'period'  => $period,
-            'hub'     => $hubNames,
-            'service' => $services,
+            'period'   => $period,
+            'hub'      => $hubNames,
+            'service'  => $services,
+            'district' => $districts,
         ];
 
         // Time-based greeting
@@ -109,6 +111,9 @@ class DashboardController extends Controller
                 }
             });
         }
+        if (!empty($districts)) {
+            $q->whereIn('district', $districts);
+        }
 
         $highRisk    = (clone $q)->where('risk', 'High')->count();
         $casesLast7  = (clone $q)->where('intake_date', '>=', now()->subDays(7)->toDateString())->count();
@@ -147,9 +152,19 @@ class DashboardController extends Controller
             return $h;
         });
 
+        // Available districts: merge configured lookups + any custom values in cases
+        $lookupDistricts = \App\Models\Lookup::where('group_key', 'intake.district')
+            ->where('is_active', true)->orderBy('sort_order')->pluck('value')->toArray();
+        $caseDistricts = \App\Models\CaseRecord::query()
+            ->whereNotNull('district')->where('district', '!=', '')
+            ->distinct()->pluck('district')->toArray();
+        $availableDistricts = collect(array_unique(array_merge($lookupDistricts, $caseDistricts)))
+            ->sort()->values()->toArray();
+
         return view('dashboards.command-center', compact(
             'm', 'greeting', 'highRisk', 'casesLast7', 'resolvedLast7', 'hubDist',
-            'referralSources', 'primaryIssues', 'activeFilters', 'dateFrom', 'dateTo'
+            'referralSources', 'primaryIssues', 'activeFilters', 'dateFrom', 'dateTo',
+            'availableDistricts'
         ));
     }
 

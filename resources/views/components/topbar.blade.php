@@ -1,13 +1,13 @@
 @php
     $pageTitles = [
         'dashboard'                  => 'Strategic Overview',
-        'dashboard.litigation-adr'   => 'Litigation & ADR Dashboard',
+        'dashboard.litigation-adr'   => 'Litigation & Mediation Dashboard',
         'dashboard.lcd'              => 'LCD Dashboard',
         'cases.index'                => 'Case Management',
         'cases.show'                 => 'Case File',
         'intake.create'              => 'Client Intake & Registration',
-        'services.adr'               => 'ADR Scorecard',
-        'services.adr-calendar'      => 'ADR Calendar',
+        'services.adr'               => 'Mediation Scorecard',
+        'services.adr-calendar'      => 'Mediation Calendar',
         'services.litigation'        => 'Litigation Scorecard',
         'services.litigation-calendar'=> 'Litigation Calendar',
         'referrals.index'            => 'Referrals & Linkages',
@@ -26,7 +26,16 @@
     $isDark       = session('theme', 'light') === 'dark';
 @endphp
 
-<header style="background: var(--paper); border-bottom: 1px solid var(--rule); padding: 0 28px; height: 56px; display: flex; align-items: center; gap: 18px; flex-shrink: 0;">
+<header style="background: var(--paper); border-bottom: 1px solid var(--rule); padding: 0 20px 0 16px; height: 56px; display: flex; align-items: center; gap: 14px; flex-shrink: 0;">
+
+    {{-- Sidebar toggle --}}
+    <button id="jh-sidebar-toggle" onclick="jhToggleSidebar()"
+        title="Toggle sidebar"
+        style="background: none; border: 1px solid var(--rule); padding: 6px 8px; cursor: pointer; color: var(--ink-3); display: flex; align-items: center; flex-shrink: 0; border-radius: 3px;"
+        onmouseenter="this.style.background='var(--parchment-2)';this.style.color='var(--ink)'"
+        onmouseleave="this.style.background='none';this.style.color='var(--ink-3)'">
+        <x-lucide-panel-left style="width: 15px; height: 15px;" />
+    </button>
 
     {{-- Breadcrumb / Page title --}}
     <div style="flex: 1; min-width: 0;">

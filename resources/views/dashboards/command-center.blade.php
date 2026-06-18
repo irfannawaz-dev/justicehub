@@ -12,7 +12,8 @@
         $filterProvinces = ['All Provinces','Sindh'];
         $filterHubs      = array_merge(['All Hubs'], $hubDist->pluck('name')->toArray());
         $filterServices  = ['All Services','Legal Advice / Consultation','Court Representation','Mediation','ADR / Dispute Resolution Support','Government Department / Public Institution','Civil Society / NGO / CSO / NPO','Other'];
-        $af = $activeFilters ?? ['period' => 'All time', 'hub' => 'All Hubs', 'service' => 'All Services'];
+        $af = $activeFilters ?? ['period' => 'All time', 'hub' => 'All Hubs', 'service' => 'All Services', 'district' => []];
+        $af['district'] = $af['district'] ?? [];
     @endphp
 
     {{-- Filter dropdown styles --}}
@@ -175,6 +176,38 @@
             </div>
             @endif
 
+            {{-- ── District (multiselect) ── --}}
+            @php $activeDistricts = is_array($af['district']) ? $af['district'] : ($af['district'] === 'All Districts' ? [] : ($af['district'] ? [$af['district']] : [])); @endphp
+            @if(count($availableDistricts ?? []) > 0)
+            <div class="dropdown">
+                <button class="filter-btn" id="dd-district" data-bs-toggle="dropdown" aria-expanded="false">
+                    <x-lucide-map style="width:12px; height:12px; color:var(--ink-4); flex-shrink:0;" />
+                    <span id="cc-label-district">{{ count($activeDistricts) ? count($activeDistricts) . ' District' . (count($activeDistricts) > 1 ? 's' : '') : 'All Districts' }}</span>
+                    <x-lucide-chevron-down class="filter-chevron" />
+                </button>
+                <ul class="dropdown-menu filter-menu" style="min-width:200px; padding:6px 0; max-height:280px; overflow-y:auto;" aria-labelledby="dd-district" onclick="event.stopPropagation()">
+                    <li style="padding:2px 12px 6px; border-bottom:1px solid var(--rule-2); margin-bottom:4px; position:sticky; top:0; background:var(--paper); z-index:1;">
+                        <button class="filter-opt" style="font-size:11px; font-weight:600; width:100%;"
+                                onclick="ccMultiToggleAll('district')">Select All / None</button>
+                    </li>
+                    @foreach($availableDistricts as $dist)
+                    <li style="padding:0 12px;">
+                        <label style="display:flex; align-items:center; gap:8px; padding:5px 0; cursor:pointer; font-size:12.5px; color:var(--ink);">
+                            <input type="checkbox" data-multi="district" value="{{ $dist }}"
+                                   {{ in_array($dist, $activeDistricts) ? 'checked' : '' }}
+                                   onchange="ccMultiChanged('district')"
+                                   style="accent-color:var(--forest); width:14px; height:14px;">
+                            {{ $dist }}
+                        </label>
+                    </li>
+                    @endforeach
+                    <li style="padding:6px 12px 4px; border-top:1px solid var(--rule-2); margin-top:4px; position:sticky; bottom:0; background:var(--paper);">
+                        <button onclick="ccApplyMulti('district')" style="width:100%; padding:6px 0; background:var(--forest); color:var(--cream); border:none; font-size:11.5px; font-weight:600; cursor:pointer; font-family:inherit;">Apply</button>
+                    </li>
+                </ul>
+            </div>
+            @endif
+
             {{-- ── Service (multiselect) ── --}}
             @php $activeServices = is_array($af['service']) ? $af['service'] : ($af['service'] === 'All Services' ? [] : [$af['service']]); @endphp
             <div class="dropdown">
@@ -238,6 +271,7 @@
         <span>Showing:
             <span id="cc-status-province">All Provinces</span> &middot;
             <span id="cc-status-hub">{{ is_array($af['hub']) && count($af['hub']) ? implode(', ', $af['hub']) : 'All Hubs' }}</span> &middot;
+            <span id="cc-status-district">{{ is_array($af['district']) && count($af['district']) ? implode(', ', $af['district']) : 'All Districts' }}</span> &middot;
             <span id="cc-status-service">{{ is_array($af['service']) && count($af['service']) ? implode(', ', $af['service']) : 'All Services' }}</span> &middot;
             <span id="cc-status-period">{{ $af['period'] }}</span>
             @if($dateFrom || $dateTo)
@@ -1045,6 +1079,10 @@
         var hubs = getCheckedValues('hub');
         if (hubs.length > 0) hubs.forEach(function(h) { params.append('hub[]', h); });
 
+        // District multiselect
+        var districts = getCheckedValues('district');
+        if (districts.length > 0) districts.forEach(function(d) { params.append('district[]', d); });
+
         // Service multiselect
         var services = getCheckedValues('service');
         if (services.length > 0) services.forEach(function(s) { params.append('service[]', s); });
@@ -1075,12 +1113,14 @@
         var vals = getCheckedValues(key);
         var label = document.getElementById('cc-label-' + key);
         var total = document.querySelectorAll('input[data-multi="' + key + '"]').length;
+        var allLabel = key === 'hub' ? 'All Hubs' : (key === 'district' ? 'All Districts' : 'All Services');
+        var pluralLabel = key === 'hub' ? ' Hubs' : (key === 'district' ? ' Districts' : ' Services');
         if (vals.length === 0 || vals.length === total) {
-            label.textContent = key === 'hub' ? 'All Hubs' : 'All Services';
+            label.textContent = allLabel;
         } else if (vals.length === 1) {
             label.textContent = vals[0];
         } else {
-            label.textContent = vals.length + (key === 'hub' ? ' Hubs' : ' Services');
+            label.textContent = vals.length + pluralLabel;
         }
     };
 

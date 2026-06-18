@@ -565,5 +565,10 @@
     </div>{{-- .slip --}}
 </div>{{-- .slip-wrap --}}
 
+<script>
+    window.addEventListener('load', function () {
+        window.print();
+    });
+</script>
 </body>
 </html>

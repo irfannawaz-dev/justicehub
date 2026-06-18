@@ -3,10 +3,11 @@
     $currentDisposition = request('disposition', 'all');
     $currentStatus = request('status', 'all');
     $currentHub = request('hub', 'all');
+    $currentDistrict = request('district', 'all');
     $currentSearch = request('search', '');
     $currentPathway = request('pathway', '');
     $viewMode = request('view', 'list');
-    $hasFilters = $currentDisposition !== 'all' || $currentStatus !== 'all' || $currentHub !== 'all' || $currentSearch || $currentPathway;
+    $hasFilters = $currentDisposition !== 'all' || $currentStatus !== 'all' || $currentHub !== 'all' || $currentDistrict !== 'all' || $currentSearch || $currentPathway;
 @endphp
 
 <div style="padding: 24px 34px 64px; max-width: 1600px; margin: 0 auto;">
@@ -42,14 +43,13 @@
 
     {{-- ═══ Service Pathways · At a Glance ═══ --}}
     <div class="label-cap" style="font-size: 9.5px; margin-bottom: 8px;">Service Pathways &middot; at a glance &middot; click to filter cases</div>
-    <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 20px;">
+    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px;">
         @foreach([
             ['key' => 'legal_advice',   'label' => 'Free Legal Advice',       'sub' => 'counsel sessions delivered',  'icon' => 'file-text',      'indicator' => 'O2.1', 'color' => 'var(--forest)',   'bg' => 'rgba(22,48,41,0.08)',  'filter' => 'legal_advice'],
             ['key' => 'mediation',      'label' => 'Mediation',               'sub' => 'cases on mediation pathway',  'icon' => 'heart-handshake','indicator' => 'O2.2', 'color' => 'var(--moss)',     'bg' => 'var(--moss-tint)',     'filter' => 'mediation'],
             ['key' => 'adr',            'label' => 'ADR',                     'sub' => 'dispute resolution support',  'icon' => 'scale',          'indicator' => 'O2.2', 'color' => 'var(--ochre)',    'bg' => 'var(--ochre-tint)',    'filter' => 'adr'],
             ['key' => 'court',          'label' => 'Representation in Court', 'sub' => 'litigation in progress',      'icon' => 'gavel',          'indicator' => 'O2.4', 'color' => 'var(--burgundy)', 'bg' => 'var(--burgundy-tint)', 'filter' => 'court'],
             ['key' => 'referred',       'label' => 'Referred (loop)',         'sub' => 'partner referrals made',      'icon' => 'share-2',        'indicator' => 'O3.2', 'color' => 'var(--forest)',   'bg' => 'rgba(22,48,41,0.08)', 'filter' => 'referred'],
-            ['key' => 'info_awareness', 'label' => 'Information & Awareness', 'sub' => 'legal awareness sessions',    'icon' => 'megaphone',      'indicator' => 'O2.5', 'color' => '#7e57c2',        'bg' => 'rgba(126,87,194,0.08)','filter' => 'info_awareness'],
         ] as $pw)
         @php
             $pwCount = $pathwayCounts[$pw['key']] ?? 0;
@@ -126,6 +126,13 @@
             <option value="all" {{ $currentHub === 'all' ? 'selected' : '' }}>All Hubs</option>
             @foreach($hubs as $hub)
                 <option value="{{ $hub->id }}" {{ $currentHub === $hub->id ? 'selected' : '' }}>{{ $hub->name }}</option>
+            @endforeach
+        </select>
+
+        <select name="district" onchange="this.form.submit()" class="inp" style="width: 160px; padding: 7px 10px; font-size: 12px;">
+            <option value="all" {{ $currentDistrict === 'all' ? 'selected' : '' }}>All Districts</option>
+            @foreach($availableDistricts as $dist)
+                <option value="{{ $dist }}" {{ $currentDistrict === $dist ? 'selected' : '' }}>{{ $dist }}</option>
             @endforeach
         </select>
 
