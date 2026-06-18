@@ -286,7 +286,15 @@
 
                 {{-- Government dept --}}
                 <div id="intake-pw-govt-box" style="display:none; margin-top: 12px;">
-                    <x-form-select name="pathwayGovernmentDept" label="Specific department / institution" required lookup-group="intake.pathway_govt" />
+                    <div>
+                        <label class="jh-field-label">Specific Department / Institution *</label>
+                        <select name="pathwayGovernmentDept" class="inp" style="width:100%; font-size:13px; box-sizing:border-box;">
+                            <option value="">— Select partner —</option>
+                            @foreach($governmentPartners as $dept)
+                                <option value="{{ $dept }}" @selected(old('pathwayGovernmentDept') === $dept)>{{ $dept }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
 
                 {{-- NGO --}}

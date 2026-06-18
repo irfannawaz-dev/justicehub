@@ -125,7 +125,6 @@
                     <a href="{{ route('cases.slip', $case) }}" target="_blank" class="btn-ghost" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;">
                         <x-lucide-printer style="width:12px;height:12px;" /> Print Slip
                     </a>
-                    <button class="btn-ghost" onclick="jhOpenModal('log-encounter')"><x-lucide-plus style="width:12px;height:12px;" /> Log service</button>
                     @if($canEdit && !$pendingTransfer)
                     <button class="btn-ghost" onclick="jhOpenModal('reassign-case')">
                         <x-lucide-arrow-right-left style="width:12px;height:12px;" /> Reassign
@@ -379,7 +378,6 @@
             ['id' => 'overview',   'label' => 'Overview',    'icon' => 'layout-dashboard'],
             ['id' => 'referrals',  'label' => 'Pathway',     'icon' => 'git-branch',       'count' => $pathways->count()],
             ['id' => 'documents',  'label' => 'Documents',   'icon' => 'file-text',        'count' => $case->documents->count()],
-            ['id' => 'notes',      'label' => 'Case Notes',  'icon' => 'notebook-pen'],
             ['id' => 'feedback',   'label' => 'Feedback',    'icon' => 'heart-handshake',  'count' => $case->feedback->count()],
             ['id' => 'complaints', 'label' => 'Complaints',  'icon' => 'alert-triangle',   'count' => $case->complaints->count()],
         ] as $i => $t)
@@ -507,6 +505,14 @@
                                 </div>
                             </div>
                         </div>
+
+                        {{-- Issue Description --}}
+                        @if($case->issue_description)
+                        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--rule-2);">
+                            <div class="label-cap" style="font-size: 9.5px; margin-bottom: 8px;">Issue Description</div>
+                            <div style="font-size: 13px; color: var(--ink-2); line-height: 1.65; white-space: pre-wrap;">{{ $case->issue_description }}</div>
+                        </div>
+                        @endif
                     </div>
 
                     {{-- Safeguarding & Vulnerability --}}
@@ -924,7 +930,7 @@
                 {{-- Step progress bar --}}
                 <div style="display: flex; align-items: center; gap: 0; margin-bottom: 24px;">
                     @php
-                        $steps = [1 => 'Opposing party', 2 => 'Consent to mediate', 3 => 'Mediation diary'];
+                        $steps = [1 => 'Parties', 2 => 'Consent to mediate', 3 => 'Mediation diary'];
                     @endphp
                     @foreach($steps as $num => $label)
                     <div style="display: flex; align-items: center; flex: 1;">
@@ -952,57 +958,67 @@
                     @endforeach
                 </div>
 
-                {{-- ── STEP 1: Opposing Parties ── --}}
+                {{-- ── STEP 1: Parties ── --}}
                 <div id="mstep-panel-1" style="{{ $activeMstep == 1 ? '' : 'display:none;' }}">
                     <div class="card" style="padding: 26px 30px; max-width: 640px;">
-                        <h3 class="serif" style="font-size: 20px; font-weight: 500; margin: 0 0 6px;">Who needs to be contacted for mediation?</h3>
-                        <p style="font-size: 13px; color: var(--ink-3); margin: 0 0 22px; line-height: 1.5;">Record the opposing party (or parties) you'll invite to mediation.</p>
+                        <h3 class="serif" style="font-size: 20px; font-weight: 500; margin: 0 0 6px;">Who are the two parties in this mediation?</h3>
+                        <p style="font-size: 13px; color: var(--ink-3); margin: 0 0 22px; line-height: 1.5;">Record both parties you'll invite to mediation.</p>
 
-                        <form method="POST" action="{{ route('mediation.party.store', $case) }}">
-                            @csrf
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
-                                <div>
-                                    <label style="font-size: 11px; font-weight: 600; color: var(--ink-3); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em;">Full name</label>
-                                    <input type="text" name="name" placeholder="Party name" required class="inp" style="width: 100%; font-size: 13px; box-sizing: border-box;" />
-                                </div>
-                                <div>
-                                    <label style="font-size: 11px; font-weight: 600; color: var(--ink-3); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em;">Role</label>
-                                    <select name="role" class="inp" style="width: 100%; font-size: 13px; box-sizing: border-box;">
-                                        <option>Respondent</option>
-                                        <option>Applicant</option>
-                                        <option>Witness</option>
-                                        <option>Representative</option>
-                                        <option>Other</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label style="font-size: 11px; font-weight: 600; color: var(--ink-3); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em;">Phone</label>
-                                    <input type="text" name="phone" placeholder="+92 ..." class="inp" style="width: 100%; font-size: 13px; box-sizing: border-box;" />
-                                </div>
-                                <div>
-                                    <label style="font-size: 11px; font-weight: 600; color: var(--ink-3); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em;">Note (optional)</label>
-                                    <input type="text" name="note" placeholder="How to reach them, preferred time..." class="inp" style="width: 100%; font-size: 13px; box-sizing: border-box;" />
-                                </div>
-                            </div>
-                            <button type="submit" style="padding: 8px 18px; background: none; border: 1.5px solid var(--rule); color: var(--ink-2); font-size: 13px; font-family: inherit; cursor: pointer;">+ Add party</button>
-                        </form>
-
-                        {{-- Parties list --}}
                         @if($parties->count())
-                        <div style="margin-top: 18px; display: flex; flex-direction: column; gap: 8px;">
-                            @foreach($parties as $party)
+                        {{-- Saved parties list --}}
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px;">
+                            @foreach($parties as $i => $party)
                             <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--paper); border: 1px solid var(--rule); border-radius: 4px;">
                                 <div>
+                                    <div style="font-size: 11px; font-weight: 700; color: var(--ink-4); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Party {{ $i + 1 }}</div>
                                     <div style="font-size: 13px; font-weight: 600; color: var(--ink);">{{ $party->name }}</div>
                                     <div style="font-size: 12px; color: var(--ink-3); margin-top: 2px;">{{ $party->role }}{{ $party->phone ? ' · ' . $party->phone : '' }}</div>
                                 </div>
                                 <form method="POST" action="{{ route('mediation.party.destroy', [$case, $party]) }}" onsubmit="return confirm('Remove this party?')">
                                     @csrf @method('DELETE')
-                                    <button type="submit" style="background: none; border: none; color: var(--ink-4); cursor: pointer; padding: 4px;">×</button>
+                                    <button type="submit" style="background: none; border: none; color: var(--ink-4); cursor: pointer; padding: 4px 8px; font-size: 18px; line-height: 1;">×</button>
                                 </form>
                             </div>
                             @endforeach
                         </div>
+                        @else
+                        {{-- Two-party entry form --}}
+                        <form method="POST" action="{{ route('mediation.party.store', $case) }}">
+                            @csrf
+                            @php $partyLabels = ['Party 1', 'Party 2']; @endphp
+                            @foreach($partyLabels as $i => $partyLabel)
+                            <div style="{{ $i === 0 ? 'margin-bottom: 22px; padding-bottom: 22px; border-bottom: 1px solid var(--rule-2);' : '' }}">
+                                <div style="font-size: 11px; font-weight: 700; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px;">{{ $partyLabel }}</div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                                    <div>
+                                        <label style="font-size: 11px; font-weight: 600; color: var(--ink-3); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em;">Full name</label>
+                                        <input type="text" name="parties[{{ $i }}][name]" placeholder="Party name" required class="inp" style="width: 100%; font-size: 13px; box-sizing: border-box;" />
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 11px; font-weight: 600; color: var(--ink-3); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em;">Role</label>
+                                        <select name="parties[{{ $i }}][role]" class="inp" style="width: 100%; font-size: 13px; box-sizing: border-box;">
+                                            <option>Respondent</option>
+                                            <option>Applicant</option>
+                                            <option>Witness</option>
+                                            <option>Representative</option>
+                                            <option>Other</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 11px; font-weight: 600; color: var(--ink-3); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em;">Phone</label>
+                                        <input type="text" name="parties[{{ $i }}][phone]" placeholder="+92 ..." class="inp" style="width: 100%; font-size: 13px; box-sizing: border-box;" />
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 11px; font-weight: 600; color: var(--ink-3); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em;">Note (optional)</label>
+                                        <input type="text" name="parties[{{ $i }}][note]" placeholder="How to reach them..." class="inp" style="width: 100%; font-size: 13px; box-sizing: border-box;" />
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
+                            <div style="margin-top: 20px;">
+                                <button type="submit" style="padding: 10px 24px; background: var(--forest); color: var(--cream); border: none; font-size: 13px; font-family: inherit; font-weight: 600; cursor: pointer;">Save Both Parties</button>
+                            </div>
+                        </form>
                         @endif
 
                         <div style="margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rule-2);">
@@ -1128,6 +1144,630 @@
 
             <hr style="border: none; border-top: 1px solid var(--rule); margin: 8px 0 22px;">
             @endif
+
+            @php
+                $isReferralCase = in_array($case->assigned_pathway, [
+                    'Government Department / Public Institution',
+                    'Civil Society / NGO / CSO / NPO',
+                    'Referred',
+                    'Referral',
+                    'Other',
+                ]);
+            @endphp
+
+            @if($isReferralCase)
+            {{-- ── Referral Tracking ── --}}
+            <div style="margin-bottom: 20px;">
+
+                {{-- Section header + "New Referral" button --}}
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <x-lucide-share-2 style="width: 15px; height: 15px; color: var(--forest);" />
+                        <span class="label-cap" style="font-size: 10px;">Referral Tracking</span>
+                        <span class="mono" style="font-size: 11px; color: var(--ink-4);">{{ $caseReferrals->count() }} {{ Str::plural('referral', $caseReferrals->count()) }}</span>
+                    </div>
+                    @if($canWrite && !$isResolved)
+                    <button onclick="jhRefToggleCreate(this)"
+                        style="display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; background: var(--forest); color: var(--cream); border: none; font-size: 12px; font-family: inherit; font-weight: 600; cursor: pointer;">
+                        <x-lucide-plus style="width: 12px; height: 12px;" /> New Referral
+                    </button>
+                    @endif
+                </div>
+
+                {{-- Create Referral Form (collapsed by default if referrals exist) --}}
+                @if($canWrite && !$isResolved)
+                <div id="jh-ref-create-form" style="{{ $caseReferrals->isEmpty() ? '' : 'display:none;' }} margin-bottom: 20px; padding: 20px 22px; background: var(--parchment); border: 1px solid var(--rule-2);">
+                    <div class="label-cap" style="font-size: 10px; margin-bottom: 14px;">Create New Referral</div>
+                    <form method="POST" action="{{ route('cases.referral.store', $case) }}">
+                        @csrf
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                            <div>
+                                <label class="jh-field-label">Referred To <span style="color:var(--burgundy)">*</span></label>
+                                <input type="text" name="referred_to" required placeholder="Organisation name"
+                                    class="inp" style="width:100%; font-size:13px; box-sizing:border-box;" />
+                            </div>
+                            <div>
+                                <label class="jh-field-label">Date Referred <span style="color:var(--burgundy)">*</span></label>
+                                <input type="date" name="referral_date" required value="{{ now()->toDateString() }}"
+                                    class="inp" style="width:100%; font-size:13px; box-sizing:border-box;" />
+                            </div>
+                            <div>
+                                <label class="jh-field-label">Referred By</label>
+                                <input type="text" name="referred_by" value="{{ auth()->user()->name }}"
+                                    class="inp" style="width:100%; font-size:13px; box-sizing:border-box;" />
+                            </div>
+                            <div style="grid-column: 1 / -1;">
+                                <label class="jh-field-label">Reason for Referral</label>
+                                <textarea name="reason" rows="2" placeholder="Briefly describe why this referral is being made."
+                                    class="inp" style="width:100%; font-size:13px; box-sizing:border-box; resize:vertical;"></textarea>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:8px;">
+                            <button type="submit" style="padding:8px 18px; background:var(--forest); color:var(--cream); border:none; font-size:13px; font-family:inherit; font-weight:600; cursor:pointer;">Create Referral</button>
+                            <button type="button" onclick="jhRefToggleCreate(null)"
+                                style="padding:8px 14px; background:none; border:1px solid var(--rule); color:var(--ink-3); font-size:13px; font-family:inherit; cursor:pointer;">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+                @endif
+
+                {{-- No referrals state --}}
+                @if($caseReferrals->isEmpty())
+                <x-empty-state icon="share-2" message="No referrals logged yet. Use the button above to create one." />
+                @endif
+
+                {{-- Each referral card --}}
+                @foreach($caseReferrals as $refIdx => $ref)
+                @php
+                    $refId    = $ref->id;
+                    $isClosed = $ref->isClosed();
+                    $statusColor = match($ref->status) {
+                        'Closed'  => 'var(--ink-3)',
+                        'Active'  => 'var(--forest)',
+                        default   => 'var(--ochre)',
+                    };
+                    $statusBg = match($ref->status) {
+                        'Closed'  => 'rgba(0,0,0,0.05)',
+                        'Active'  => 'rgba(22,48,41,0.08)',
+                        default   => 'rgba(184,115,25,0.08)',
+                    };
+                @endphp
+                <div class="card" style="margin-bottom: 16px; padding: 0; overflow: hidden; {{ $isClosed ? 'opacity:0.82;' : '' }}">
+
+                    {{-- Card header --}}
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 20px; background:var(--parchment); border-bottom:1px solid var(--rule-2);">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <x-lucide-building-2 style="width:14px; height:14px; color:var(--forest);" />
+                            <span style="font-size:14px; font-weight:600; color:var(--ink);">{{ $ref->referred_to }}</span>
+                            <span class="mono" style="font-size:11px; color:var(--ink-4);">{{ $ref->referral_date->format('d M Y') }}</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="padding:3px 10px; font-size:11px; font-weight:700; color:{{ $statusColor }}; background:{{ $statusBg }};">{{ $ref->status }}</span>
+                            @if($canWrite && !$isResolved)
+                            <form method="POST" action="{{ route('cases.referral.destroy', [$case, $ref]) }}" style="display:inline;"
+                                onsubmit="return confirm('Delete this referral and all its data?')">
+                                @csrf @method('DELETE')
+                                <button type="submit" title="Delete referral"
+                                    style="padding:3px 8px; background:none; border:1px solid var(--rule); color:var(--ink-4); cursor:pointer; font-size:11px; line-height:1.4; font-family:inherit;">×</button>
+                            </form>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div style="padding: 0 20px 20px;">
+
+                        {{-- ── SECTION 1: Referred ── --}}
+                        <div style="padding-top: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--rule-2);">
+                            <div class="label-cap" style="font-size: 9.5px; color: var(--ink-4); margin-bottom: 10px; display:flex; align-items:center; gap:6px;">
+                                <x-lucide-arrow-up-right style="width:11px;height:11px;" /> Referred
+                            </div>
+                            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:14px;">
+                                <div>
+                                    <div class="jh-intake-label">Date Referred</div>
+                                    <div class="jh-intake-value">{{ $ref->referral_date->format('d M Y') }}</div>
+                                </div>
+                                <div>
+                                    <div class="jh-intake-label">Pathway</div>
+                                    <div class="jh-intake-value">{{ $case->assigned_pathway ?? '---' }}</div>
+                                </div>
+                                <div>
+                                    <div class="jh-intake-label">Referred By</div>
+                                    <div class="jh-intake-value">{{ $ref->referred_by ?? '---' }}</div>
+                                </div>
+                                @if($ref->reason)
+                                <div style="grid-column: 1 / -1;">
+                                    <div class="jh-intake-label">Reason</div>
+                                    <div style="font-size:13px; color:var(--ink-2); line-height:1.55;">{{ $ref->reason }}</div>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        {{-- ── SECTION 2: Focal Person ── --}}
+                        <div style="padding-top: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--rule-2);">
+                            <div class="label-cap" style="font-size: 9.5px; color: var(--ink-4); margin-bottom: 10px; display:flex; align-items:center; gap:6px;">
+                                <x-lucide-user style="width:11px;height:11px;" /> Focal Person
+                            </div>
+                            @if($ref->focal_person_name || ($canWrite && !$isResolved && !$isClosed))
+                            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:{{ ($canWrite && !$isResolved && !$isClosed) ? '12px' : '0' }};">
+                                @if($ref->focal_person_name || $ref->focal_person_designation || $ref->focal_person_phone || $ref->focal_person_email)
+                                <div>
+                                    <div class="jh-intake-label">Name</div>
+                                    <div class="jh-intake-value">{{ $ref->focal_person_name ?: '---' }}</div>
+                                </div>
+                                <div>
+                                    <div class="jh-intake-label">Designation</div>
+                                    <div class="jh-intake-value">{{ $ref->focal_person_designation ?: '---' }}</div>
+                                </div>
+                                <div>
+                                    <div class="jh-intake-label">Phone</div>
+                                    <div class="jh-intake-value">{{ $ref->focal_person_phone ?: '---' }}</div>
+                                </div>
+                                <div>
+                                    <div class="jh-intake-label">Email</div>
+                                    <div class="jh-intake-value" style="word-break:break-all;">{{ $ref->focal_person_email ?: '---' }}</div>
+                                </div>
+                                @endif
+                            </div>
+                            @endif
+                            @if($canWrite && !$isResolved && !$isClosed)
+                            <details style="margin-top: {{ $ref->focal_person_name ? '4px' : '0' }};">
+                                <summary style="font-size:12px; color:var(--forest); cursor:pointer; list-style:none; display:inline-flex; align-items:center; gap:5px;">
+                                    <x-lucide-pencil style="width:11px;height:11px;" />
+                                    {{ $ref->focal_person_name ? 'Edit focal person' : 'Add focal person' }}
+                                </summary>
+                                <form method="POST" action="{{ route('cases.referral.focal', [$case, $ref]) }}" style="margin-top:10px;">
+                                    @csrf @method('PATCH')
+                                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:10px; margin-bottom:10px;">
+                                        <div>
+                                            <label class="jh-field-label">Name</label>
+                                            <input type="text" name="focal_person_name" value="{{ $ref->focal_person_name }}"
+                                                placeholder="Full name" class="inp" style="width:100%; font-size:13px; box-sizing:border-box;" />
+                                        </div>
+                                        <div>
+                                            <label class="jh-field-label">Designation</label>
+                                            <input type="text" name="focal_person_designation" value="{{ $ref->focal_person_designation }}"
+                                                placeholder="Title / role" class="inp" style="width:100%; font-size:13px; box-sizing:border-box;" />
+                                        </div>
+                                        <div>
+                                            <label class="jh-field-label">Phone</label>
+                                            <input type="text" name="focal_person_phone" value="{{ $ref->focal_person_phone }}"
+                                                placeholder="+92..." class="inp" style="width:100%; font-size:13px; box-sizing:border-box;" />
+                                        </div>
+                                        <div>
+                                            <label class="jh-field-label">Email</label>
+                                            <input type="email" name="focal_person_email" value="{{ $ref->focal_person_email }}"
+                                                placeholder="email@org.pk" class="inp" style="width:100%; font-size:13px; box-sizing:border-box;" />
+                                        </div>
+                                    </div>
+                                    <button type="submit"
+                                        style="padding:7px 16px; background:var(--forest); color:var(--cream); border:none; font-size:12px; font-family:inherit; font-weight:600; cursor:pointer;">Save Focal Person</button>
+                                </form>
+                            </details>
+                            @elseif(!$ref->focal_person_name)
+                            <span style="font-size:12px; color:var(--ink-4); font-style:italic;">No focal person on record.</span>
+                            @endif
+                        </div>
+
+                        {{-- ── SECTION 3: Letter Sent ── --}}
+                        <div style="padding-top: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--rule-2);">
+                            <div class="label-cap" style="font-size: 9.5px; color: var(--ink-4); margin-bottom: 10px; display:flex; align-items:center; gap:6px;">
+                                <x-lucide-mail style="width:11px;height:11px;" /> Letter Sent
+                                <span class="mono" style="font-size:10px; color:var(--ink-4); font-weight:400; text-transform:none; letter-spacing:0;">{{ $ref->letters->count() }} {{ Str::plural('letter', $ref->letters->count()) }}</span>
+                            </div>
+
+                            {{-- Letters list --}}
+                            @if($ref->letters->count())
+                            <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:12px;">
+                                @foreach($ref->letters as $letter)
+                                <div style="display:flex; align-items:flex-start; gap:12px; padding:10px 12px; background:var(--paper); border:1px solid var(--rule-2);">
+                                    <x-lucide-file-text style="width:13px;height:13px; color:var(--ink-4); flex-shrink:0; margin-top:2px;" />
+                                    <div style="flex:1; min-width:0;">
+                                        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                                            @if($letter->our_ref)
+                                            <span style="font-size:12px; font-weight:600; color:var(--ink);">{{ $letter->our_ref }}</span>
+                                            @endif
+                                            <span class="mono" style="font-size:11px; color:var(--ink-4);">{{ $letter->letter_date->format('d M Y') }}</span>
+                                            @if($letter->logged_by)
+                                            <span style="font-size:11px; color:var(--ink-4);">by {{ $letter->logged_by }}</span>
+                                            @endif
+                                            @if($letter->file_path)
+                                            <a href="{{ Storage::url($letter->file_path) }}" target="_blank"
+                                                style="display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--forest); text-decoration:none; padding:2px 7px; border:1px solid var(--rule); background:var(--parchment);">
+                                                <x-lucide-paperclip style="width:10px;height:10px;" />
+                                                {{ $letter->file_name ?? 'attachment' }}
+                                            </a>
+                                            @endif
+                                        </div>
+                                        @if($letter->note)
+                                        <div style="font-size:12px; color:var(--ink-3); margin-top:4px; line-height:1.45;">{{ $letter->note }}</div>
+                                        @endif
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
+                            @endif
+
+                            @if($canWrite && !$isResolved && !$isClosed)
+                            <details>
+                                <summary style="font-size:12px; color:var(--forest); cursor:pointer; list-style:none; display:inline-flex; align-items:center; gap:5px;">
+                                    <x-lucide-plus style="width:11px;height:11px;" /> Log a letter
+                                </summary>
+                                <div style="margin-top:12px; padding:16px 18px; background:var(--paper); border:1px solid var(--rule-2);">
+                                    <div style="font-size:14px; font-weight:600; color:var(--ink); margin-bottom:3px;">Letter sent</div>
+                                    <div style="font-size:12px; color:var(--ink-3); margin-bottom:14px;">Record the reference letter dispatched to {{ $ref->referred_to }}.</div>
+                                    <form method="POST" action="{{ route('cases.referral.letter', [$case, $ref]) }}"
+                                        enctype="multipart/form-data">
+                                        @csrf
+                                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+                                            <div>
+                                                <label class="jh-field-label">Our Reference / Dispatch No.</label>
+                                                <input type="text" name="our_ref" placeholder="e.g. LAS-HYD/Disp/0231"
+                                                    class="inp" style="width:100%; font-size:13px; box-sizing:border-box;" />
+                                            </div>
+                                            <div>
+                                                <label class="jh-field-label">Date Sent <span style="color:var(--burgundy)">*</span></label>
+                                                <input type="date" name="letter_date" required value="{{ now()->toDateString() }}"
+                                                    class="inp" style="width:100%; font-size:13px; box-sizing:border-box;" />
+                                            </div>
+                                            <div style="grid-column: 1 / -1;">
+                                                <label class="jh-field-label">Reference Letter (PDF / Scan)</label>
+                                                <div id="jh-letter-drop-{{ $refId }}"
+                                                    style="border:1.5px dashed var(--rule); padding:12px 14px; cursor:pointer; background:var(--parchment); display:flex; align-items:center; gap:10px;"
+                                                    onclick="document.getElementById('jh-letter-file-{{ $refId }}').click()">
+                                                    <x-lucide-paperclip style="width:14px;height:14px; color:var(--ink-4); flex-shrink:0;" />
+                                                    <span id="jh-letter-name-{{ $refId }}" style="font-size:13px; color:var(--ink-4);">Click to attach PDF or scan…</span>
+                                                    <button type="button" id="jh-letter-clear-{{ $refId }}"
+                                                        onclick="event.stopPropagation(); jhLetterClear('{{ $refId }}')"
+                                                        style="display:none; margin-left:auto; background:none; border:none; color:var(--ink-4); cursor:pointer; font-size:13px; line-height:1; padding:0 2px;">×</button>
+                                                </div>
+                                                <input type="file" id="jh-letter-file-{{ $refId }}" name="letter_file"
+                                                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                                    style="display:none;"
+                                                    onchange="jhLetterPicked('{{ $refId }}', this)" />
+                                            </div>
+                                            <div style="grid-column: 1 / -1;">
+                                                <label class="jh-field-label">Note</label>
+                                                <textarea name="note" rows="3" placeholder="Purpose of the letter, any context..."
+                                                    class="inp" style="width:100%; font-size:13px; box-sizing:border-box; resize:vertical;"></textarea>
+                                            </div>
+                                        </div>
+                                        <div style="display:flex; gap:8px;">
+                                            <button type="submit"
+                                                style="padding:8px 18px; background:var(--forest); color:var(--cream); border:none; font-size:13px; font-family:inherit; font-weight:600; cursor:pointer;">Record letter sent</button>
+                                            <button type="button" onclick="this.closest('details').removeAttribute('open')"
+                                                style="padding:8px 14px; background:none; border:1px solid var(--rule); color:var(--ink-3); font-size:13px; font-family:inherit; cursor:pointer;">× Cancel</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </details>
+                            @elseif($ref->letters->isEmpty())
+                            <span style="font-size:12px; color:var(--ink-4); font-style:italic;">No letters logged.</span>
+                            @endif
+                        </div>
+
+                        {{-- ── SECTION 4: Follow-up ── --}}
+                        <div style="padding-top: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--rule-2);">
+                            <div class="label-cap" style="font-size: 9.5px; color: var(--ink-4); margin-bottom: 10px; display:flex; align-items:center; gap:6px;">
+                                <x-lucide-repeat-2 style="width:11px;height:11px;" /> Follow-up
+                                <span class="mono" style="font-size:10px; color:var(--ink-4); font-weight:400; text-transform:none; letter-spacing:0;">{{ $ref->threads->count() }} {{ Str::plural('entry', $ref->threads->count()) }}</span>
+                            </div>
+
+                            {{-- Follow-up meta (due date, partner ref) --}}
+                            @if($ref->follow_up_date || $ref->partner_tracking_ref)
+                            <div style="display:flex; gap:18px; flex-wrap:wrap; margin-bottom:12px;">
+                                @if($ref->follow_up_date)
+                                <span style="font-size:12px; color:var(--ink-3);">
+                                    <span style="font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em;">Due:</span>
+                                    {{ $ref->follow_up_date->format('d M Y') }}
+                                    @if($ref->follow_up_date->isPast() && !$isClosed)
+                                    <span style="color:var(--burgundy); font-size:10px; font-weight:700; margin-left:4px;">OVERDUE</span>
+                                    @endif
+                                </span>
+                                @endif
+                                @if($ref->partner_tracking_ref)
+                                <span style="font-size:12px; color:var(--ink-3);">
+                                    <span style="font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em;">Partner Ref:</span>
+                                    {{ $ref->partner_tracking_ref }}
+                                </span>
+                                @endif
+                            </div>
+                            @endif
+
+                            {{-- Thread timeline --}}
+                            @if($ref->threads->count())
+                            <div style="display:flex; flex-direction:column; gap:0; margin-bottom:14px; border-left:2px solid var(--rule); padding-left:14px;">
+                                @foreach($ref->threads as $thread)
+                                @php
+                                    $isPartner = $thread->isFromPartner();
+                                    $threadIcon = match($thread->type) {
+                                        'Email'   => 'mail',
+                                        'Phone'   => 'phone',
+                                        'Meeting' => 'users',
+                                        'Letter'  => 'file-text',
+                                        default   => 'message-circle',
+                                    };
+                                @endphp
+                                <div style="position:relative; padding:0 0 14px 0;">
+                                    <div style="position:absolute; left:-19px; top:3px; width:8px; height:8px; border-radius:50%; background:{{ $isPartner ? 'var(--ochre)' : 'var(--forest)' }}; border:2px solid var(--paper);"></div>
+                                    <div style="display:flex; align-items:flex-start; gap:10px;">
+                                        <div style="flex:1; min-width:0;">
+                                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                                                <span style="font-size:11px; font-weight:700; color:{{ $isPartner ? 'var(--ochre)' : 'var(--forest)' }}; text-transform:uppercase; letter-spacing:0.04em;">
+                                                    {{ $isPartner ? 'From Partner' : 'From Us' }}
+                                                </span>
+                                                <span style="font-size:11px; color:var(--ink-4);">{{ $thread->type }}</span>
+                                                <span class="mono" style="font-size:11px; color:var(--ink-4);">{{ $thread->thread_date->format('d M Y') }}</span>
+                                                @if($thread->logged_by)
+                                                <span style="font-size:11px; color:var(--ink-4);">· {{ $thread->logged_by }}</span>
+                                                @endif
+                                            </div>
+                                            @if($thread->note)
+                                            <div style="font-size:12.5px; color:var(--ink-2); line-height:1.5; margin-top:4px;">{{ $thread->note }}</div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
+                            @endif
+
+                            @if($canWrite && !$isResolved && !$isClosed)
+                            {{-- Always-visible add-thread form --}}
+                            <div style="margin-top:10px; padding:14px 16px; background:var(--parchment); border:1px solid var(--rule-2);">
+                                <div class="label-cap" style="font-size:9.5px; margin-bottom:10px; color:var(--ink-4);">Add to Thread</div>
+                                <form method="POST" action="{{ route('cases.referral.thread', [$case, $ref]) }}">
+                                    @csrf
+                                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:10px; margin-bottom:10px;">
+                                        <div>
+                                            <label class="jh-field-label">Direction <span style="color:var(--burgundy)">*</span></label>
+                                            <select name="direction" required class="inp" style="width:100%; font-size:13px; box-sizing:border-box;">
+                                                <option value="from_us">From Us</option>
+                                                <option value="from_partner">From Partner</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="jh-field-label">Type <span style="color:var(--burgundy)">*</span></label>
+                                            <select name="type" required class="inp" style="width:100%; font-size:13px; box-sizing:border-box;">
+                                                <option>Email</option>
+                                                <option>Phone</option>
+                                                <option>Meeting</option>
+                                                <option>Letter</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="jh-field-label">Date <span style="color:var(--burgundy)">*</span></label>
+                                            <input type="date" name="thread_date" required value="{{ now()->toDateString() }}"
+                                                class="inp" style="width:100%; font-size:13px; box-sizing:border-box;" />
+                                        </div>
+                                        <div>
+                                            <label class="jh-field-label">Follow-up Due</label>
+                                            <input type="date" name="follow_up_date" value="{{ $ref->follow_up_date?->toDateString() }}"
+                                                class="inp" style="width:100%; font-size:13px; box-sizing:border-box;" />
+                                        </div>
+                                        <div style="grid-column:1 / span 3;">
+                                            <label class="jh-field-label">Note</label>
+                                            <textarea name="note" rows="2" placeholder="Summary of the communication..."
+                                                class="inp" style="width:100%; font-size:13px; box-sizing:border-box; resize:vertical;"></textarea>
+                                        </div>
+                                        <div>
+                                            <label class="jh-field-label">Partner Ref</label>
+                                            <input type="text" name="partner_tracking_ref" value="{{ $ref->partner_tracking_ref }}"
+                                                placeholder="Their reference no."
+                                                class="inp" style="width:100%; font-size:13px; box-sizing:border-box;" />
+                                        </div>
+                                    </div>
+                                    <button type="submit"
+                                        style="padding:8px 18px; background:var(--forest); color:var(--cream); border:none; font-size:12px; font-family:inherit; font-weight:600; cursor:pointer;">Add to Thread</button>
+                                </form>
+                            </div>
+                            @elseif($ref->threads->isEmpty())
+                            <span style="font-size:12px; color:var(--ink-4); font-style:italic;">No follow-up entries yet.</span>
+                            @endif
+                        </div>
+
+                        {{-- ── SECTION 5: Closed ── --}}
+                        <div style="padding-top: 16px;">
+                            <div class="label-cap" style="font-size: 9.5px; color: var(--ink-4); margin-bottom: 10px; display:flex; align-items:center; gap:6px;">
+                                <x-lucide-check-circle style="width:11px;height:11px;" /> Closed
+                            </div>
+
+                            @if($isClosed)
+                            {{-- Closed record --}}
+                            <div style="padding:12px 14px; background:rgba(0,0,0,0.025); border:1px solid var(--rule-2); display:flex; flex-direction:column; gap:6px;">
+                                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                                    <span style="font-size:12px; color:var(--ink-3);">
+                                        <span style="font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em;">Closed:</span>
+                                        {{ $ref->closed_at->format('d M Y') }}
+                                    </span>
+                                    <span style="font-size:12px; color:var(--ink-3);">
+                                        <span style="font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em;">Outcome:</span>
+                                        {{ $ref->closed_outcome }}
+                                    </span>
+                                </div>
+                                @if($ref->closed_note)
+                                <div style="font-size:12.5px; color:var(--ink-2); line-height:1.5;">{{ $ref->closed_note }}</div>
+                                @endif
+                            </div>
+                            @elseif($canWrite && !$isResolved)
+                            <details>
+                                <summary style="font-size:12px; color:var(--ink-3); cursor:pointer; list-style:none; display:inline-flex; align-items:center; gap:5px;">
+                                    <x-lucide-x-circle style="width:11px;height:11px;" /> Close this referral
+                                </summary>
+                                <form method="POST" action="{{ route('cases.referral.close', [$case, $ref]) }}" style="margin-top:10px;">
+                                    @csrf
+                                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+                                        <div>
+                                            <label class="jh-field-label">Date Closed <span style="color:var(--burgundy)">*</span></label>
+                                            <input type="date" name="closed_at" required value="{{ now()->toDateString() }}"
+                                                class="inp" style="width:100%; font-size:13px; box-sizing:border-box;" />
+                                        </div>
+                                        <div>
+                                            <label class="jh-field-label">Outcome <span style="color:var(--burgundy)">*</span></label>
+                                            <select name="closed_outcome" required class="inp" style="width:100%; font-size:13px; box-sizing:border-box;">
+                                                <option value="">— Select outcome —</option>
+                                                <option>Resolved — Partner assisted</option>
+                                                <option>Resolved — Self-resolved</option>
+                                                <option>No Response from Partner</option>
+                                                <option>Client withdrew</option>
+                                                <option>Referred onwards</option>
+                                                <option>Other</option>
+                                            </select>
+                                        </div>
+                                        <div style="grid-column: 1 / -1;">
+                                            <label class="jh-field-label">Closing Note</label>
+                                            <textarea name="closed_note" rows="2" placeholder="Any final notes on this referral outcome..."
+                                                class="inp" style="width:100%; font-size:13px; box-sizing:border-box; resize:vertical;"></textarea>
+                                        </div>
+                                    </div>
+                                    <button type="submit"
+                                        onclick="return confirm('Close this referral? This cannot be undone.')"
+                                        style="padding:7px 16px; background:var(--burgundy); color:#fff; border:none; font-size:12px; font-family:inherit; font-weight:600; cursor:pointer;">Close Referral</button>
+                                </form>
+                            </details>
+                            @else
+                            <span style="font-size:12px; color:var(--ink-4); font-style:italic;">Referral is still active.</span>
+                            @endif
+                        </div>
+
+                    </div>{{-- end card body --}}
+
+                    {{-- ── ACTIVITY HISTORY ── --}}
+                    @php
+                        // Build unified activity feed from all referral events
+                        $refActivity = collect();
+
+                        // 1. Referral created
+                        $refActivity->push([
+                            'icon'  => 'git-branch',
+                            'color' => 'var(--forest)',
+                            'label' => 'Referral created',
+                            'meta'  => 'Referred to ' . $ref->referred_to,
+                            'by'    => $ref->referred_by,
+                            'at'    => $ref->created_at,
+                        ]);
+
+                        // 2. Letters
+                        foreach ($ref->letters as $l) {
+                            $refActivity->push([
+                                'icon'  => 'mail',
+                                'color' => 'var(--ink-3)',
+                                'label' => 'Letter logged' . ($l->our_ref ? ' · ' . $l->our_ref : ''),
+                                'meta'  => $l->note ? \Str::limit($l->note, 80) : 'Letter sent on ' . $l->letter_date->format('d M Y'),
+                                'by'    => $l->logged_by,
+                                'at'    => $l->created_at,
+                            ]);
+                        }
+
+                        // 3. Thread entries
+                        foreach ($ref->threads as $t) {
+                            $dir = $t->isFromPartner() ? 'From Partner' : 'From Us';
+                            $refActivity->push([
+                                'icon'  => match($t->type) { 'Email' => 'mail', 'Phone' => 'phone', 'Meeting' => 'users', default => 'file-text' },
+                                'color' => $t->isFromPartner() ? 'var(--ochre)' : 'var(--forest)',
+                                'label' => $dir . ' · ' . $t->type,
+                                'meta'  => $t->note ? \Str::limit($t->note, 80) : $t->type . ' on ' . $t->thread_date->format('d M Y'),
+                                'by'    => $t->logged_by,
+                                'at'    => $t->created_at,
+                            ]);
+                        }
+
+                        // 4. Closure
+                        if ($ref->isClosed()) {
+                            $refActivity->push([
+                                'icon'  => 'check-circle',
+                                'color' => 'var(--moss)',
+                                'label' => 'Referral closed',
+                                'meta'  => 'Outcome: ' . $ref->closed_outcome,
+                                'by'    => null,
+                                'at'    => $ref->closed_at,
+                            ]);
+                        }
+
+                        $refActivity = $refActivity->sortByDesc('at')->values();
+                    @endphp
+                    <div style="border-top: 1px solid var(--rule-2); padding: 14px 20px; background: var(--parchment);">
+                        <div style="display:flex; align-items:center; gap:6px; margin-bottom:12px;">
+                            <x-lucide-clock style="width:12px;height:12px; color:var(--ink-4);" />
+                            <span class="label-cap" style="font-size:9.5px; color:var(--ink-4);">Activity History</span>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:0; border-left:2px solid var(--rule); padding-left:14px;">
+                            @foreach($refActivity as $evt)
+                            <div style="position:relative; padding:0 0 10px;">
+                                <div style="position:absolute; left:-19px; top:3px; width:8px; height:8px; border-radius:50%; background:{{ $evt['color'] }}; border:2px solid var(--parchment);"></div>
+                                <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+                                    <div>
+                                        <span style="font-size:12px; font-weight:600; color:var(--ink);">{{ $evt['label'] }}</span>
+                                        @if($evt['by'])
+                                        <span style="font-size:11px; color:var(--ink-4);"> · {{ $evt['by'] }}</span>
+                                        @endif
+                                        @if($evt['meta'])
+                                        <div style="font-size:11.5px; color:var(--ink-3); margin-top:2px; line-height:1.4;">{{ $evt['meta'] }}</div>
+                                        @endif
+                                    </div>
+                                    <span class="mono" style="font-size:10px; color:var(--ink-4); white-space:nowrap; flex-shrink:0;">
+                                        {{ $evt['at']->format('d M Y, H:i') }}
+                                    </span>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                </div>{{-- end referral card --}}
+                @endforeach
+
+            </div>{{-- end referral tracking --}}
+            @endif
+
+            <style>
+                .jh-field-label {
+                    font-size: 11px;
+                    font-weight: 600;
+                    color: var(--ink-3);
+                    display: block;
+                    margin-bottom: 5px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.04em;
+                }
+                details > summary { user-select: none; }
+                details > summary::-webkit-details-marker { display: none; }
+            </style>
+
+            <script>
+            function jhRefToggleCreate(btn) {
+                var form = document.getElementById('jh-ref-create-form');
+                if (!form) return;
+                var showing = form.style.display !== 'none';
+                form.style.display = showing ? 'none' : '';
+            }
+
+            function jhLetterPicked(refId, input) {
+                var name = document.getElementById('jh-letter-name-' + refId);
+                var clear = document.getElementById('jh-letter-clear-' + refId);
+                var drop  = document.getElementById('jh-letter-drop-' + refId);
+                if (input.files && input.files[0]) {
+                    name.textContent  = input.files[0].name;
+                    name.style.color  = 'var(--ink)';
+                    clear.style.display = 'inline-block';
+                    drop.style.borderColor = 'var(--forest)';
+                    drop.style.borderStyle = 'solid';
+                }
+            }
+
+            function jhLetterClear(refId) {
+                var input = document.getElementById('jh-letter-file-' + refId);
+                var name  = document.getElementById('jh-letter-name-' + refId);
+                var clear = document.getElementById('jh-letter-clear-' + refId);
+                var drop  = document.getElementById('jh-letter-drop-' + refId);
+                input.value = '';
+                name.textContent = 'Click to attach PDF or scan…';
+                name.style.color = 'var(--ink-4)';
+                clear.style.display = 'none';
+                drop.style.borderColor = 'var(--rule)';
+                drop.style.borderStyle = 'dashed';
+            }
+            </script>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
 
@@ -1345,40 +1985,7 @@
         </div>
 
         {{-- ─────────────────────────────────────────────────────
-             TAB 5: CASE NOTES (NEW)
-             ───────────────────────────────────────────────────── --}}
-        <div class="tab-pane fade" id="tab-notes" role="tabpanel">
-            <div style="display: flex; flex-direction: column; gap: 18px;">
-                {{-- Issue Description --}}
-                <div class="card" style="padding: 22px 26px;">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
-                        <x-lucide-file-text style="width: 15px; height: 15px; color: var(--forest);" />
-                        <div class="label-cap" style="font-size: 10px;">Issue Description</div>
-                    </div>
-                    @if($case->issue_description)
-                    <div style="font-size: 13.5px; color: var(--ink-2); line-height: 1.65; white-space: pre-wrap;">{{ $case->issue_description }}</div>
-                    @else
-                    <div style="font-size: 13px; color: var(--ink-4); font-style: italic;">No issue description recorded.</div>
-                    @endif
-                </div>
-
-                {{-- Case Summary --}}
-                <div class="card" style="padding: 22px 26px;">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
-                        <x-lucide-notebook-pen style="width: 15px; height: 15px; color: var(--forest);" />
-                        <div class="label-cap" style="font-size: 10px;">Case Summary</div>
-                    </div>
-                    @if($case->summary)
-                    <div style="font-size: 13.5px; color: var(--ink-2); line-height: 1.65; white-space: pre-wrap;">{{ $case->summary }}</div>
-                    @else
-                    <div style="font-size: 13px; color: var(--ink-4); font-style: italic;">No case summary recorded.</div>
-                    @endif
-                </div>
-            </div>
-        </div>
-
-        {{-- ─────────────────────────────────────────────────────
-             TAB 6: FEEDBACK (kept)
+             TAB 5: FEEDBACK (kept)
              ───────────────────────────────────────────────────── --}}
         <div class="tab-pane fade" id="tab-feedback" role="tabpanel">
             <div class="card" style="padding: 24px 28px;">

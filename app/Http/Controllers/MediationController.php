@@ -9,26 +9,29 @@ use Illuminate\Http\Request;
 
 class MediationController extends Controller
 {
-    // Step 1 — Add a party
+    // Step 1 — Add both parties at once
     public function storeParty(Request $request, CaseRecord $case)
     {
         $request->validate([
-            'name'  => 'required|string|max:255',
-            'role'  => 'required|string',
-            'phone' => 'nullable|string|max:30',
-            'note'  => 'nullable|string|max:500',
+            'parties'           => 'required|array|size:2',
+            'parties.*.name'    => 'required|string|max:255',
+            'parties.*.role'    => 'required|string',
+            'parties.*.phone'   => 'nullable|string|max:30',
+            'parties.*.note'    => 'nullable|string|max:500',
         ]);
 
-        MediationParty::create([
-            'case_id'        => $case->id,
-            'name'           => $request->name,
-            'role'           => $request->role,
-            'phone'          => $request->phone,
-            'note'           => $request->note,
-            'consent_status' => 'awaiting',
-        ]);
+        foreach ($request->parties as $party) {
+            MediationParty::create([
+                'case_id'        => $case->id,
+                'name'           => $party['name'],
+                'role'           => $party['role'],
+                'phone'          => $party['phone'] ?? null,
+                'note'           => $party['note'] ?? null,
+                'consent_status' => 'awaiting',
+            ]);
+        }
 
-        return redirect()->route('cases.show', $case)->with('mstep', 1)->withFragment('tab-referrals')
+        return redirect()->route('cases.show', $case)->withFragment('tab-referrals')
             ->with('flash_mstep', 1);
     }
 

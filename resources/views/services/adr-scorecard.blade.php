@@ -19,10 +19,10 @@
 
     // Outcome colors for chart and bars
     $outcomeColors = [
-        'Settled via ADR' => '#4a7a5c',
-        'Ongoing ADR'     => '#b87319',
-        'Escalated'       => '#8a2e1d',
-        'Withdrawn'       => '#8a8a84',
+        'Settled via Mediation' => '#4a7a5c',
+        'Ongoing Mediation'     => '#b87319',
+        'Escalated'             => '#8a2e1d',
+        'Withdrawn'             => '#8a8a84',
     ];
     $outcomeTotal = array_sum($outcomes);
 @endphp
@@ -45,6 +45,10 @@
     .jh-scorecard { transition: transform 0.25s ease, box-shadow 0.25s ease; }
     .jh-kanban-card:hover { border-color: var(--ochre) !important; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
     .jh-kanban-card { transition: border-color 150ms ease, box-shadow 150ms ease; }
+    .adr-kanban-wrap::-webkit-scrollbar { width: 4px; }
+    .adr-kanban-wrap::-webkit-scrollbar-track { background: transparent; }
+    .adr-kanban-wrap::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 2px; }
+    .adr-kanban-wrap::-webkit-scrollbar-thumb:hover { background: var(--ink-4); }
     .jh-staff-row:hover { background: var(--parchment); }
     .jh-staff-row { transition: background 120ms ease; }
     .jh-pill-filter { cursor: pointer; font-family: inherit; border: 1px solid var(--rule); background: var(--paper); color: var(--ink-2); padding: 5px 14px; font-size: 12px; font-weight: 500; transition: all 150ms ease; }
@@ -63,21 +67,15 @@
                 SERVICE DELIVERY &middot; REPRESENTATION & MEDIATION
             </div>
             <h1 class="serif" style="font-size: 34px; font-weight: 400; letter-spacing: -0.02em; margin: 0; line-height: 1.15;">
-                Services & <em style="color: var(--ochre); font-style: italic;">ADR</em>
+                Services & <em style="color: var(--ochre); font-style: italic;">Mediation</em>
             </h1>
             <p style="margin: 6px 0 0 0; font-size: 13px; color: var(--ink-3); max-width: 520px; line-height: 1.45;">
                 Mediation pathway performance, service delivery tracking, and staff workload for {{ $total }} ADR-track cases across the programme.
             </p>
         </div>
         <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-shrink: 0;">
-            <button style="display: inline-flex; align-items: center; gap: 5px; padding: 7px 14px; font-size: 12px; font-weight: 500; font-family: inherit; border: 1px solid var(--rule); background: transparent; color: var(--ink-2); cursor: pointer;">
-                <x-lucide-settings style="width: 13px; height: 13px;" /> Configure
-            </button>
             <button onclick="jhOpenModal('log-service')" style="display: inline-flex; align-items: center; gap: 5px; padding: 7px 14px; font-size: 12px; font-weight: 500; font-family: inherit; border: 1px solid var(--rule); background: transparent; color: var(--ink-2); cursor: pointer;">
                 <x-lucide-plus style="width: 13px; height: 13px;" /> Log service
-            </button>
-            <button onclick="jhOpenModal('new-adr-referral')" style="display: inline-flex; align-items: center; gap: 5px; padding: 7px 14px; font-size: 12px; font-weight: 500; font-family: inherit; border: 1px solid var(--forest); background: var(--forest); color: var(--cream); cursor: pointer;">
-                <x-lucide-plus style="width: 13px; height: 13px;" /> New ADR referral
             </button>
         </div>
     </div>
@@ -194,6 +192,17 @@
             </button>
         </div>
 
+        {{-- Pipeline search --}}
+        <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+            <div style="position: relative; max-width: 280px; flex: 1;">
+                <x-lucide-search style="width:13px;height:13px; position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--ink-4); pointer-events:none;" />
+                <input type="text" id="adr-search" placeholder="Search name or UID…"
+                    oninput="adrSearchCards(this.value)"
+                    class="inp" style="padding-left:30px; font-size:12.5px; height:34px; width:100%; box-sizing:border-box;" />
+            </div>
+            <span id="adr-search-info" style="font-size:11px; color:var(--ink-4);"></span>
+        </div>
+
         {{-- 5-Column Kanban Board --}}
         <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; align-items: start;">
             @foreach($pipeline as $stage => $stageCases)
@@ -202,21 +211,21 @@
                 $sortedCases = collect($stageCases)->sortByDesc('days_in_stage')->values();
                 $showNextSession = in_array($stage, ['ADR Intake', 'In Mediation']);
             @endphp
-            <div>
-                {{-- Column header --}}
-                <div style="padding: 10px 12px; margin-bottom: 8px; border-bottom: 2px solid {{ $cfg['color'] }};">
+            <div class="adr-kanban-col">
+                {{-- Column header (sticky) --}}
+                <div style="padding: 10px 12px; margin-bottom: 8px; border-bottom: 2px solid {{ $cfg['color'] }}; background: var(--parchment); position: sticky; top: 0; z-index: 2;">
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px;">
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <span style="width: 8px; height: 8px; border-radius: 50%; background: {{ $cfg['dot'] }}; display: inline-block;"></span>
                             <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink);">{{ $stage }}</span>
                         </div>
-                        <span class="mono" style="font-size: 12px; font-weight: 600; color: var(--ink-2);">{{ count($stageCases) }}</span>
+                        <span class="mono adr-kanban-count" style="font-size: 12px; font-weight: 600; color: var(--ink-2);">{{ count($stageCases) }}</span>
                     </div>
                     <div style="font-size: 10px; color: var(--ink-4); line-height: 1.3;">{{ $cfg['subtitle'] }}</div>
                 </div>
 
                 {{-- Cards --}}
-                <div style="display: flex; flex-direction: column; gap: 6px; min-height: 80px;">
+                <div class="adr-kanban-wrap" style="display: flex; flex-direction: column; gap: 6px; min-height: 80px; max-height: calc(100vh - 340px); overflow-y: auto; padding-right: 2px; padding-bottom: 6px;">
                     @forelse($sortedCases as $case)
                     @php
                         $cInitials = collect(explode(' ', $case->name))->map(fn($n) => strtoupper(substr($n, 0, 1)))->take(2)->join('');
@@ -228,6 +237,8 @@
                     <div class="card jh-kanban-card"
                          style="padding: 12px 13px; display: block; cursor: pointer;"
                          onclick="window.location='{{ route('cases.show', $case) }}'"
+                         data-name="{{ strtolower($case->name ?? '') }}"
+                         data-uid="{{ strtolower($case->case_uid ?? '') }}"
                          data-gbv="{{ $case->is_gbv ? '1' : '0' }}"
                          data-child="{{ $case->is_child ? '1' : '0' }}"
                          data-minority="{{ $case->is_minority ? '1' : '0' }}"
@@ -401,7 +412,7 @@
             </div>
 
             <p style="font-size: 11px; color: var(--ink-4); margin: 24px 0 0 0; line-height: 1.5; border-top: 1px solid var(--rule-2); padding-top: 14px;">
-                ADR resolution rate counts cases settled via mediation over the sum of completed routes (settled + escalated + withdrawn). Ongoing cases are excluded from the denominator until they reach a terminal state.
+                Mediation resolution rate counts cases settled via mediation over the sum of completed routes (settled + escalated + withdrawn). Ongoing cases are excluded from the denominator until they reach a terminal state.
             </p>
         </div>
     </div>
@@ -1095,6 +1106,29 @@ function filterKanban(type, btn) {
             card.style.display = match ? '' : 'none';
         }
     });
+}
+
+function adrSearchCards(q) {
+    q = q.trim().toLowerCase();
+    var total = 0, shown = 0;
+    document.querySelectorAll('.jh-kanban-card').forEach(function(card) {
+        total++;
+        var text = (card.dataset.name || '') + ' ' + (card.dataset.uid || '');
+        var match = !q || text.includes(q);
+        // also respect active filter pill
+        var activeFilter = document.querySelector('#kanbanFilters .jh-pill-filter.active')?.dataset.filter || 'all';
+        var filterOk = activeFilter === 'all' || card.dataset[activeFilter] === '1';
+        card.style.display = (match && filterOk) ? '' : 'none';
+        if (match && filterOk) shown++;
+    });
+    // Update column count badges
+    document.querySelectorAll('.adr-kanban-col').forEach(function(col) {
+        var v = [...col.querySelectorAll('.jh-kanban-card')].filter(function(c) { return c.style.display !== 'none'; }).length;
+        var badge = col.querySelector('.adr-kanban-count');
+        if (badge) badge.textContent = v;
+    });
+    var info = document.getElementById('adr-search-info');
+    if (info) info.textContent = q ? shown + ' of ' + total + ' cases match' : '';
 }
 
 function filterStaff(role, btn) {

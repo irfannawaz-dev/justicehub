@@ -75,7 +75,10 @@ class IntakeController extends Controller
         }
         $hubCoordinators = $coordinatorQuery->pluck('name', 'hub_id'); // [hub_id => coordinator_name]
 
-        return view('intake.create', compact('hubs', 'hubDistricts', 'locationData', 'lawyers', 'allStaff', 'defaultStaffName', 'defaultStaffDesignation', 'hubCoordinators'));
+        $governmentPartners = \App\Models\Partner::where('category', 'Government')
+            ->orderBy('name')->pluck('name');
+
+        return view('intake.create', compact('hubs', 'hubDistricts', 'locationData', 'lawyers', 'allStaff', 'defaultStaffName', 'defaultStaffDesignation', 'hubCoordinators', 'governmentPartners'));
     }
 
     public function store(Request $request)
@@ -274,7 +277,9 @@ class IntakeController extends Controller
             }
         }
 
-        $redirect = redirect()->route('cases.index')->with('success', "Intake registered successfully. Case ID: {$caseUid}");
+        $redirect = redirect()->route('cases.index')
+            ->with('success', "Intake registered successfully. Case ID: {$caseUid}")
+            ->with('open_slip', route('cases.slip', $case));
         if ($emailError) {
             $redirect->with('warning', "Notification email could not be sent. Admins have been alerted.");
         }

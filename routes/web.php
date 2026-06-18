@@ -67,6 +67,14 @@ Route::middleware(['auth', 'hub.scope', 'can.write'])->group(function () {
     Route::post('/cases/{case}/adr-stage', [ServiceController::class, 'updateAdrStage'])->name('cases.adr-stage');
     Route::post('/cases/{case}/set-outcome', [CaseController::class, 'setOutcome'])->name('cases.set-outcome');
 
+    // ── Case Referral Tracking ───────────────────────────────────────
+    Route::post('/cases/{case}/referrals',                              [CaseController::class, 'storeReferral'])->name('cases.referral.store');
+    Route::patch('/cases/{case}/referrals/{referral}/focal',            [CaseController::class, 'updateReferralFocal'])->name('cases.referral.focal');
+    Route::post('/cases/{case}/referrals/{referral}/letters',           [CaseController::class, 'storeReferralLetter'])->name('cases.referral.letter');
+    Route::post('/cases/{case}/referrals/{referral}/threads',           [CaseController::class, 'storeReferralThread'])->name('cases.referral.thread');
+    Route::post('/cases/{case}/referrals/{referral}/close',             [CaseController::class, 'closeReferral'])->name('cases.referral.close');
+    Route::delete('/cases/{case}/referrals/{referral}',                 [CaseController::class, 'destroyReferral'])->name('cases.referral.destroy');
+
     // ── Mediation Workflow ───────────────────────────────────────────
     Route::post('/cases/{case}/mediation/parties',              [MediationController::class, 'storeParty'])->name('mediation.party.store');
     Route::delete('/cases/{case}/mediation/parties/{party}',    [MediationController::class, 'destroyParty'])->name('mediation.party.destroy');

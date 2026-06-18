@@ -30,6 +30,9 @@ class CaseController extends Controller
         if ($request->filled('hub') && $request->hub !== 'all') {
             $base->where('hub_id', $request->hub);
         }
+        if ($request->filled('district') && $request->district !== 'all') {
+            $base->where('district', $request->district);
+        }
         if ($request->filled('pathway') && $request->pathway !== 'all') {
             $pw = $request->pathway;
             $base->where(function ($q) use ($pw) {
@@ -130,10 +133,17 @@ class CaseController extends Controller
             elseif ($request->status === 'sla') $query->where('sla_met', false);
         }
 
-        $cases = $query->latest('intake_date')->paginate(config('justice_hub.per_page.cases', 25));
+        $cases = $query->orderByDesc('id')->paginate(config('justice_hub.per_page.cases', 25));
         $hubs = Hub::where('is_active', true)->get();
 
-        return view('cases.index', compact('cases', 'counts', 'dispositionCounts', 'pathwayCounts', 'hubs'));
+        $lookupDistricts = \App\Models\Lookup::where('group_key', 'intake.district')
+            ->where('is_active', true)->orderBy('sort_order')->pluck('value')->toArray();
+        $caseDistricts = CaseRecord::whereNotNull('district')->where('district', '!=', '')
+            ->distinct()->pluck('district')->toArray();
+        $availableDistricts = collect(array_unique(array_merge($lookupDistricts, $caseDistricts)))
+            ->sort()->values()->toArray();
+
+        return view('cases.index', compact('cases', 'counts', 'dispositionCounts', 'pathwayCounts', 'hubs', 'availableDistricts'));
     }
 
     public function slip(CaseRecord $case)
@@ -145,7 +155,7 @@ class CaseController extends Controller
     public function show(CaseRecord $case)
     {
         // Hub scope enforced via Route::bind() in AppServiceProvider
-        $case->load(['serviceEncounters', 'documents', 'complaints', 'feedback', 'hub', 'transfers.transferredBy', 'transfers.approvedBy', 'mediationParties', 'mediationDiary']);
+        $case->load(['serviceEncounters', 'documents', 'complaints', 'feedback', 'hub', 'transfers.transferredBy', 'transfers.approvedBy', 'mediationParties', 'mediationDiary', 'caseReferrals.letters', 'caseReferrals.threads']);
 
         // Auto-fetch hearings from LAS CMS if case is linked
         if ($case->external_case_id) {
@@ -367,8 +377,11 @@ class CaseController extends Controller
         }
 
         // 12. LAS CMS — programs_detail change history
+        $cmsCreateSeen = false;
         foreach ($cmsHistory as $h) {
-            $isCreate = ($h->change_type ?? '') === 'create';
+            $rawCreate = ($h->change_type ?? '') === 'create';
+            $isCreate  = $rawCreate && !$cmsCreateSeen;
+            if ($rawCreate) $cmsCreateSeen = true;
             $by       = $h->edited_by ?: $h->username ?: 'LAS CMS';
             $parts    = [];
             if ($h->currentCaseStatus) $parts[] = "Status: {$h->currentCaseStatus}";
@@ -417,7 +430,9 @@ class CaseController extends Controller
             $mstep = max($mstep, 1);
         }
 
-        return view('cases.show', compact('case', 'assignableUsers', 'pendingTransfer', 'timeline', 'cmsData', 'mstep'));
+        $caseReferrals = $case->caseReferrals;
+
+        return view('cases.show', compact('case', 'assignableUsers', 'pendingTransfer', 'timeline', 'cmsData', 'mstep', 'caseReferrals'));
     }
 
     public function verifyDocument(Request $request, \App\Models\Document $document)
@@ -730,5 +745,152 @@ class CaseController extends Controller
         }
 
         return back()->with('error', 'Transfer request rejected.');
+    }
+
+    // ── Referral: create ─────────────────────────────────────────────────────
+    public function storeReferral(Request $request, CaseRecord $case)
+    {
+        $data = $request->validate([
+            'referred_to'   => 'required|string|max:255',
+            'referral_date' => 'required|date',
+            'reason'        => 'nullable|string|max:2000',
+            'referred_by'   => 'nullable|string|max:255',
+        ]);
+
+        $data['case_id']    = $case->id;
+        $data['status']     = 'Active';
+        $data['referred_by'] = $data['referred_by'] ?? auth()->user()->name;
+
+        \App\Models\CaseReferral::create($data);
+
+        return redirect()->route('cases.show', $case)
+            ->with('success', 'Referral created.')
+            ->withFragment('tab-referrals');
+    }
+
+    // ── Referral: update focal person ────────────────────────────────────────
+    public function updateReferralFocal(Request $request, CaseRecord $case, \App\Models\CaseReferral $referral)
+    {
+        abort_unless($referral->case_id === $case->id, 404);
+        abort_if($referral->isClosed(), 403, 'Referral is closed.');
+
+        $data = $request->validate([
+            'focal_person_name'        => 'nullable|string|max:255',
+            'focal_person_designation' => 'nullable|string|max:255',
+            'focal_person_phone'       => 'nullable|string|max:50',
+            'focal_person_email'       => 'nullable|email|max:255',
+            'follow_up_date'           => 'nullable|date',
+            'partner_tracking_ref'     => 'nullable|string|max:255',
+        ]);
+
+        $referral->update($data);
+
+        return redirect()->route('cases.show', $case)
+            ->with('success', 'Focal person updated.')
+            ->withFragment('tab-referrals');
+    }
+
+    // ── Referral: log letter ─────────────────────────────────────────────────
+    public function storeReferralLetter(Request $request, CaseRecord $case, \App\Models\CaseReferral $referral)
+    {
+        abort_unless($referral->case_id === $case->id, 404);
+        abort_if($referral->isClosed(), 403, 'Referral is closed.');
+
+        $data = $request->validate([
+            'our_ref'     => 'nullable|string|max:255',
+            'note'        => 'nullable|string|max:2000',
+            'letter_date' => 'required|date',
+            'letter_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240',
+        ]);
+
+        $data['case_referral_id'] = $referral->id;
+        $data['logged_by']        = auth()->user()->name;
+
+        if ($request->hasFile('letter_file')) {
+            $file              = $request->file('letter_file');
+            $data['file_path'] = $file->store('referral-letters/' . $case->id, 'public');
+            $data['file_name'] = $file->getClientOriginalName();
+        }
+
+        unset($data['letter_file']);
+        \App\Models\CaseReferralLetter::create($data);
+
+        return redirect()->route('cases.show', $case)
+            ->with('success', 'Letter logged.')
+            ->withFragment('tab-referrals');
+    }
+
+    // ── Referral: add thread entry ───────────────────────────────────────────
+    public function storeReferralThread(Request $request, CaseRecord $case, \App\Models\CaseReferral $referral)
+    {
+        abort_unless($referral->case_id === $case->id, 404);
+        abort_if($referral->isClosed(), 403, 'Referral is closed.');
+
+        $data = $request->validate([
+            'direction'            => 'required|in:from_partner,from_us',
+            'type'                 => 'required|in:Email,Phone,Meeting,Letter',
+            'thread_date'          => 'required|date',
+            'note'                 => 'nullable|string|max:4000',
+            'follow_up_date'       => 'nullable|date',
+            'partner_tracking_ref' => 'nullable|string|max:255',
+        ]);
+
+        // Update referral-level fields if provided
+        $referralUpdate = array_filter([
+            'follow_up_date'       => $data['follow_up_date'] ?? null,
+            'partner_tracking_ref' => $data['partner_tracking_ref'] ?? null,
+        ]);
+        if ($referralUpdate) {
+            $referral->update($referralUpdate);
+        }
+
+        \App\Models\CaseReferralThread::create([
+            'case_referral_id' => $referral->id,
+            'direction'        => $data['direction'],
+            'type'             => $data['type'],
+            'thread_date'      => $data['thread_date'],
+            'note'             => $data['note'] ?? null,
+            'logged_by'        => auth()->user()->name,
+        ]);
+
+        return redirect()->route('cases.show', $case)
+            ->with('success', 'Follow-up entry added.')
+            ->withFragment('tab-referrals');
+    }
+
+    // ── Referral: close ──────────────────────────────────────────────────────
+    public function closeReferral(Request $request, CaseRecord $case, \App\Models\CaseReferral $referral)
+    {
+        abort_unless($referral->case_id === $case->id, 404);
+        abort_if($referral->isClosed(), 403, 'Already closed.');
+
+        $data = $request->validate([
+            'closed_outcome' => 'required|string|max:255',
+            'closed_note'    => 'nullable|string|max:4000',
+            'closed_at'      => 'required|date',
+        ]);
+
+        $referral->update([
+            'status'         => 'Closed',
+            'closed_at'      => $data['closed_at'],
+            'closed_outcome' => $data['closed_outcome'],
+            'closed_note'    => $data['closed_note'],
+        ]);
+
+        return redirect()->route('cases.show', $case)
+            ->with('success', 'Referral closed.')
+            ->withFragment('tab-referrals');
+    }
+
+    // ── Referral: delete ─────────────────────────────────────────────────────
+    public function destroyReferral(CaseRecord $case, \App\Models\CaseReferral $referral)
+    {
+        abort_unless($referral->case_id === $case->id, 404);
+
+        $referral->delete();
+
+        return redirect()->route('cases.show', $case)
+            ->with('success', 'Referral deleted.')
+            ->withFragment('tab-referrals');
     }
 }

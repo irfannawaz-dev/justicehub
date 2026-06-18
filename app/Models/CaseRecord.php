@@ -136,6 +136,11 @@ class CaseRecord extends Model
         return $this->hasMany(CaseTransfer::class, 'case_id')->latest();
     }
 
+    public function caseReferrals(): HasMany
+    {
+        return $this->hasMany(CaseReferral::class, 'case_id')->latest();
+    }
+
     /**
      * Compute SLA compliance status based on urgency-defined hours and first encounter date.
      * Pass $firstEncounterDate as a date string; if null the method queries the DB.

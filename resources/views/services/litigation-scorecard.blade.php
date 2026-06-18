@@ -65,6 +65,11 @@
 .staff-pill-filter:hover { background: var(--parchment); color: var(--ink); }
 .staff-pill-filter.active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
 
+.kanban-cards-wrap::-webkit-scrollbar { width: 4px; }
+.kanban-cards-wrap::-webkit-scrollbar-track { background: transparent; }
+.kanban-cards-wrap::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 2px; }
+.kanban-cards-wrap::-webkit-scrollbar-thumb:hover { background: var(--ink-4); }
+
 .jh-anim-bar {
     transition: width 0s;
     animation: jh-bar-grow 0.7s cubic-bezier(.22,.68,0,1.2) both;
@@ -165,17 +170,28 @@
             </div>
         </div>
 
+        {{-- Pipeline search --}}
+        <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+            <div style="position: relative; max-width: 280px; flex: 1;">
+                <x-lucide-search style="width:13px;height:13px; position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--ink-4); pointer-events:none;" />
+                <input type="text" id="lit-search" placeholder="Search name or UID…"
+                    oninput="litSearchCards(this.value)"
+                    class="inp" style="padding-left:30px; font-size:12.5px; height:34px; width:100%; box-sizing:border-box;" />
+            </div>
+            <span id="lit-search-info" style="font-size:11px; color:var(--ink-4);"></span>
+        </div>
+
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; align-items: start;">
             @foreach($pipeline as $stage => $stageCases)
             @php $stageColor = $stageColors[$stage] ?? 'var(--ink)'; @endphp
             <div class="kanban-col" data-stage="{{ $stage }}">
-                {{-- Column header --}}
-                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: {{ $stageColor }}; color: var(--cream); margin-bottom: 8px;">
+                {{-- Column header (sticky inside column) --}}
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: {{ $stageColor }}; color: var(--cream); margin-bottom: 8px; position: sticky; top: 0; z-index: 2;">
                     <span style="font-size: 11.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;">{{ $stage }}</span>
                     <span class="mono kanban-count" style="font-size: 12px; font-weight: 600;">{{ count($stageCases) }}</span>
                 </div>
 
-                <div style="display: flex; flex-direction: column; gap: 7px; min-height: 80px;">
+                <div class="kanban-cards-wrap" style="display: flex; flex-direction: column; gap: 7px; min-height: 80px; max-height: calc(100vh - 340px); overflow-y: auto; padding-right: 2px; padding-bottom: 6px;">
                     @forelse($stageCases as $idx => $case)
                     @php
                         $avBg  = $avColors[$idx % count($avColors)];
@@ -183,6 +199,8 @@
                     @endphp
                     <div class="lit-kanban-card"
                        data-case-id="{{ $case->id }}"
+                       data-name="{{ strtolower($case->name ?? '') }}"
+                       data-uid="{{ strtolower($case->case_uid ?? '') }}"
                        data-gbv="{{ $case->is_gbv ? '1' : '0' }}"
                        data-child="{{ $case->is_child ? '1' : '0' }}"
                        data-underserved="{{ ($case->is_minority || $case->is_disability || $case->is_underserved) ? '1' : '0' }}">
@@ -665,6 +683,33 @@ function litFilter(type, btn) {
         const badge = col.querySelector('.kanban-count');
         if (badge) badge.textContent = visible;
     });
+}
+
+// ── Pipeline search ────────────────────────────────────────────
+function litSearchCards(q) {
+    q = q.trim().toLowerCase();
+    var total = 0, shown = 0;
+    document.querySelectorAll('.lit-kanban-card').forEach(card => {
+        total++;
+        var text = (card.dataset.name || '') + ' ' + (card.dataset.uid || '');
+        var match = !q || text.includes(q);
+        // respect active filter pill too
+        var activeFilter = document.querySelector('.lit-pill-filter.active')?.getAttribute('onclick') || '';
+        var filterOk = true;
+        if (activeFilter.includes("'gbv'"))        filterOk = card.dataset.gbv === '1';
+        else if (activeFilter.includes("'child'")) filterOk = card.dataset.child === '1';
+        else if (activeFilter.includes("'underserved'")) filterOk = card.dataset.underserved === '1';
+        card.style.display = (match && filterOk) ? '' : 'none';
+        if (match && filterOk) shown++;
+    });
+    // Update count badges
+    document.querySelectorAll('.kanban-col').forEach(col => {
+        const v = [...col.querySelectorAll('.lit-kanban-card')].filter(c => c.style.display !== 'none').length;
+        const badge = col.querySelector('.kanban-count');
+        if (badge) badge.textContent = v;
+    });
+    var info = document.getElementById('lit-search-info');
+    if (info) info.textContent = q ? shown + ' of ' + total + ' cases match' : '';
 }
 
 // ── Staff filter ───────────────────────────────────────────────
