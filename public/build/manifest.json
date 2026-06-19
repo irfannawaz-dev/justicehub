@@ -1,0 +1,26 @@
+{
+  "resources/css/app.css": {
+    "file": "assets/app-DabRveNN.css",
+    "src": "resources/css/app.css",
+    "isEntry": true,
+    "name": "app",
+    "names": [
+      "app.css"
+    ]
+  },
+  "resources/css/justice-hub.css": {
+    "file": "assets/justice-hub-B5aZwpHC.css",
+    "src": "resources/css/justice-hub.css",
+    "isEntry": true,
+    "name": "justice-hub",
+    "names": [
+      "justice-hub.css"
+    ]
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-D04pDcXn.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true
+  }
+}
