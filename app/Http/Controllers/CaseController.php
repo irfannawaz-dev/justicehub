@@ -79,15 +79,21 @@ class CaseController extends Controller
             $hubBase->where('hub_id', $request->hub);
         }
 
-        // Disposition counts (always show full counts, not search-filtered)
+        // Disposition counts — derived from assigned_pathway when disposition is null
         $totalAll = (clone $hubBase)->count();
+
+        $litigationPathways = ['Court Representation', 'Representation in Court'];
+        $adrPathways        = ['Mediation', 'ADR / Dispute Resolution Support'];
+        $referredPathways   = ['Government Department / Public Institution', 'Civil Society / NGO / CSO / NPO', 'Referral', 'Other'];
+        $advicePathways     = ['Legal Advice / Consultation', 'Information & Awareness'];
+
         $dispositionCounts = [
             'all'         => $totalAll,
-            'advice-only' => (clone $hubBase)->where('disposition', 'advice-only')->count(),
-            'litigation'  => (clone $hubBase)->where('disposition', 'litigation')->count(),
-            'adr'         => (clone $hubBase)->where('disposition', 'adr')->count(),
-            'referred'    => (clone $hubBase)->where('disposition', 'referred')->count(),
-            'pending'     => (clone $hubBase)->where(fn($q) => $q->whereNull('disposition')->orWhere('disposition', ''))->count(),
+            'advice-only' => (clone $hubBase)->where(fn($q) => $q->where('disposition', 'advice-only')->orWhere(fn($q2) => $q2->whereNull('disposition')->whereIn('assigned_pathway', $advicePathways)))->count(),
+            'litigation'  => (clone $hubBase)->where(fn($q) => $q->where('disposition', 'litigation')->orWhere(fn($q2) => $q2->whereNull('disposition')->whereIn('assigned_pathway', $litigationPathways)))->count(),
+            'adr'         => (clone $hubBase)->where(fn($q) => $q->where('disposition', 'adr')->orWhere(fn($q2) => $q2->whereNull('disposition')->whereIn('assigned_pathway', $adrPathways)))->count(),
+            'referred'    => (clone $hubBase)->where(fn($q) => $q->where('disposition', 'referred')->orWhere(fn($q2) => $q2->whereNull('disposition')->whereIn('assigned_pathway', $referredPathways)))->count(),
+            'pending'     => (clone $hubBase)->where(fn($q) => $q->whereNull('disposition')->orWhere('disposition', ''))->whereNotIn('assigned_pathway', array_merge($litigationPathways, $adrPathways, $referredPathways, $advicePathways))->count(),
         ];
 
         // Service pathway counts — matching actual lookup values stored in DB
@@ -125,7 +131,20 @@ class CaseController extends Controller
         // ── Final paginated query (adds disposition + status on top of base) ──
         $query = clone $base;
         if ($request->filled('disposition') && $request->disposition !== 'all') {
-            $query->where('disposition', $request->disposition);
+            $d = $request->disposition;
+            $query->where(function($q) use ($d, $litigationPathways, $adrPathways, $referredPathways, $advicePathways) {
+                $q->where('disposition', $d);
+                // Also include cases where disposition is null but pathway implies this disposition
+                $pathwayMap = [
+                    'litigation'  => $litigationPathways,
+                    'adr'         => $adrPathways,
+                    'referred'    => $referredPathways,
+                    'advice-only' => $advicePathways,
+                ];
+                if (isset($pathwayMap[$d])) {
+                    $q->orWhere(fn($q2) => $q2->whereNull('disposition')->whereIn('assigned_pathway', $pathwayMap[$d]));
+                }
+            });
         }
         if ($request->filled('status') && $request->status !== 'all') {
             if ($request->status === 'active') $query->where('status', 'Active');
