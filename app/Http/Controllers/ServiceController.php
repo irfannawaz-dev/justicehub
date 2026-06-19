@@ -315,16 +315,18 @@ class ServiceController extends Controller
             ->latest('intake_date')
             ->get();
 
-        // Bulk-fetch CMS caseStage for all linked cases (1 query, no N+1)
-        // keyed by external_case_id → caseStage
+        // Bulk-fetch CMS caseStage + caseApprovalStatus for all linked cases (1 query, no N+1)
         $linkedExternalIds = $cases->whereNotNull('external_case_id')->pluck('external_case_id', 'id');
-        $cmsStageMap = collect();
+        $cmsStageMap      = collect();
+        $cmsApprovalMap   = collect(); // external_case_id → caseApprovalStatus
         if ($linkedExternalIds->isNotEmpty()) {
             try {
-                $cmsStageMap = DB::connection('las_cms')
+                $cmsRows = DB::connection('las_cms')
                     ->table('programs')
                     ->whereIn('id', $linkedExternalIds->values())
-                    ->pluck('caseStage', 'id');
+                    ->get(['id', 'caseStage', 'caseApprovalStatus']);
+                $cmsStageMap    = $cmsRows->pluck('caseStage', 'id');
+                $cmsApprovalMap = $cmsRows->pluck('caseApprovalStatus', 'id');
             } catch (\Exception $e) {
                 \Log::warning('LAS CMS stage fetch failed: ' . $e->getMessage());
             }
@@ -370,8 +372,8 @@ class ServiceController extends Controller
             return null; // unknown — fall back to other logic
         };
 
-        // 4-stage pipeline: Filed → In Hearings → Awaiting Judgment → Resolved
-        $pipeline = ['Filed' => [], 'In Hearings' => [], 'Awaiting Judgment' => [], 'Resolved' => []];
+        // 5-stage pipeline: Not Filed → Filed → In Hearings → Awaiting Judgment → Resolved
+        $pipeline = ['Not Filed' => [], 'Filed' => [], 'In Hearings' => [], 'Awaiting Judgment' => [], 'Resolved' => []];
         foreach ($cases as $c) {
             $encounters  = $c->serviceEncounters;
             $lastType    = strtolower($encounters->last()?->type ?? '');
@@ -403,10 +405,12 @@ class ServiceController extends Controller
             }
 
             // Stage: CMS is source of truth — auto-update JH if CMS differs
-            $externalId  = $c->external_case_id ?? null;
-            $cmsRaw      = $externalId ? ($cmsStageMap[$externalId] ?? null) : null;
-            $cmsStage    = $cmsStageToJH($cmsRaw);
-            $c->cms_case_stage = $cmsRaw;
+            $externalId        = $c->external_case_id ?? null;
+            $cmsRaw            = $externalId ? ($cmsStageMap[$externalId] ?? null) : null;
+            $cmsApprovalStatus = $externalId ? ($cmsApprovalMap[$externalId] ?? null) : null;
+            $cmsStage          = $cmsStageToJH($cmsRaw);
+            $c->cms_case_stage        = $cmsRaw;
+            $c->cms_approval_status   = $cmsApprovalStatus;
 
             // If CMS maps to a valid stage AND it differs from current litigation_stage → auto-update
             if ($cmsStage && $cmsStage !== ($c->litigation_stage ?? null)) {
@@ -428,7 +432,12 @@ class ServiceController extends Controller
 
             $effectiveStage = $c->litigation_stage ?? null;
 
-            if ($effectiveStage && array_key_exists($effectiveStage, $pipeline)) {
+            // Not Filed: CMS approval is Pending, or no external ID yet (not pushed to CMS)
+            $isNotFiled = ($cmsApprovalStatus === 'Pending') || (!$externalId && !$effectiveStage);
+
+            if ($isNotFiled) {
+                $pipeline['Not Filed'][] = $c;
+            } elseif ($effectiveStage && array_key_exists($effectiveStage, $pipeline)) {
                 $pipeline[$effectiveStage][] = $c;
             } elseif (in_array($c->status->value, ['Closed', 'Settlement'])) {
                 $pipeline['Resolved'][] = $c;

@@ -5,6 +5,7 @@
 
     // Stage header colors
     $stageColors = [
+        'Not Filed'          => '#6b6a65',
         'Filed'              => '#3d3d38',
         'In Hearings'        => 'var(--burgundy)',
         'Awaiting Judgment'  => 'var(--ochre)',
@@ -158,7 +159,7 @@
                     Litigation <em style="font-style: italic;">pipeline</em>
                 </h2>
                 <div style="font-size: 12.5px; color: var(--ink-3); margin-top: 4px;">
-                    Filed &rarr; In Hearings &rarr; Awaiting Judgment &rarr; Resolved &middot; {{ $total }} cases total
+                    Not Filed &rarr; Filed &rarr; In Hearings &rarr; Awaiting Judgment &rarr; Resolved &middot; {{ $total }} cases total
                 </div>
             </div>
             {{-- Filter pills --}}
@@ -181,7 +182,7 @@
             <span id="lit-search-info" style="font-size:11px; color:var(--ink-4);"></span>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; align-items: start;">
+        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; align-items: start;">
             @foreach($pipeline as $stage => $stageCases)
             @php $stageColor = $stageColors[$stage] ?? 'var(--ink)'; @endphp
             <div class="kanban-col" data-stage="{{ $stage }}">
@@ -323,8 +324,8 @@
                             <label style="font-size:9px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--ink-3); display:block; margin-bottom:3px;">Move Stage</label>
                             <select onchange="litUpdateStage(this, {{ $case->id }})"
                                     style="width:100%; font-size:11px; padding:5px 6px; border:1px solid var(--rule); background:var(--parchment); color:var(--ink); font-family:inherit; border-radius:2px; cursor:pointer;">
-                                @foreach(['Filed','In Hearings','Awaiting Judgment','Resolved'] as $s)
-                                    <option value="{{ $s }}" {{ ($case->litigation_stage ?? 'Filed') === $s ? 'selected' : '' }}>{{ $s }}</option>
+                                @foreach(['Not Filed','Filed','In Hearings','Awaiting Judgment','Resolved'] as $s)
+                                    <option value="{{ $s }}" {{ ($case->litigation_stage ?? ($case->cms_approval_status === 'Pending' ? 'Not Filed' : 'Filed')) === $s ? 'selected' : '' }}>{{ $s }}</option>
                                 @endforeach
                             </select>
                             @if($changer)
