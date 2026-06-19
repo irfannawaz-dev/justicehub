@@ -18,7 +18,6 @@
             </div>
             <div style="display: flex; gap: 10px; flex-shrink: 0;">
                 <button class="btn-ghost"><x-lucide-filter style="width:13px;height:13px;" /> Export directory</button>
-                <button class="btn-primary" onclick="jhOpenModal('referral-modal')"><x-lucide-plus style="width:14px;height:14px;" /> Log new referral</button>
             </div>
         </div>
     </div>
@@ -97,7 +96,7 @@
                             <div>
                                 <div style="font-size: 13px; font-weight: 500; letter-spacing: -0.005em;">{{ $cat['category'] }}</div>
                                 <div style="font-size: 10.5px; color: var(--ink-3); margin-top: 1px;">
-                                    {{ $cat['partners'] }} partner{{ $cat['partners'] === 1 ? '' : 's' }} · {{ $cat['active'] }} active
+                                    {{ $cat['active'] }} active · {{ $cat['completed'] + $cat['failed'] }} resolved
                                 </div>
                             </div>
                         </div>

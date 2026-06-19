@@ -373,6 +373,7 @@
     {{-- ═══════════════════════════════════════════════════════════
          4. ENHANCED TAB NAVIGATION (6 tabs)
          ═══════════════════════════════════════════════════════════ --}}
+    @php $activeTab = session('activeTab', 'overview'); @endphp
     <ul class="nav" role="tablist" style="display: flex; gap: 0; border-bottom: 1px solid var(--rule); margin-bottom: 22px; padding: 0; list-style: none;">
         @foreach([
             ['id' => 'overview',   'label' => 'Overview',    'icon' => 'layout-dashboard'],
@@ -380,14 +381,15 @@
             ['id' => 'documents',  'label' => 'Documents',   'icon' => 'file-text',        'count' => $case->documents->count()],
             ['id' => 'feedback',   'label' => 'Feedback',    'icon' => 'heart-handshake',  'count' => $case->feedback->count()],
             ['id' => 'complaints', 'label' => 'Complaints',  'icon' => 'alert-triangle',   'count' => $case->complaints->count()],
-        ] as $i => $t)
+        ] as $t)
+        @php $isActive = $activeTab === $t['id']; @endphp
         <li class="nav-item" role="presentation">
             <button
-                class="jh-case-tab {{ $i === 0 ? 'active' : '' }}"
+                class="jh-case-tab {{ $isActive ? 'active' : '' }}"
                 data-bs-toggle="tab"
                 data-bs-target="#tab-{{ $t['id'] }}"
                 role="tab"
-                style="padding:12px 20px; border:none; border-bottom: 2px solid {{ $i === 0 ? 'var(--forest)' : 'transparent' }}; margin-bottom:-1px; cursor:pointer; font-family:inherit; display:inline-flex; align-items:center; gap:8px; font-size:13px; font-weight:{{ $i === 0 ? '600' : '500' }}; color:{{ $i === 0 ? 'var(--ink)' : 'var(--ink-3)' }}; background:transparent;"
+                style="padding:12px 20px; border:none; border-bottom: 2px solid {{ $isActive ? 'var(--forest)' : 'transparent' }}; margin-bottom:-1px; cursor:pointer; font-family:inherit; display:inline-flex; align-items:center; gap:8px; font-size:13px; font-weight:{{ $isActive ? '600' : '500' }}; color:{{ $isActive ? 'var(--ink)' : 'var(--ink-3)' }}; background:transparent;"
             >
                 <x-dynamic-component :component="'lucide-' . $t['icon']" style="width: 14px; height: 14px;" />
                 {{ $t['label'] }}
@@ -409,8 +411,20 @@
                     t.style.color             = isActive ? 'var(--ink)'    : 'var(--ink-3)';
                     t.style.fontWeight        = isActive ? '600'           : '500';
                 });
+                // Save active tab in URL hash without scrolling
+                var target = tab.getAttribute('data-bs-target');
+                if (target) history.replaceState(null, '', target.replace('#tab-', '#'));
             });
         });
+
+        // On load: restore tab from URL hash
+        var hash = location.hash.replace('#', '');
+        if (hash) {
+            var target = document.querySelector('[data-bs-target="#tab-' + hash + '"]');
+            if (target) {
+                bootstrap.Tab.getOrCreateInstance(target).show();
+            }
+        }
     });
 
     // Mediation stepper
@@ -459,7 +473,7 @@
         {{-- ─────────────────────────────────────────────────────
              TAB 1: OVERVIEW (NEW comprehensive two-column layout)
              ───────────────────────────────────────────────────── --}}
-        <div class="tab-pane fade show active" id="tab-overview" role="tabpanel">
+        <div class="tab-pane fade {{ $activeTab === 'overview' ? 'show active' : '' }}" id="tab-overview" role="tabpanel">
             <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
 
                 {{-- ══ LEFT COLUMN ══ --}}
@@ -925,10 +939,10 @@
         {{-- ─────────────────────────────────────────────────────
              TAB 2: PATHWAY
              ───────────────────────────────────────────────────── --}}
-        <div class="tab-pane fade" id="tab-referrals" role="tabpanel">
+        <div class="tab-pane fade {{ $activeTab === 'referrals' ? 'show active' : '' }}" id="tab-referrals" role="tabpanel">
 
             @php
-                $isMediationCase = in_array($case->assigned_pathway, ['Mediation', 'ADR / Dispute Resolution Support']);
+                $isMediationCase = in_array($case->assigned_pathway, ['Mediation']);
                 $parties         = $case->mediationParties;
                 $diary           = $case->mediationDiary;
                 $anyAgreed       = $parties->where('consent_status', 'agreed')->count() > 0;
@@ -1018,7 +1032,7 @@
                                     </div>
                                     <div>
                                         <label style="font-size: 11px; font-weight: 600; color: var(--ink-3); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em;">Phone</label>
-                                        <input type="text" name="parties[{{ $i }}][phone]" placeholder="+92 ..." class="inp" style="width: 100%; font-size: 13px; box-sizing: border-box;" />
+                                        <input type="tel" name="parties[{{ $i }}][phone]" placeholder="+92 ..." class="inp" style="width: 100%; font-size: 13px; box-sizing: border-box;" oninput="this.value=this.value.replace(/[^0-9+\-\s()]/g,'')" />
                                     </div>
                                     <div>
                                         <label style="font-size: 11px; font-weight: 600; color: var(--ink-3); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em;">Note (optional)</label>
@@ -1159,6 +1173,7 @@
                 $isReferralCase = in_array($case->assigned_pathway, [
                     'Government Department / Public Institution',
                     'Civil Society / NGO / CSO / NPO',
+                    'ADR / Dispute Resolution Support',
                     'Referred',
                     'Referral',
                     'Other',
@@ -1193,8 +1208,15 @@
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                             <div>
                                 <label class="jh-field-label">Referred To <span style="color:var(--burgundy)">*</span></label>
+                                @php
+                                    $autoReferredTo = $case->pathway_govt_dept
+                                        ?? $case->pathway_ngo_name
+                                        ?? (in_array($case->assigned_pathway, ['ADR / Dispute Resolution Support']) ? $case->assigned_pathway : '');
+                                @endphp
                                 <input type="text" name="referred_to" required placeholder="Organisation name"
-                                    class="inp" style="width:100%; font-size:13px; box-sizing:border-box;" />
+                                    value="{{ old('referred_to', $autoReferredTo) }}"
+                                    {{ $autoReferredTo ? 'readonly' : '' }}
+                                    class="inp" style="width:100%; font-size:13px; box-sizing:border-box; {{ $autoReferredTo ? 'background:var(--paper); color:var(--ink-3); cursor:default;' : '' }}" />
                             </div>
                             <div>
                                 <label class="jh-field-label">Date Referred <span style="color:var(--burgundy)">*</span></label>
@@ -1209,7 +1231,7 @@
                             <div style="grid-column: 1 / -1;">
                                 <label class="jh-field-label">Reason for Referral</label>
                                 <textarea name="reason" rows="2" placeholder="Briefly describe why this referral is being made."
-                                    class="inp" style="width:100%; font-size:13px; box-sizing:border-box; resize:vertical;"></textarea>
+                                    class="inp" style="width:100%; font-size:13px; box-sizing:border-box; resize:vertical;">{{ old('reason', $case->issue_description) }}</textarea>
                             </div>
                         </div>
                         <div style="display:flex; gap:8px;">
@@ -1341,8 +1363,10 @@
                                         </div>
                                         <div>
                                             <label class="jh-field-label">Phone</label>
-                                            <input type="text" name="focal_person_phone" value="{{ $ref->focal_person_phone }}"
-                                                placeholder="+92..." class="inp" style="width:100%; font-size:13px; box-sizing:border-box;" />
+                                            <input type="tel" name="focal_person_phone" value="{{ $ref->focal_person_phone }}"
+                                                placeholder="+92..." pattern="[0-9+\-\s()]+" title="Numbers only"
+                                                class="inp" style="width:100%; font-size:13px; box-sizing:border-box;"
+                                                oninput="this.value=this.value.replace(/[^0-9+\-\s()]/g,'')" />
                                         </div>
                                         <div>
                                             <label class="jh-field-label">Email</label>
@@ -1913,7 +1937,7 @@
         {{-- ─────────────────────────────────────────────────────
              TAB 4: DOCUMENTS (kept)
              ───────────────────────────────────────────────────── --}}
-        <div class="tab-pane fade" id="tab-documents" role="tabpanel">
+        <div class="tab-pane fade {{ $activeTab === 'documents' ? 'show active' : '' }}" id="tab-documents" role="tabpanel">
 
             {{-- Summary header --}}
             <div class="card-accent" style="padding: 18px 22px; border-left-color: var(--forest); margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between;">
@@ -1997,7 +2021,7 @@
         {{-- ─────────────────────────────────────────────────────
              TAB 5: FEEDBACK (kept)
              ───────────────────────────────────────────────────── --}}
-        <div class="tab-pane fade" id="tab-feedback" role="tabpanel">
+        <div class="tab-pane fade {{ $activeTab === 'feedback' ? 'show active' : '' }}" id="tab-feedback" role="tabpanel">
             <div class="card" style="padding: 24px 28px;">
                 @forelse($case->feedback as $fb)
                 <div style="padding: 16px 0; {{ !$loop->last ? 'border-bottom: 1px solid var(--rule-2);' : '' }}">
@@ -2060,7 +2084,7 @@
         {{-- ─────────────────────────────────────────────────────
              TAB 7: COMPLAINTS (kept)
              ───────────────────────────────────────────────────── --}}
-        <div class="tab-pane fade" id="tab-complaints" role="tabpanel">
+        <div class="tab-pane fade {{ $activeTab === 'complaints' ? 'show active' : '' }}" id="tab-complaints" role="tabpanel">
             <div class="card" style="padding: 24px 28px;">
                 @forelse($case->complaints as $complaint)
                 <div style="padding: 16px 0; {{ !$loop->last ? 'border-bottom: 1px solid var(--rule-2);' : '' }}">

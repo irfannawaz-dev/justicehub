@@ -78,7 +78,13 @@ class IntakeController extends Controller
         $governmentPartners = \App\Models\Partner::where('category', 'Government')
             ->orderBy('name')->pluck('name');
 
-        return view('intake.create', compact('hubs', 'hubDistricts', 'locationData', 'lawyers', 'allStaff', 'defaultStaffName', 'defaultStaffDesignation', 'hubCoordinators', 'governmentPartners'));
+        $ngoPartners = \App\Models\Partner::whereIn('category', ['NGO', 'Civil Society', 'CSO', 'NPO'])
+            ->orderBy('name')->pluck('name');
+
+        $adrPartners = \App\Models\Partner::whereIn('category', ['ADR', 'Mediation', 'Legal Aid'])
+            ->orderBy('name')->pluck('name');
+
+        return view('intake.create', compact('hubs', 'hubDistricts', 'locationData', 'lawyers', 'allStaff', 'defaultStaffName', 'defaultStaffDesignation', 'hubCoordinators', 'governmentPartners', 'ngoPartners', 'adrPartners'));
     }
 
     public function store(Request $request)

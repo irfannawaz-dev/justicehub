@@ -347,6 +347,9 @@
 var _locHubDistricts = @json($hubDistricts);
 var _locData = @json($locationData);
 var _hubCoordinators = @json($hubCoordinators);
+var _governmentPartners = @json($governmentPartners->values());
+var _ngoPartners = @json($ngoPartners->values());
+var _adrPartners = @json($adrPartners->values());
 
 // ── Cascade function (global, always available for onchange) ──
 function intakeLocationCascade(level) {

@@ -597,11 +597,17 @@ function jhInitIntakeWizard() {
         try { sessionStorage.removeItem(DRAFT_KEY); } catch (_) {}
     }
 
+    const _adrOpts  = (typeof _adrPartners  !== 'undefined' && _adrPartners.length)  ? [..._adrPartners,  'Other'] : ['Provincial Ombudsman / Mohtasib', 'Federal Ombudsman', 'Other'];
+    const _govtOpts = (typeof _governmentPartners !== 'undefined' && _governmentPartners.length) ? [..._governmentPartners, 'Other'] : ['Other'];
+    const _ngoOpts  = (typeof _ngoPartners  !== 'undefined' && _ngoPartners.length)  ? [..._ngoPartners,  'Other'] : ['Other'];
+
     const pathwaySpecificMap = {
-        'Legal Advice / Consultation':       ['SLACC', 'Justice Hub Lawyer', 'NAZ Assist', 'Other'],
-        'Court Representation':              ['Justice Hub Lawyer', 'Other'],
-        'Mediation':                         ['Justice Hub Accredited Mediator', 'MICADR', 'Other'],
-        'ADR / Dispute Resolution Support':  ['Provincial Ombudsman', 'Federal Ombudsman', 'Other'],
+        'Legal Advice / Consultation':                  ['SLACC', 'Justice Hub Lawyer', 'NAZ Assist', 'Other'],
+        'Court Representation':                         ['Justice Hub Lawyer', 'Other'],
+        'Mediation':                                    ['Justice Hub Accredited Mediator', 'MICADR', 'Other'],
+        'ADR / Dispute Resolution Support':             _adrOpts,
+        'Government Department / Public Institution':   _govtOpts,
+        'Civil Society / NGO / CSO / NPO':              _ngoOpts,
     };
 
     function getVal(name) {

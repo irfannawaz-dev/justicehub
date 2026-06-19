@@ -91,12 +91,13 @@ class CaseController extends Controller
         ];
 
         // Service pathway counts — matching actual lookup values stored in DB
+        $hubCaseIds = (clone $hubBase)->pluck('id');
         $pathwayCounts = [
             'legal_advice'  => (clone $hubBase)->where('assigned_pathway', 'Legal Advice / Consultation')->count(),
             'mediation'     => (clone $hubBase)->where('assigned_pathway', 'Mediation')->count(),
             'adr'           => (clone $hubBase)->where('assigned_pathway', 'ADR / Dispute Resolution Support')->count(),
             'court'         => (clone $hubBase)->whereIn('assigned_pathway', ['Court Representation', 'Representation in Court'])->count(),
-            'referred'      => (clone $hubBase)->whereIn('assigned_pathway', ['Referral', 'Government Department / Public Institution', 'Civil Society / NGO / CSO / NPO'])->count(),
+            'referred'      => \App\Models\CaseReferral::whereIn('case_id', $hubCaseIds)->count(),
             'info_awareness'=> (clone $hubBase)->where('assigned_pathway', 'Information & Awareness')->count(),
         ];
 
@@ -765,7 +766,7 @@ class CaseController extends Controller
 
         return redirect()->route('cases.show', $case)
             ->with('success', 'Referral created.')
-            ->withFragment('tab-referrals');
+            ->with('activeTab', 'referrals');
     }
 
     // ── Referral: update focal person ────────────────────────────────────────
@@ -787,7 +788,7 @@ class CaseController extends Controller
 
         return redirect()->route('cases.show', $case)
             ->with('success', 'Focal person updated.')
-            ->withFragment('tab-referrals');
+            ->with('activeTab', 'referrals');
     }
 
     // ── Referral: log letter ─────────────────────────────────────────────────
@@ -817,7 +818,7 @@ class CaseController extends Controller
 
         return redirect()->route('cases.show', $case)
             ->with('success', 'Letter logged.')
-            ->withFragment('tab-referrals');
+            ->with('activeTab', 'referrals');
     }
 
     // ── Referral: add thread entry ───────────────────────────────────────────
@@ -855,7 +856,7 @@ class CaseController extends Controller
 
         return redirect()->route('cases.show', $case)
             ->with('success', 'Follow-up entry added.')
-            ->withFragment('tab-referrals');
+            ->with('activeTab', 'referrals');
     }
 
     // ── Referral: close ──────────────────────────────────────────────────────
@@ -879,7 +880,7 @@ class CaseController extends Controller
 
         return redirect()->route('cases.show', $case)
             ->with('success', 'Referral closed.')
-            ->withFragment('tab-referrals');
+            ->with('activeTab', 'referrals');
     }
 
     // ── Referral: delete ─────────────────────────────────────────────────────
@@ -891,6 +892,6 @@ class CaseController extends Controller
 
         return redirect()->route('cases.show', $case)
             ->with('success', 'Referral deleted.')
-            ->withFragment('tab-referrals');
+            ->with('activeTab', 'referrals');
     }
 }

@@ -49,7 +49,7 @@
             ['key' => 'mediation',      'label' => 'Mediation',               'sub' => 'cases on mediation pathway',  'icon' => 'heart-handshake','indicator' => 'O2.2', 'color' => 'var(--moss)',     'bg' => 'var(--moss-tint)',     'filter' => 'mediation'],
             ['key' => 'adr',            'label' => 'ADR',                     'sub' => 'dispute resolution support',  'icon' => 'scale',          'indicator' => 'O2.2', 'color' => 'var(--ochre)',    'bg' => 'var(--ochre-tint)',    'filter' => 'adr'],
             ['key' => 'court',          'label' => 'Representation in Court', 'sub' => 'litigation in progress',      'icon' => 'gavel',          'indicator' => 'O2.4', 'color' => 'var(--burgundy)', 'bg' => 'var(--burgundy-tint)', 'filter' => 'court'],
-            ['key' => 'referred',       'label' => 'Referred (loop)',         'sub' => 'partner referrals made',      'icon' => 'share-2',        'indicator' => 'O3.2', 'color' => 'var(--forest)',   'bg' => 'rgba(22,48,41,0.08)', 'filter' => 'referred'],
+            ['key' => 'referred',       'label' => 'Referred (loop)',         'sub' => 'total referrals logged',      'icon' => 'share-2',        'indicator' => 'O3.2', 'color' => 'var(--forest)',   'bg' => 'rgba(22,48,41,0.08)', 'filter' => 'referred'],
         ] as $pw)
         @php
             $pwCount = $pathwayCounts[$pw['key']] ?? 0;

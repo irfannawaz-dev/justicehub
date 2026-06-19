@@ -31,7 +31,7 @@ class MediationController extends Controller
             ]);
         }
 
-        return redirect()->route('cases.show', $case)->withFragment('tab-referrals')
+        return redirect()->route('cases.show', $case)->with('activeTab', 'referrals')
             ->with('flash_mstep', 1);
     }
 
@@ -41,7 +41,7 @@ class MediationController extends Controller
         abort_if($party->case_id !== $case->id, 403);
         $party->delete();
 
-        return redirect()->route('cases.show', $case)->withFragment('tab-referrals')
+        return redirect()->route('cases.show', $case)->with('activeTab', 'referrals')
             ->with('flash_mstep', 1);
     }
 
@@ -59,7 +59,7 @@ class MediationController extends Controller
         }
 
         $anyAgreed = $case->mediationParties()->where('consent_status', 'agreed')->exists();
-        return redirect()->route('cases.show', $case)->withFragment('tab-referrals')
+        return redirect()->route('cases.show', $case)->with('activeTab', 'referrals')
             ->with('flash_mstep', $anyAgreed ? 3 : 2);
     }
 
@@ -82,7 +82,7 @@ class MediationController extends Controller
             'logged_by'             => auth()->user()->name,
         ]);
 
-        return redirect()->route('cases.show', $case)->withFragment('tab-referrals')
+        return redirect()->route('cases.show', $case)->with('activeTab', 'referrals')
             ->with('flash_mstep', 3);
     }
 }

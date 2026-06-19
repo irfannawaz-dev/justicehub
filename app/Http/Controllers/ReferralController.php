@@ -7,6 +7,7 @@ use App\Models\CaseRecord;
 use App\Models\ServiceEncounter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ReferralController extends Controller
 {
@@ -14,17 +15,8 @@ class ReferralController extends Controller
     {
         $partners = Partner::with('hubs')->orderBy('name')->get();
 
-        $totalActive    = $partners->sum('active_referrals');
-        $totalCompleted = $partners->sum('completed_referrals');
-        $totalFailed    = $partners->sum('failed_referrals');
-        $closureRate    = ($totalCompleted + $totalFailed) > 0
-            ? round(($totalCompleted / ($totalCompleted + $totalFailed)) * 100)
-            : 0;
-
-        // Weighted average response hours
-        $weightedSum   = $partners->sum(fn ($p) => $p->avg_response_hours * ($p->active_referrals + $p->completed_referrals));
-        $weightedCount = $partners->sum(fn ($p) => $p->active_referrals + $p->completed_referrals);
-        $avgResponseHrs = $weightedCount > 0 ? round($weightedSum / $weightedCount) : 0;
+        // KPI stats now come from CaseReferral — calculated after tracker is built below
+        $totalActive = $totalCompleted = $totalFailed = $closureRate = $avgResponseHrs = 0;
 
         // Category config — built from lookups table, with fallback colours/icons
         $defaultStyles = [
@@ -45,18 +37,19 @@ class ReferralController extends Controller
             $cat => $defaultStyles[$cat] ?? ['color' => 'var(--ink-3)', 'tint' => 'var(--rule-2)', 'icon' => 'circle-dot'],
         ])->toArray();
 
-        $categoryStats = collect($categoryConfig)->map(function ($cfg, $cat) use ($partners) {
-            $cps = $partners->where('category', $cat);
-            $completed = $cps->sum('completed_referrals');
-            $failed    = $cps->sum('failed_referrals');
-            $active    = $cps->sum('active_referrals');
+        // Load all CaseReferrals grouped by referred_to
+        $allReferrals = \App\Models\CaseReferral::all();
+
+        $categoryStats = $allReferrals->groupBy('referred_to')->map(function ($refs, $referredTo) {
+            $completed = $refs->filter(fn($r) => $r->closed_at && $r->closed_outcome === 'Successful')->count();
+            $failed    = $refs->filter(fn($r) => $r->closed_at && $r->closed_outcome !== 'Successful')->count();
+            $active    = $refs->filter(fn($r) => !$r->closed_at)->count();
             $volume    = $completed + $failed + $active;
             return [
-                'category'    => $cat,
-                'color'       => $cfg['color'],
-                'tint'        => $cfg['tint'],
-                'icon'        => $cfg['icon'],
-                'partners'    => $cps->count(),
+                'category'    => $referredTo,
+                'color'       => 'var(--forest)',
+                'tint'        => 'rgba(22,48,41,0.08)',
+                'icon'        => 'share-2',
                 'active'      => $active,
                 'completed'   => $completed,
                 'failed'      => $failed,
@@ -90,31 +83,42 @@ class ReferralController extends Controller
             ->orderBy('name')
             ->get(['id', 'case_uid', 'name', 'primary_issue', 'hub_id']);
 
-        // Referral tracker – all External Referral service encounters
-        $referralEncounters = ServiceEncounter::where('type', 'External Referral')
-            ->with('caseRecord:id,case_uid,name,hub_id')
-            ->orderByDesc('date')
+        // Referral tracker — from CaseReferral records
+        $caseReferrals = \App\Models\CaseReferral::with(['caseRecord:id,case_uid,name,hub_id', 'threads'])
+            ->orderByDesc('referral_date')
             ->get();
 
-        $referralTracker = $referralEncounters->map(function ($enc) {
-            $meta  = $enc->meta ?? [];
-            $stage = $meta['pipeline_stage'] ?? 'Sent';
-            $days  = $enc->date
-                ? (int) now()->startOfDay()->diffInDays(Carbon::parse($enc->date)->startOfDay())
+        $referralTracker = $caseReferrals->map(function ($ref) {
+            // Derive stage from referral state
+            if ($ref->closed_at) {
+                $stage = $ref->closed_outcome === 'Successful' ? 'Completed' : 'Failed';
+            } elseif ($ref->threads->count() > 0) {
+                $stage = 'In progress';
+            } elseif ($ref->focal_person_name) {
+                $stage = 'Acknowledged';
+            } else {
+                $stage = 'Sent';
+            }
+
+            $days = $ref->referral_date
+                ? (int) now()->startOfDay()->diffInDays(Carbon::parse($ref->referral_date)->startOfDay())
                 : 0;
+
+            $followUp = $ref->threads->sortByDesc('thread_date')->first()?->created_at ?? null;
+
             return [
-                'ref'          => 'R-' . str_pad($enc->id, 5, '0', STR_PAD_LEFT),
-                'date'         => $enc->date,
-                'case_uid'     => $enc->caseRecord?->case_uid ?? '—',
-                'client_name'  => $enc->caseRecord?->name ?? '—',
-                'hub_id'       => $enc->caseRecord?->hub_id ?? '—',
-                'partner_name' => $meta['partner_name'] ?? '—',
-                'partner_cat'  => $meta['partner_category'] ?? '—',
-                'urgency'      => $meta['urgency'] ?? 'Med',
-                'service'      => $meta['service_description'] ?? $enc->note,
+                'ref'          => 'R-' . str_pad($ref->id, 5, '0', STR_PAD_LEFT),
+                'date'         => $ref->referral_date,
+                'case_uid'     => $ref->caseRecord?->case_uid ?? '—',
+                'client_name'  => $ref->caseRecord?->name ?? '—',
+                'hub_id'       => $ref->caseRecord?->hub_id ?? '—',
+                'partner_name' => $ref->referred_to,
+                'partner_cat'  => $ref->caseRecord?->assigned_pathway ?? '—',
+                'urgency'      => 'Med',
+                'service'      => $ref->reason ?? '—',
                 'stage'        => $stage,
                 'days_open'    => $days,
-                'follow_up'    => $meta['follow_up_date'] ?? null,
+                'follow_up'    => $followUp,
             ];
         });
 
@@ -124,6 +128,15 @@ class ReferralController extends Controller
             'failed'    => $referralTracker->where('stage', 'Failed')->count(),
             'all'       => $referralTracker->count(),
         ];
+
+        // Recalculate KPI stats from CaseReferral data
+        $totalActive    = $trackerCounts['active'];
+        $totalCompleted = $trackerCounts['completed'];
+        $totalFailed    = $trackerCounts['failed'];
+        $closureRate    = ($totalCompleted + $totalFailed) > 0
+            ? round(($totalCompleted / ($totalCompleted + $totalFailed)) * 100)
+            : 0;
+        $avgResponseHrs = 0;
 
         return view('referrals.index', compact(
             'partners', 'filteredPartners',
@@ -157,7 +170,7 @@ class ReferralController extends Controller
             'case_id'      => $case->id,
             'date'         => today(),
             'type'         => 'External Referral',
-            'performed_by' => auth()->user()->name,
+            'performed_by' => auth()->user()?->name ?? 'System',
             'note'         => "Referred to {$partner->name} ({$partner->category}). {$data['service_description']}",
             'meta'         => array_filter([
                 'partner_id'          => $partner->id,
