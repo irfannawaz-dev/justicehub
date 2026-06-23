@@ -284,18 +284,6 @@
                     <input type="hidden" name="assignedCoordinator" id="intake-pw-coordinator-hidden">
                 </div>
 
-                {{-- Government dept --}}
-                <div id="intake-pw-govt-box" style="display:none; margin-top: 12px;">
-                    <div>
-                        <label class="jh-field-label">Specific Department / Institution *</label>
-                        <select name="pathwayGovernmentDept" class="inp" style="width:100%; font-size:13px; box-sizing:border-box;">
-                            <option value="">— Select partner —</option>
-                            @foreach($governmentPartners as $dept)
-                                <option value="{{ $dept }}" @selected(old('pathwayGovernmentDept') === $dept)>{{ $dept }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
 
                 {{-- NGO --}}
                 <div id="intake-pw-ngo-box" style="display:none; margin-top: 12px;">

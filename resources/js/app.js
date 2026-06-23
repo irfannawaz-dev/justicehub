@@ -606,8 +606,8 @@ function jhInitIntakeWizard() {
         'Court Representation':                         ['Justice Hub Lawyer', 'Other'],
         'Mediation':                                    ['Justice Hub Accredited Mediator', 'MICADR', 'Other'],
         'ADR / Dispute Resolution Support':             _adrOpts,
-        // Government and NGO have their own dedicated dropdowns (intake-pw-govt-box, intake-pw-ngo-box)
-        // so they are intentionally excluded from this generic map
+        'Government Department / Public Institution':   _govtOpts,
+        // NGO has its own dedicated dropdown (intake-pw-ngo-box)
     };
 
     function getVal(name) {
@@ -723,7 +723,6 @@ function jhInitIntakeWizard() {
     toggleConditional('heardAboutUs', 'Government Department', 'intake-govt-box');
     toggleConditional('gender', 'Other', 'intake-gender-other-box');
     toggleConditional('preferredLanguage', 'Other', 'intake-lang-other-box');
-    toggleConditional('assignedPathway', 'Government Department / Public Institution', 'intake-pw-govt-box');
     toggleConditional('assignedPathway', 'Civil Society / NGO / CSO / NPO', 'intake-pw-ngo-box');
     toggleConditional('assignedPathway', 'Other', 'intake-pw-other-box');
     toggleConditional('pathwaySpecific', 'Other', 'intake-pw-specific-other-box');
