@@ -6,7 +6,6 @@ use App\Models\Evidence;
 use App\Models\Indicator;
 use App\Models\IndicatorSnapshot;
 use App\Services\IndicatorDerivationService;
-use Illuminate\Http\Request;
 
 class IndicatorController extends Controller
 {
@@ -85,5 +84,38 @@ class IndicatorController extends Controller
         ]);
 
         return view('indicators.index', compact('indicators', 'grouped', 'counts', 'panelData'));
+    }
+
+    public function show(Indicator $indicator)
+    {
+        $service = new IndicatorDerivationService();
+        $actuals = $service->derive();
+
+        $liveActual = $actuals[$indicator->code] ?? null;
+        if ($liveActual !== null) {
+            $indicator->actual = $liveActual;
+        }
+        $indicator->source_line = $service->sourceLine($indicator->code);
+        $indicator->rag = $indicator->ragStatus();
+
+        $snapshots = IndicatorSnapshot::where('indicator_code', $indicator->code)
+            ->orderBy('month_iso')->get();
+        $currentMonth = now()->format('M');
+        $indicator->trend_labels = $snapshots->pluck('month_label')->push($currentMonth)->values()->toArray();
+        $indicator->trend_values = $snapshots->pluck('value')->push((float) $indicator->actual)->values()->toArray();
+
+        $indicator->evidence = Evidence::where('linked_indicator', $indicator->code)->get();
+
+        $indicator->pct = $indicator->target > 0
+            ? ($indicator->is_inverse
+                ? min(100, round(($indicator->target / max($indicator->actual, 0.01)) * 100))
+                : min(100, round(($indicator->actual / $indicator->target) * 100)))
+            : 100;
+
+        $siblings = Indicator::where('level', $indicator->level)
+            ->where('id', '!=', $indicator->id)
+            ->get();
+
+        return view('indicators.show', compact('indicator', 'snapshots', 'siblings'));
     }
 }

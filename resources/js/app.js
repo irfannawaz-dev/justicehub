@@ -606,8 +606,8 @@ function jhInitIntakeWizard() {
         'Court Representation':                         ['Justice Hub Lawyer', 'Other'],
         'Mediation':                                    ['Justice Hub Accredited Mediator', 'MICADR', 'Other'],
         'ADR / Dispute Resolution Support':             _adrOpts,
-        'Government Department / Public Institution':   _govtOpts,
-        'Civil Society / NGO / CSO / NPO':              _ngoOpts,
+        // Government and NGO have their own dedicated dropdowns (intake-pw-govt-box, intake-pw-ngo-box)
+        // so they are intentionally excluded from this generic map
     };
 
     function getVal(name) {

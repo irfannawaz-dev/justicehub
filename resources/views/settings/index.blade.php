@@ -337,7 +337,7 @@
                             <summary style="font-size: 12px; color: var(--forest); cursor: pointer; font-weight: 500; list-style: none; display: flex; align-items: center; gap: 6px;">
                                 <x-lucide-plus style="width: 13px; height: 13px;" /> Add new option to this group
                             </summary>
-                            <form method="POST" action="{{ route('lookups.option.store') }}" style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: end;">
+                            <form method="POST" action="{{ route('lookups.option.store') }}" style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 8px; align-items: end;">
                                 @csrf
                                 <input type="hidden" name="group_key" value="{{ $groupKey }}" />
                                 <div>
@@ -347,6 +347,20 @@
                                 <div>
                                     <label style="font-size: 10px; color: var(--ink-3); display: block; margin-bottom: 4px;">Value (slug) <span style="color: var(--burgundy);">*</span></label>
                                     <input type="text" name="value" required placeholder="e.g. land-dispute" class="inp mono" style="width: 100%; font-size: 12px;" />
+                                </div>
+                                <div>
+                                    <label style="font-size: 10px; color: var(--ink-3); display: block; margin-bottom: 4px;">Parent (optional)</label>
+                                    <input type="text" name="parent_value" list="pv-{{ Str::slug($groupKey) }}"
+                                           placeholder="e.g. Legal Advice / Consultation"
+                                           class="inp" style="width: 100%; font-size: 12px;" />
+                                    <datalist id="pv-{{ Str::slug($groupKey) }}">
+                                        @foreach($options->pluck('parent_value')->filter()->unique()->sort() as $pv)
+                                        <option value="{{ $pv }}">
+                                        @endforeach
+                                        @foreach($options->sortBy('label') as $opt)
+                                        <option value="{{ $opt->label }}">
+                                        @endforeach
+                                    </datalist>
                                 </div>
                                 <button type="submit" class="btn-primary" style="padding: 7px 16px; font-size: 12px; white-space: nowrap; height: fit-content;">Add</button>
                             </form>

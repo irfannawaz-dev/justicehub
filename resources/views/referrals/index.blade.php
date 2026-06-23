@@ -173,9 +173,8 @@
             @foreach($partners as $p)
             @php
                 $catCfg = $categoryConfig[$p->category] ?? ['color' => 'var(--ink-3)', 'tint' => 'var(--paper)', 'icon' => 'circle'];
-                $pClosureRate = ($p->completed_referrals + $p->failed_referrals) > 0
-                    ? round(($p->completed_referrals / ($p->completed_referrals + $p->failed_referrals)) * 100)
-                    : 0;
+                $ps = $partnerStats[$p->name] ?? ['active' => 0, 'completed' => 0, 'failed' => 0, 'closureRate' => 0];
+                $pClosureRate = $ps['closureRate'];
                 $rateColor = $pClosureRate >= 90 ? 'var(--moss)' : ($pClosureRate >= 85 ? 'var(--ochre)' : 'var(--burgundy)');
                 $mouDot = match($p->mou_status) { 'active' => 'var(--moss)', 'expiring' => 'var(--ochre)', 'expired' => 'var(--burgundy)', default => 'var(--ink-3)' };
                 $hubList = $p->hubs->pluck('id')->toArray();
@@ -207,11 +206,11 @@
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--rule-2); margin-bottom: 12px;">
                     <div style="padding: 8px 10px; background: var(--parchment-2);">
                         <div class="label-cap" style="font-size: 9px; margin-bottom: 3px;">Active</div>
-                        <div class="serif" style="font-size: 17px; font-weight: 500; color: {{ $p->active_referrals > 0 ? $catCfg['color'] : 'var(--ink-4)' }}; line-height: 1;">{{ $p->active_referrals }}</div>
+                        <div class="serif" style="font-size: 17px; font-weight: 500; color: {{ $ps['active'] > 0 ? $catCfg['color'] : 'var(--ink-4)' }}; line-height: 1;">{{ $ps['active'] }}</div>
                     </div>
                     <div style="padding: 8px 10px; background: var(--parchment-2);">
                         <div class="label-cap" style="font-size: 9px; margin-bottom: 3px;">Closed</div>
-                        <div class="serif" style="font-size: 17px; font-weight: 500; line-height: 1;">{{ $p->completed_referrals }}</div>
+                        <div class="serif" style="font-size: 17px; font-weight: 500; line-height: 1;">{{ $ps['completed'] }}</div>
                     </div>
                     <div style="padding: 8px 10px; background: var(--parchment-2);">
                         <div class="label-cap" style="font-size: 9px; margin-bottom: 3px;">Rate</div>

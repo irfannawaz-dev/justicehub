@@ -299,7 +299,16 @@
 
                 {{-- NGO --}}
                 <div id="intake-pw-ngo-box" style="display:none; margin-top: 12px;">
-                    <x-form-input name="pathwayNgoName" label="Name of organisation" placeholder="Organisation name" />
+                    <div>
+                        <label class="jh-field-label">Specific Organisation / NGO *</label>
+                        <select name="pathwayNgoName" class="inp" style="width:100%; font-size:13px; box-sizing:border-box;">
+                            <option value="">— Select organisation —</option>
+                            @foreach($ngoPartners as $ngo)
+                                <option value="{{ $ngo }}" @selected(old('pathwayNgoName') === $ngo)>{{ $ngo }}</option>
+                            @endforeach
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
                 </div>
 
                 {{-- Other --}}

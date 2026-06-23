@@ -33,11 +33,19 @@ class SettingsController extends Controller
 
         $partners = \App\Models\Partner::orderBy('category')->orderBy('name')->get();
 
+        // Merge lookup-defined categories with any already used in the partners table
+        // so existing partner categories always appear even if lookups are empty
         $partnerCategories = DB::table('lookups')
             ->where('group_key', 'partner_category')
             ->where('is_active', 1)
             ->orderBy('sort_order')
-            ->pluck('label');
+            ->pluck('label')
+            ->merge(
+                \App\Models\Partner::distinct()->orderBy('category')->pluck('category')->filter()
+            )
+            ->unique()
+            ->sort()
+            ->values();
 
         $moduleSettings = DB::table('settings')
             ->where('key', 'like', 'module_%')

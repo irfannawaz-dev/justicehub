@@ -9,7 +9,7 @@ use Illuminate\Support\Carbon;
 
 class StaffController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
         $staff = Staff::forAuthUser()
             ->with(['trainings', 'hub', 'user'])
@@ -68,6 +68,46 @@ class StaffController extends Controller
         $grouped = $staff->groupBy('hub_id');
 
         return view('staff.index', compact('staff', 'trainings', 'mandatoryTrainings', 'grouped', 'compliancePct', 'compliantCount', 'expiring'));
+    }
+
+    public function show(Staff $staff)
+    {
+        $staff->load(['hub', 'user', 'trainings']);
+
+        $trainings = Training::orderBy('mandatory', 'desc')->orderBy('code')->get();
+        $mandatoryTrainings = $trainings->where('mandatory', true);
+        $today = now();
+
+        $required = $mandatoryTrainings->filter(fn($t) => in_array($staff->role, $t->audience ?? []));
+
+        $trainingStatus = $staff->trainings->keyBy('code')->map(function ($t) use ($today) {
+            $expires = $t->pivot->expires ? Carbon::parse($t->pivot->expires) : null;
+            if (!$expires) return 'current';
+            if ($expires->lt($today)) return 'expired';
+            if ($expires->lt($today->copy()->addMonths(3))) return 'expiring';
+            return 'current';
+        });
+
+        $mandatoryDone = $required->filter(function ($req) use ($staff, $today) {
+            $pivot = $staff->trainings->where('code', $req->code)->first();
+            if (!$pivot) return false;
+            if ($req->refresh === 'one-off' || !$pivot->pivot->expires) return true;
+            return Carbon::parse($pivot->pivot->expires)->gte($today);
+        })->count();
+
+        $staff->is_compliant    = $required->every(function ($req) use ($staff, $today) {
+            $pivot = $staff->trainings->where('code', $req->code)->first();
+            if (!$pivot) return false;
+            if ($req->refresh === 'one-off' || !$pivot->pivot->expires) return true;
+            return Carbon::parse($pivot->pivot->expires)->gte($today);
+        });
+        $staff->compliance_pct  = $required->count() > 0 ? round(($mandatoryDone / $required->count()) * 100) : 100;
+        $staff->required_trainings = $required;
+        $staff->training_status = $trainingStatus;
+
+        $canWrite = request()->user()->canWrite();
+
+        return view('staff.show', compact('staff', 'trainings', 'required', 'trainingStatus', 'canWrite'));
     }
 
     public function logTraining(Request $request, Staff $staff)

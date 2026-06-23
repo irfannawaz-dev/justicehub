@@ -28,7 +28,7 @@ class ReferralController extends Controller
             'Legal Aid'       => ['color' => 'var(--forest)',   'tint' => 'rgba(22,48,41,0.08)',  'icon' => 'scale'],
             'Other'           => ['color' => 'var(--ink-3)',    'tint' => 'var(--rule-2)',        'icon' => 'circle-dot'],
         ];
-        $dbCategories = \DB::table('lookups')
+        $dbCategories = DB::table('lookups')
             ->where('group_key', 'partner_category')
             ->where('is_active', 1)
             ->orderBy('sort_order')
@@ -39,6 +39,19 @@ class ReferralController extends Controller
 
         // Load all CaseReferrals grouped by referred_to
         $allReferrals = \App\Models\CaseReferral::all();
+
+        // Per-partner stats keyed by partner name (referred_to field)
+        $partnerStats = $allReferrals->groupBy('referred_to')->map(function ($refs) {
+            $completed = $refs->filter(fn($r) => $r->closed_at && $r->closed_outcome === 'Successful')->count();
+            $failed    = $refs->filter(fn($r) => $r->closed_at && $r->closed_outcome !== 'Successful')->count();
+            $active    = $refs->filter(fn($r) => !$r->closed_at)->count();
+            return [
+                'active'      => $active,
+                'completed'   => $completed,
+                'failed'      => $failed,
+                'closureRate' => ($completed + $failed) > 0 ? round(($completed / ($completed + $failed)) * 100) : 0,
+            ];
+        })->toArray();
 
         $categoryStats = $allReferrals->groupBy('referred_to')->map(function ($refs, $referredTo) {
             $completed = $refs->filter(fn($r) => $r->closed_at && $r->closed_outcome === 'Successful')->count();
@@ -145,6 +158,7 @@ class ReferralController extends Controller
             'categoryStats', 'categoryConfig', 'maxVolume',
             'mouAttention', 'partnerFilter', 'filterCounts',
             'activeCases', 'referralTracker', 'trackerCounts',
+            'partnerStats',
         ));
     }
 
@@ -185,8 +199,7 @@ class ReferralController extends Controller
             ]),
         ]);
 
-        // Increment partner's active referrals and set last referral date
-        $partner->increment('active_referrals');
+        // Update partner's last referral date
         $partner->update(['last_referral_date' => today()]);
 
         // Touch case last_update
