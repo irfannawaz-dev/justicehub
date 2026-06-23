@@ -262,12 +262,13 @@
                     <label style="display:block; margin-bottom:6px; font-size:10px; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">
                         Assigned Lawyer <span style="color:var(--burgundy);">*</span>
                     </label>
-                    <select name="assignedLawyer" class="inp">
+                    <select name="assignedLawyer" id="lawyerSelect" class="inp">
                         <option value="">— Select lawyer —</option>
                         @foreach($lawyers as $lawyer)
-                        <option value="{{ $lawyer->id }}">{{ $lawyer->name }}</option>
+                        <option value="{{ $lawyer->id }}" data-hub="{{ $lawyer->hub_id }}">{{ $lawyer->name }}</option>
                         @endforeach
                     </select>
+                    <p id="no-lawyers-msg" style="display:none; font-size:11px; color:var(--ink-4); margin:6px 0 0;">No lawyers found for this hub.</p>
                     @if($lawyers->isEmpty())
                     <p style="font-size:11px; color:var(--ink-4); margin:6px 0 0;">No lawyers found for this hub. Add staff first.</p>
                     @endif

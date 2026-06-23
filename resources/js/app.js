@@ -742,6 +742,30 @@ function jhInitIntakeWizard() {
     const hubSel2 = form.querySelector('[name="hubLocation"]');
     if (hubSel2) hubSel2.addEventListener('change', updateCoordinatorBox);
 
+    // ── Filter lawyer dropdown by selected hub ──────────────────
+    (function () {
+        const hubSel    = form.querySelector('[name="hubLocation"]');
+        const lawSel    = document.getElementById('lawyerSelect');
+        const noMsg     = document.getElementById('no-lawyers-msg');
+        if (!hubSel || !lawSel) return;
+
+        function filterLawyers() {
+            const hub = hubSel.value;
+            let visible = 0;
+            Array.from(lawSel.options).forEach(function (opt) {
+                if (!opt.value) return; // keep placeholder
+                const show = !hub || opt.dataset.hub === hub;
+                opt.style.display = show ? '' : 'none';
+                if (show) visible++;
+                if (!show && opt.selected) { opt.selected = false; lawSel.value = ''; }
+            });
+            if (noMsg) noMsg.style.display = (visible === 0) ? '' : 'none';
+        }
+
+        hubSel.addEventListener('change', filterLawyers);
+        filterLawyers(); // run on load in case hub is pre-selected
+    }());
+
     // ── Repeat-client lookup via Search button ──────────────────
     (function () {
         const cnicEl    = form.querySelector('[name="cnic"]');
