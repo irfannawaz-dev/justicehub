@@ -476,51 +476,22 @@ function jhInitGlobalSearch() {
 
 // ─────────────────────────────────────────────────────────────
 // Lookup management (settings page)
+// Groups are now URL-based — clicking a group navigates to ?lookup_group=xxx
+// Only the selected group's options are rendered in the DOM (fast page load)
 // ─────────────────────────────────────────────────────────────
+
+// Client-side search filter for group names in the left panel
+function jhFilterLookupGroups(q) {
+    document.querySelectorAll('[data-group-link]').forEach(function(link) {
+        link.style.display = link.dataset.groupLink.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
+    });
+}
+
 function jhInitLookups() {
     const container = document.getElementById('jh-lookup-manager');
     if (!container) return;
 
-    const searchInput = container.querySelector('#jh-lookup-search');
-    const groupBtns   = () => container.querySelectorAll('[data-group-btn]');
-    const panels      = () => container.querySelectorAll('[data-group-panel]');
-
-    function setActive(groupKey) {
-        groupBtns().forEach(btn => {
-            const isActive = btn.dataset.groupBtn === groupKey;
-            btn.style.background   = isActive ? 'var(--parchment)' : 'transparent';
-            btn.style.borderLeft   = isActive ? '3px solid var(--forest)' : '3px solid transparent';
-            btn.style.color        = isActive ? 'var(--ink)'  : 'var(--ink-3)';
-            btn.style.fontWeight   = isActive ? '500' : '400';
-            btn.style.paddingLeft  = isActive ? '11px' : '14px';
-        });
-        panels().forEach(panel => {
-            panel.style.display = panel.dataset.groupPanel === groupKey ? '' : 'none';
-        });
-    }
-
-    groupBtns().forEach(btn => {
-        btn.addEventListener('click', () => {
-            setActive(btn.dataset.groupBtn);
-            // reset any open edit rows
-            container.querySelectorAll('[data-edit-row]').forEach(r => {
-                r.querySelector('[data-edit-form]').style.display  = 'none';
-                r.querySelector('[data-read-view]').style.display  = '';
-                r.querySelector('[data-status-cell]').style.display = '';
-                r.querySelector('[data-action-cell]').style.display = '';
-            });
-        });
-    });
-
-    if (searchInput) {
-        searchInput.addEventListener('input', () => {
-            const q = searchInput.value.toLowerCase();
-            groupBtns().forEach(btn => {
-                btn.style.display = btn.dataset.groupBtn.toLowerCase().includes(q) ? '' : 'none';
-            });
-        });
-    }
-
+    // Edit row toggle for options table
     function openEditRow(row) {
         const ef = row.querySelector('[data-edit-form]');
         const sc = row.querySelector('[data-status-cell]');
@@ -540,7 +511,6 @@ function jhInitLookups() {
         if (ac) ac.style.display = '';
     }
 
-    // Edit row toggle
     container.querySelectorAll('[data-edit-btn]').forEach(btn => {
         btn.addEventListener('click', () => {
             const row = btn.closest('[data-edit-row]');
@@ -554,9 +524,9 @@ function jhInitLookups() {
         });
     });
 
-    // Show first group
-    const firstBtn = container.querySelector('[data-group-btn]');
-    if (firstBtn) setActive(firstBtn.dataset.groupBtn);
+    // Scroll active group into view in left panel
+    const activeLink = container.querySelector('[data-group-link][style*="var(--forest)"]');
+    if (activeLink) activeLink.scrollIntoView({ block: 'nearest' });
 }
 
 // ─────────────────────────────────────────────────────────────

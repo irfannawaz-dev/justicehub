@@ -13,12 +13,37 @@ class SettingsController extends Controller
 {
     public function index(Request $request)
     {
-        $lookupData = null;
+        $lookupData       = null;
+        $lookupGroupKeys  = collect();
+        $activeLookupGroup = null;
+        $activeLookupOptions = collect();
+        $lookupTotalGroups = 0;
+        $lookupTotalOptions = 0;
+
         if ($request->user()->can('lookups.manage')) {
-            $lookupData = Lookup::orderBy('group_key')
-                ->orderBy('sort_order')
-                ->get()
-                ->groupBy('group_key');
+            // Only fetch group keys (lightweight — one column, no options)
+            $lookupGroupKeys = Lookup::select('group_key')
+                ->distinct()
+                ->orderBy('group_key')
+                ->pluck('group_key');
+
+            $lookupTotalGroups  = $lookupGroupKeys->count();
+            $lookupTotalOptions = Lookup::count();
+
+            // Only load options for the selected group
+            $activeLookupGroup = $request->input('lookup_group');
+            if ($activeLookupGroup && $lookupGroupKeys->contains($activeLookupGroup)) {
+                $activeLookupOptions = Lookup::where('group_key', $activeLookupGroup)
+                    ->orderBy('sort_order')
+                    ->get();
+            } else {
+                $activeLookupGroup = null;
+            }
+
+            // Keep $lookupData for backward-compat with view count expressions
+            $lookupData = $activeLookupGroup
+                ? collect([$activeLookupGroup => $activeLookupOptions])
+                : collect();
         }
 
         // Location data for admin
@@ -51,7 +76,11 @@ class SettingsController extends Controller
             ->where('key', 'like', 'module_%')
             ->pluck('value', 'key');
 
-        return view('settings.index', compact('lookupData', 'locationData', 'partners', 'partnerCategories', 'moduleSettings'));
+        return view('settings.index', compact(
+            'lookupData', 'lookupGroupKeys', 'activeLookupGroup',
+            'activeLookupOptions', 'lookupTotalGroups', 'lookupTotalOptions',
+            'locationData', 'partners', 'partnerCategories', 'moduleSettings'
+        ));
     }
 
     public function setHub(Request $request)

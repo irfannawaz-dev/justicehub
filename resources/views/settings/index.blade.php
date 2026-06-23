@@ -250,7 +250,6 @@
     @if($lookupData)
     @php
         $sectionNum = $user->canSeeAllHubs() ? '5' : '4';
-        $groupKeys  = $lookupData->keys()->sort()->values();
     @endphp
     <div style="margin-bottom: 28px;" id="jh-lookup-manager">
 
@@ -278,8 +277,8 @@
         {{-- Two-panel layout: group list (left) + options table (right) --}}
         <div style="display: grid; grid-template-columns: 260px 1fr; gap: 14px; max-width: 1060px; align-items: start;">
 
-            {{-- ── Left panel: group list ─────────────────────────── --}}
-            <div style="border: 1px solid var(--rule); background: var(--paper); overflow: hidden;">
+            {{-- ── Left panel: group list (URL-based — only group names loaded) ── --}}
+            <div style="border: 1px solid var(--rule); background: var(--paper); overflow: hidden; position: sticky; top: 16px;">
 
                 {{-- Search + New Group --}}
                 <div style="padding: 10px 12px; border-bottom: 1px solid var(--rule-2); display: flex; gap: 8px; align-items: center;">
@@ -289,6 +288,7 @@
                         placeholder="Search groups…"
                         class="inp mono"
                         style="flex: 1; font-size: 11px; padding: 5px 8px;"
+                        oninput="jhFilterLookupGroups(this.value)"
                     />
                     <button
                         type="button"
@@ -298,27 +298,30 @@
                     >+ Group</button>
                 </div>
 
-                {{-- Group list --}}
-                <div style="max-height: 520px; overflow-y: auto;" class="jh-scroll">
-                    @foreach($groupKeys as $groupKey)
-                    <button
-                        type="button"
-                        data-group-btn="{{ $groupKey }}"
-                        style="width: 100%; text-align: left; padding: 9px 14px; border: none; background: transparent; cursor: pointer; font-family: inherit; font-size: 11.5px; display: block; border-bottom: 1px solid var(--rule-2); color: var(--ink-3);"
-                    >{{ $groupKey }}</button>
+                {{-- Group list — links navigate to ?lookup_group=xxx --}}
+                <div style="max-height: 520px; overflow-y: auto;" class="jh-scroll" id="lookup-group-list">
+                    @foreach($lookupGroupKeys as $gk)
+                    <a href="{{ request()->fullUrlWithQuery(['lookup_group' => $gk]) }}#jh-lookup-manager"
+                       data-group-link="{{ $gk }}"
+                       style="width: 100%; text-align: left; padding: 9px 14px; border: none; cursor: pointer;
+                              font-family: inherit; font-size: 11.5px; display: block;
+                              border-bottom: 1px solid var(--rule-2); text-decoration: none;
+                              {{ $activeLookupGroup === $gk ? 'background: var(--forest); color: var(--cream); font-weight: 600;' : 'background: transparent; color: var(--ink-3);' }}"
+                    >{{ $gk }}</a>
                     @endforeach
                 </div>
 
                 {{-- Group count --}}
                 <div style="padding: 8px 12px; border-top: 1px solid var(--rule-2); font-size: 10.5px; color: var(--ink-4);">
-                    {{ $lookupData->count() }} groups · {{ $lookupData->flatten()->count() }} options total
+                    {{ $lookupTotalGroups }} groups · {{ $lookupTotalOptions }} options total
                 </div>
             </div>
 
-            {{-- ── Right panel: options for active group ──────────── --}}
+            {{-- ── Right panel: options for selected group only ──────── --}}
             <div>
-                @foreach($lookupData as $groupKey => $options)
-                <div data-group-panel="{{ $groupKey }}" style="display:none;">
+                @if($activeLookupGroup)
+                @php $groupKey = $activeLookupGroup; $options = $activeLookupOptions; @endphp
+                <div>
 
                     {{-- Group header + Add option form --}}
                     <div style="background: var(--paper); border: 1px solid var(--rule); padding: 14px 16px; margin-bottom: 10px;">
@@ -482,7 +485,12 @@
                         @endif
                     </div>
                 </div>
-                @endforeach
+                @else
+                <div style="padding: 48px 24px; text-align: center; color: var(--ink-4); border: 1px solid var(--rule); background: var(--paper);">
+                    <x-lucide-mouse-pointer-click style="width:28px;height:28px;margin-bottom:12px;opacity:0.4;" />
+                    <div style="font-size: 13px;">Select a group from the left to manage its options.</div>
+                </div>
+                @endif
             </div>
         </div>
     </div>
