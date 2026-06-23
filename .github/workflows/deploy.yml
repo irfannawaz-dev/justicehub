@@ -20,32 +20,6 @@ jobs:
           php-version: '8.2'
           extensions: mbstring, bcmath, pdo_mysql, tokenizer, xml, ctype, json, fileinfo
 
-      - name: Install Composer dependencies
-        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install NPM dependencies
-        run: npm ci
-
-      - name: Build frontend assets
-        run: npm run build
-
-      - name: Upload built assets via SCP
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          source: "public/build/"
-          target: "~/public_html/website_46a92717/public/"
-          strip_components: 1
-
       - name: Deploy to server via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
