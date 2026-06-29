@@ -12,110 +12,90 @@ class ServiceController extends Controller
     public function adrScorecard(Request $request)
     {
         $hubId = $request->input('_active_hub', 'all');
-        $q = CaseRecord::query()->where(function ($sq) {
-            $sq->where('disposition', 'adr')
-               ->orWhere('assigned_pathway', 'Mediation & ADR')
-               ->orWhere('assigned_pathway', 'like', '%Mediation%')
-               ->orWhere('assigned_pathway', 'ADR / Dispute Resolution Support');
-        });
+
+        // ── Mediation only: pathway = 'Mediation' ──
+        $q = CaseRecord::query()->where('assigned_pathway', 'Mediation');
         if ($hubId && $hubId !== 'all') $q->where('hub_id', $hubId);
 
-        $total = (clone $q)->count();
-        $settled = (clone $q)->whereIn('status', ['Settlement', 'Closed'])->count();
-        $active = (clone $q)->whereIn('status', ['Active', 'Pending Approval'])->count();
-        $gbv = (clone $q)->where('is_gbv', true)->count();
-        $female = (clone $q)->where('gender', 'Female')->count();
+        $total    = (clone $q)->count();
+        $settled  = (clone $q)->whereIn('status', ['Settlement', 'Closed'])->count();
+        $active   = (clone $q)->whereIn('status', ['Active', 'Pending Approval'])->count();
+        $gbv      = (clone $q)->where('is_gbv', true)->count();
+        $female   = (clone $q)->where('gender', 'Female')->count();
         $minority = (clone $q)->where('is_minority', true)->count();
-        $child = (clone $q)->where('is_child', true)->count();
+        $child    = (clone $q)->where('is_child', true)->count();
         $disability = (clone $q)->where('is_disability', true)->count();
-        $rate = $total > 0 ? round(($settled / $total) * 100) : 0;
+        $rate     = $total > 0 ? round(($settled / $total) * 100) : 0;
 
-        // Service encounters count for ADR cases
-        $adrCaseIds = (clone $q)->pluck('id');
-        $servicesDelivered = ServiceEncounter::whereIn('case_id', $adrCaseIds)->count();
+        $caseIds           = (clone $q)->pluck('id');
+        $servicesDelivered = ServiceEncounter::whereIn('case_id', $caseIds)->count();
 
-        // Average days to resolution for settled ADR cases
-        $resolvedAdr = (clone $q)->whereIn('status', ['Closed', 'Settlement'])
-            ->get(['intake_date', 'last_update', 'created_at']);
-        $adrTotalDays = $resolvedAdr->sum(fn($c) =>
+        $resolvedCases  = (clone $q)->whereIn('status', ['Closed', 'Settlement'])->get(['intake_date', 'last_update', 'created_at']);
+        $totalDays      = $resolvedCases->sum(fn($c) =>
             $c->intake_date && ($c->last_update ?? $c->created_at)
-                ? $c->intake_date->diffInDays($c->last_update ?? $c->created_at)
-                : 0
+                ? $c->intake_date->diffInDays($c->last_update ?? $c->created_at) : 0
         );
-        $avgDays = $resolvedAdr->count() > 0 ? round($adrTotalDays / $resolvedAdr->count()) : 0;
+        $avgDays = $resolvedCases->count() > 0 ? round($totalDays / $resolvedCases->count()) : 0;
 
-        // Cases with mediation encounters for pipeline
-        $cases = (clone $q)->with(['serviceEncounters' => fn($sq) => $sq->orderBy('date')])
-            ->latest('intake_date')->get();
+        $cases = (clone $q)->with(['serviceEncounters' => fn($sq) => $sq->orderBy('date')])->latest('intake_date')->get();
 
-        // 5-stage pipeline
-        $pipeline = ['ADR Intake' => [], 'In Mediation' => [], 'Settlement Draft' => [], 'Resolved' => [], 'Escalated' => []];
+        // ── Mediation-specific pipeline stages ──
+        $pipeline = ['Mediation Intake' => [], 'Joint Session' => [], 'Agreement Draft' => [], 'Resolved' => [], 'Escalated' => []];
         foreach ($cases as $c) {
-            $lastType = $c->serviceEncounters->last()?->type ?? 'Intake';
-            $daysInStage = $c->last_update ? (int) $c->last_update->diffInDays(now()) : (int) $c->intake_date->diffInDays(now());
+            $lastType      = strtolower($c->serviceEncounters->last()?->type ?? '');
+            $daysInStage   = $c->last_update ? (int) $c->last_update->diffInDays(now()) : (int) $c->intake_date->diffInDays(now());
             $c->days_in_stage = $daysInStage;
             $c->session_count = $c->serviceEncounters->count();
 
-            // Use manual adr_stage if set, otherwise infer from encounters/status
             $manualStage = $c->adr_stage ?? null;
             if ($manualStage && array_key_exists($manualStage, $pipeline)) {
                 $pipeline[$manualStage][] = $c;
-            } elseif ($c->status->value === 'Rejected' || str_contains(strtolower($lastType), 'litigation') || str_contains(strtolower($lastType), 'court')) {
+            } elseif ($c->status->value === 'Rejected' || str_contains($lastType, 'litigation') || str_contains($lastType, 'court')) {
                 $pipeline['Escalated'][] = $c;
             } elseif (in_array($c->status->value, ['Closed', 'Settlement'])) {
                 $pipeline['Resolved'][] = $c;
-            } elseif (str_contains(strtolower($lastType), 'settlement') || str_contains(strtolower($lastType), 'closure') || str_contains(strtolower($lastType), 'draft')) {
-                $pipeline['Settlement Draft'][] = $c;
-            } elseif (str_contains(strtolower($lastType), 'mediation')) {
-                $pipeline['In Mediation'][] = $c;
+            } elseif (str_contains($lastType, 'agreement') || str_contains($lastType, 'draft') || str_contains($lastType, 'settlement')) {
+                $pipeline['Agreement Draft'][] = $c;
+            } elseif (str_contains($lastType, 'joint') || str_contains($lastType, 'session') || str_contains($lastType, 'mediation')) {
+                $pipeline['Joint Session'][] = $c;
             } else {
-                $pipeline['ADR Intake'][] = $c;
+                $pipeline['Mediation Intake'][] = $c;
             }
         }
 
-        // Resolution outcomes for chart
         $escalated = count($pipeline['Escalated']);
-        $withdrawn = 0; // No withdrawn status currently
-        $ongoingAdr = $active;
-        $outcomes = [
+        $outcomes  = [
             'Settled via Mediation' => $settled,
-            'Ongoing Mediation'     => $ongoingAdr,
+            'Ongoing Mediation'     => $active,
             'Escalated'             => $escalated,
-            'Withdrawn'             => $withdrawn,
+            'Withdrawn'             => 0,
         ];
 
-        // Staff workload for ADR
+        // Staff workload
         $staff = \App\Models\Staff::with(['hub', 'user'])->where('status', 'active')->get()->map(function ($s) {
-            $allActive = CaseRecord::where('assigned_to', $s->name)->where('status', 'Active');
-            $adrCount = (clone $allActive)->where(fn($sq) => $sq->where('disposition', 'adr')->orWhere('assigned_pathway', 'Mediation & ADR'))->count();
-            $courtCount = (clone $allActive)->where(fn($sq) => $sq->where('disposition', 'litigation')->orWhereIn('assigned_pathway', ['Representation in Court', 'Court Representation']))->count();
+            $allActive  = CaseRecord::where('assigned_to', $s->name)->where('status', 'Active');
+            $adrCount   = (clone $allActive)->where('assigned_pathway', 'Mediation')->count();
+            $courtCount = (clone $allActive)->whereIn('assigned_pathway', ['Representation in Court', 'Court Representation'])->count();
             $totalActive = (clone $allActive)->count();
-            $capacity = $s->role === 'Lawyer' ? 25 : 35;
-            $utilization = $capacity > 0 ? round(($totalActive / $capacity) * 100) : 0;
-            $slaBreach = CaseRecord::where('assigned_to', $s->name)->where('sla_met', false)->count();
+            $capacity   = $s->role === 'Lawyer' ? 25 : 35;
             return [
                 'name' => $s->name, 'initials' => $s->initials, 'role' => $s->role,
                 'designation' => $s->user?->designation ?: $s->role,
                 'hub' => $s->hub?->name ?? $s->hub_id, 'hub_id' => $s->hub_id,
                 'active' => $totalActive, 'adr' => $adrCount, 'court' => $courtCount,
-                'capacity' => $capacity, 'utilization' => min($utilization, 100),
-                'sla_breach' => $slaBreach,
+                'capacity' => $capacity, 'utilization' => min($capacity > 0 ? round(($totalActive / $capacity) * 100) : 0, 100),
+                'sla_breach' => CaseRecord::where('assigned_to', $s->name)->where('sla_met', false)->count(),
             ];
         })->sortByDesc('active')->values();
 
-        // Only ADR/Mediation pathway cases for the log service modal
         $activeCases = CaseRecord::query()
             ->when($hubId && $hubId !== 'all', fn($q) => $q->where('hub_id', $hubId))
             ->whereNotIn('status', ['Closed', 'Settlement', 'Rejected'])
-            ->where(fn($q) => $q
-                ->whereIn('assigned_pathway', ['Mediation', 'ADR / Dispute Resolution Support'])
-                ->orWhere('disposition', 'adr')
-            )
+            ->where('assigned_pathway', 'Mediation')
             ->orderBy('name')
             ->get(['id', 'case_uid', 'name', 'primary_issue', 'hub_id', 'disposition']);
 
-        // Provider dropdown — real users with service-delivering roles
-        $providerRoles = ['lawyer', 'hub-coordinator', 'court-clerk', 'operations-officer'];
+        $providerRoles  = ['lawyer', 'hub-coordinator', 'court-clerk', 'operations-officer'];
         $providersQuery = \App\Models\User::whereIn('role', $providerRoles)->where('is_active', true);
         if ($hubId && $hubId !== 'all') {
             $providersQuery->where(fn($q) => $q->where('hub_id', $hubId)->orWhereNull('hub_id'));
@@ -188,13 +168,9 @@ class ServiceController extends Controller
     {
         $hubId = $request->input('_active_hub', 'all');
 
-        // All ADR cases in scope
-        $adrQ = CaseRecord::query()->where(function ($sq) {
-                $sq->where('disposition', 'adr')
-                   ->orWhere('assigned_pathway', 'Mediation & ADR')
-                   ->orWhere('assigned_pathway', 'like', '%Mediation%')
-                   ->orWhere('assigned_pathway', 'ADR / Dispute Resolution Support');
-            })
+        // Mediation cases only
+        $adrQ = CaseRecord::query()
+            ->where('assigned_pathway', 'Mediation')
             ->when($hubId && $hubId !== 'all', fn($q) => $q->where('hub_id', $hubId));
 
         $totalCases = (clone $adrQ)->count();

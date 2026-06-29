@@ -1,6 +1,6 @@
 <x-layouts.app>
 @php
-    $awaitingFirst = collect($pipeline['ADR Intake'] ?? [])->count();
+    $awaitingFirst = collect($pipeline['Mediation Intake'] ?? [])->count();
     $gbvActive = collect($cases)->where('is_gbv', true)->filter(fn($c) => in_array($c->status->value, ['Active','Pending Approval']))->count();
     $uniqueHubs = $staff->pluck('hub_id')->unique()->count();
     $staffCount = $staff->count();
@@ -10,11 +10,11 @@
 
     // Stage config
     $stageConfig = [
-        'ADR Intake'       => ['color' => 'var(--ink-3)',    'dot' => '#8a8a84', 'subtitle' => 'Accepted · awaiting 1st session'],
-        'In Mediation'     => ['color' => 'var(--ochre)',    'dot' => '#b87319', 'subtitle' => 'Sessions in progress'],
-        'Settlement Draft' => ['color' => 'var(--moss)',     'dot' => '#4a7a5c', 'subtitle' => 'Agreement being finalised'],
-        'Resolved'         => ['color' => '#2f7a4d',        'dot' => '#2f7a4d', 'subtitle' => 'Settled & compliance confirmed'],
-        'Escalated'        => ['color' => 'var(--burgundy)', 'dot' => '#8a2e1d', 'subtitle' => 'Moved to court · failed ADR'],
+        'Mediation Intake' => ['color' => 'var(--ink-3)',    'dot' => '#8a8a84', 'subtitle' => 'Accepted · awaiting 1st session'],
+        'Joint Session'    => ['color' => 'var(--ochre)',    'dot' => '#b87319', 'subtitle' => 'Sessions in progress'],
+        'Agreement Draft'  => ['color' => 'var(--moss)',     'dot' => '#4a7a5c', 'subtitle' => 'Agreement being finalised'],
+        'Resolved'         => ['color' => '#2f7a4d',         'dot' => '#2f7a4d', 'subtitle' => 'Settled & compliance confirmed'],
+        'Escalated'        => ['color' => 'var(--burgundy)', 'dot' => '#8a2e1d', 'subtitle' => 'Moved to court · failed mediation'],
     ];
 
     // Outcome colors for chart and bars
@@ -70,7 +70,7 @@
                 Services & <em style="color: var(--ochre); font-style: italic;">Mediation</em>
             </h1>
             <p style="margin: 6px 0 0 0; font-size: 13px; color: var(--ink-3); max-width: 520px; line-height: 1.45;">
-                Mediation pathway performance, service delivery tracking, and staff workload for {{ $total }} ADR-track cases across the programme.
+                Mediation pathway performance, service delivery tracking, and staff workload for {{ $total }} mediation cases across the programme.
             </p>
         </div>
         <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-shrink: 0;">
@@ -88,7 +88,7 @@
         {{-- O2.1 ADR Resolution Rate --}}
         <div class="card jh-scorecard jh-anim-card" style="padding: 20px 22px; border-top: 3px solid var(--ochre); display: flex; flex-direction: column; gap: 6px; min-height: 140px;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div class="label-cap" style="font-size: 9.5px; line-height: 1.4;">O2.1 ADR Resolution Rate</div>
+                <div class="label-cap" style="font-size: 9.5px; line-height: 1.4;">O2.1 Mediation Resolution Rate</div>
                 <x-lucide-heart-handshake style="width: 13px; height: 13px; color: var(--ink-4);" />
             </div>
             <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 4px;">
@@ -209,7 +209,7 @@
             @php
                 $cfg = $stageConfig[$stage] ?? ['color' => 'var(--ink-3)', 'dot' => '#8a8a84', 'subtitle' => ''];
                 $sortedCases = collect($stageCases)->sortByDesc('days_in_stage')->values();
-                $showNextSession = in_array($stage, ['ADR Intake', 'In Mediation']);
+                $showNextSession = in_array($stage, ['Mediation Intake', 'Joint Session']);
             @endphp
             <div class="adr-kanban-col">
                 {{-- Column header (sticky) --}}
@@ -231,8 +231,8 @@
                         $cInitials = collect(explode(' ', $case->name))->map(fn($n) => strtoupper(substr($n, 0, 1)))->take(2)->join('');
                         $avatarBg = $avatarColors[abs(crc32($case->name ?? '')) % count($avatarColors)];
                         $nextSession = $case->serviceEncounters->where('date', '>=', now()->toDateString())->first();
-                        $adrStages = ['ADR Intake', 'In Mediation', 'Settlement Draft', 'Resolved', 'Escalated'];
-                        $currentAdrStage = $case->adr_stage ?? 'ADR Intake';
+                        $adrStages = ['Mediation Intake', 'Joint Session', 'Agreement Draft', 'Resolved', 'Escalated'];
+                        $currentAdrStage = $case->adr_stage ?? 'Mediation Intake';
                     @endphp
                     <div class="card jh-kanban-card"
                          style="padding: 12px 13px; display: block; cursor: pointer;"
@@ -444,7 +444,7 @@
                         <th style="text-align: left; padding: 11px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Staff Member</th>
                         <th style="text-align: left; padding: 11px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Role &middot; Hub</th>
                         <th style="text-align: left; padding: 11px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Active Caseload</th>
-                        <th style="text-align: center; padding: 11px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">ADR</th>
+                        <th style="text-align: center; padding: 11px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Mediation</th>
                         <th style="text-align: center; padding: 11px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Court</th>
                         <th style="text-align: center; padding: 11px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">SLA</th>
                         <th style="text-align: right; padding: 11px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Utilisation</th>
@@ -542,7 +542,7 @@
                 </div>
                 <div style="display: flex; align-items: center; justify-content: space-between;">
                     <h3 class="serif" style="font-size: 22px; font-weight: 400; margin: 0; color: var(--forest); letter-spacing: -0.01em;">
-                        New ADR referral
+                        New Mediation Referral
                     </h3>
                     <button type="button" data-bs-dismiss="modal"
                         style="background: none; border: none; cursor: pointer; color: var(--ink-3); padding: 4px; line-height: 1;">
@@ -681,7 +681,7 @@
                                 <option value="">Select mediator (caseload shown)...</option>
                                 @foreach($staff as $s)
                                 <option value="{{ $s['name'] }}">
-                                    {{ $s['name'] }} — {{ $s['designation'] ?: $s['role'] }} · {{ $s['adr'] }} ADR cases ({{ $s['utilization'] }}% capacity)
+                                    {{ $s['name'] }} — {{ $s['designation'] ?: $s['role'] }} · {{ $s['adr'] }} mediation cases ({{ $s['utilization'] }}% capacity)
                                 </option>
                                 @endforeach
                             </select>
