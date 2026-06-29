@@ -91,6 +91,11 @@ class CaseRecord extends Model
         return $this->belongsTo(Hub::class);
     }
 
+    public function messages(): HasMany
+    {
+        return $this->hasMany(\App\Models\CaseMessage::class, 'case_id')->orderBy('created_at');
+    }
+
     public function assignedStaff(): BelongsTo
     {
         return $this->belongsTo(Staff::class, 'assigned_staff_id');
@@ -189,10 +194,14 @@ class CaseRecord extends Model
     /** Return the User record for the currently assigned person, or null. */
     public function getAssignedUser(): ?\App\Models\User
     {
+        // Prefer lookup via assigned_staff_id → Staff → User (cross-hub safe)
+        if ($this->assigned_staff_id) {
+            $userId = \App\Models\Staff::where('id', $this->assigned_staff_id)->value('user_id');
+            if ($userId) return \App\Models\User::find($userId);
+        }
+        // Fallback: match by name only (no hub filter)
         if (! $this->assigned_to) return null;
-        return \App\Models\User::where('name', $this->assigned_to)
-            ->where('hub_id', $this->hub_id)
-            ->first();
+        return \App\Models\User::where('name', $this->assigned_to)->first();
     }
 
     // Scopes

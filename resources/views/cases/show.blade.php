@@ -381,6 +381,7 @@
             ['id' => 'documents',  'label' => 'Documents',   'icon' => 'file-text',        'count' => $case->documents->count()],
             ['id' => 'feedback',   'label' => 'Feedback',    'icon' => 'heart-handshake',  'count' => $case->feedback->count()],
             ['id' => 'complaints', 'label' => 'Complaints',  'icon' => 'alert-triangle',   'count' => $case->complaints->count()],
+            ['id' => 'messages',   'label' => 'Case Notes',  'icon' => 'message-square',   'count' => $case->messages->count()],
         ] as $t)
         @php $isActive = $activeTab === $t['id']; @endphp
         <li class="nav-item" role="presentation">
@@ -2148,6 +2149,104 @@
                 </div>
             </div>
         </div>
+
+    {{-- ════════════════════════════════════════════════════════
+         TAB: CASE NOTES (Coordinator ↔ Lawyer/Mediator)
+         Confidential thread — only visible to Coordinator,
+         assigned Lawyer/Mediator, and Head.
+    ════════════════════════════════════════════════════════ --}}
+    @php
+        $user           = auth()->user();
+        $canSeeMessages = $user->isHead()
+                       || $user->isHubCoordinator()
+                       || ($case->assigned_to && $user->name === $case->assigned_to);
+    @endphp
+
+    @if($canSeeMessages)
+    <div class="tab-pane fade {{ $activeTab === 'messages' ? 'show active' : '' }}"
+         id="tab-messages" role="tabpanel">
+
+        <div style="max-width: 680px; margin: 0 auto;">
+
+            {{-- Header --}}
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
+                <div>
+                    <div style="font-size:15px; font-weight:700; color:var(--ink);">Case Notes</div>
+                    <div style="font-size:11px; color:var(--ink-3); margin-top:2px;">
+                        Confidential thread between Hub Coordinator and {{ $case->assigned_to ?? 'assigned staff' }}.
+                        Not visible to other roles.
+                    </div>
+                </div>
+                <span style="margin-left:auto; font-size:10px; padding:3px 10px; background:var(--burgundy-soft,#fdf2f2); color:var(--burgundy); border:1px solid var(--burgundy); font-weight:600; letter-spacing:0.05em; text-transform:uppercase;">
+                    Confidential
+                </span>
+            </div>
+
+            {{-- Message thread --}}
+            <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:24px;">
+                @forelse($case->messages as $msg)
+                @php
+                    $isMine    = $msg->sender_id === $user->id;
+                    $senderRole = $msg->sender?->role?->label() ?? 'Staff';
+                @endphp
+                <div style="display:flex; flex-direction:column; align-items:{{ $isMine ? 'flex-end' : 'flex-start' }};">
+                    {{-- Sender label --}}
+                    <div style="font-size:9.5px; color:var(--ink-3); margin-bottom:3px; padding:0 4px;">
+                        <span style="font-weight:600; color:var(--ink-2);">{{ $msg->sender?->name ?? 'Unknown' }}</span>
+                        &middot; {{ $senderRole }}
+                        &middot; <span class="mono">{{ $msg->created_at->format('d M Y, H:i') }}</span>
+                    </div>
+                    {{-- Bubble --}}
+                    <div style="
+                        max-width: 80%;
+                        padding: 10px 14px;
+                        font-size: 13px;
+                        line-height: 1.55;
+                        color: {{ $isMine ? '#fff' : 'var(--ink)' }};
+                        background: {{ $isMine ? 'var(--forest)' : 'var(--surface-2, #f4f4f2)' }};
+                        border: 1px solid {{ $isMine ? 'var(--forest)' : 'var(--rule)' }};
+                        border-radius: {{ $isMine ? '12px 12px 2px 12px' : '12px 12px 12px 2px' }};
+                        white-space: pre-wrap;
+                        word-break: break-word;
+                    ">{{ $msg->body }}</div>
+                </div>
+                @empty
+                <div style="text-align:center; padding:48px 0; color:var(--ink-4);">
+                    <x-lucide-message-square style="width:32px; height:32px; margin:0 auto 10px; display:block; opacity:0.3;" />
+                    <div style="font-size:13px;">No messages yet.</div>
+                    <div style="font-size:11px; margin-top:4px;">Start the conversation below.</div>
+                </div>
+                @endforelse
+            </div>
+
+            {{-- Reply form --}}
+            <div style="border-top:1px solid var(--rule); padding-top:18px;">
+                <form method="POST" action="{{ route('cases.message.store', $case) }}">
+                    @csrf
+                    <div style="margin-bottom:10px;">
+                        <label style="font-size:10px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3); display:block; margin-bottom:6px;">
+                            {{ $user->isHubCoordinator() ? 'Message to ' . ($case->assigned_to ?? 'Assigned Staff') : 'Reply to Coordinator' }}
+                        </label>
+                        <textarea
+                            name="body"
+                            rows="3"
+                            required
+                            placeholder="Write your message…"
+                            style="width:100%; padding:10px 12px; border:1px solid var(--rule); font-family:inherit; font-size:13px; color:var(--ink); background:var(--surface); resize:vertical; outline:none;"
+                            onkeydown="if(event.ctrlKey && event.key==='Enter') this.closest('form').submit();"
+                        >{{ old('body') }}</textarea>
+                        <div style="font-size:10px; color:var(--ink-4); margin-top:4px;">Ctrl + Enter to send</div>
+                    </div>
+                    <button type="submit" class="jh-btn jh-btn-primary" style="display:inline-flex; align-items:center; gap:6px;">
+                        <x-lucide-send style="width:13px; height:13px;" />
+                        Send Message
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>{{-- tab-messages --}}
+    @endif
 
     </div>{{-- end tab-content --}}
 </div>

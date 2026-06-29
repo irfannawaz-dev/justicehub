@@ -169,13 +169,14 @@ class CaseController extends Controller
     public function slip(CaseRecord $case)
     {
         $case->load('hub');
-        return view('cases.slip', compact('case'));
+        $lawyerPhone = $case->getAssignedUser()?->contact_number;
+        return view('cases.slip', compact('case', 'lawyerPhone'));
     }
 
     public function show(CaseRecord $case)
     {
         // Hub scope enforced via Route::bind() in AppServiceProvider
-        $case->load(['serviceEncounters', 'documents', 'complaints', 'feedback', 'hub', 'transfers.transferredBy', 'transfers.approvedBy', 'mediationParties', 'mediationDiary', 'caseReferrals.letters', 'caseReferrals.threads']);
+        $case->load(['serviceEncounters', 'documents', 'complaints', 'feedback', 'hub', 'transfers.transferredBy', 'transfers.approvedBy', 'mediationParties', 'mediationDiary', 'caseReferrals.letters', 'caseReferrals.threads', 'messages.sender']);
 
         // Auto-fetch hearings from LAS CMS if case is linked
         if ($case->external_case_id) {
@@ -912,5 +913,30 @@ class CaseController extends Controller
         return redirect()->route('cases.show', $case)
             ->with('success', 'Referral deleted.')
             ->with('activeTab', 'referrals');
+    }
+
+    // ── Case Messages (Coordinator ↔ Lawyer/Mediator) ─────────────────────────
+    public function storeMessage(Request $request, CaseRecord $case)
+    {
+        $user = $request->user();
+
+        // Only Hub Coordinator, assigned Lawyer/Mediator, or Head may post
+        $isCoordinator = $user->isHubCoordinator();
+        $isAssigned    = $case->assigned_to && $user->name === $case->assigned_to;
+        $isHead        = $user->isHead();
+
+        abort_unless($isCoordinator || $isAssigned || $isHead, 403);
+
+        $request->validate(['body' => 'required|string|max:3000']);
+
+        \App\Models\CaseMessage::create([
+            'case_id'   => $case->id,
+            'sender_id' => $user->id,
+            'body'      => $request->body,
+        ]);
+
+        return redirect()->route('cases.show', $case)
+            ->with('activeTab', 'messages')
+            ->with('success', 'Message sent.');
     }
 }
