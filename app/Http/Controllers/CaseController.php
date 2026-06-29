@@ -107,7 +107,7 @@ class CaseController extends Controller
             'mediation'     => (clone $hubBase)->where('assigned_pathway', 'Mediation')->count(),
             'adr'           => (clone $hubBase)->where('assigned_pathway', 'ADR / Dispute Resolution Support')->count(),
             'court'         => (clone $hubBase)->whereIn('assigned_pathway', ['Court Representation', 'Representation in Court'])->count(),
-            'referred'      => \App\Models\CaseReferral::whereIn('case_id', $hubCaseIds)->count(),
+            'referred'      => (clone $hubBase)->whereIn('assigned_pathway', ['Government Department / Public Institution', 'Civil Society / NGO / CSO / NPO', 'Referral', 'Other'])->count(),
             'info_awareness'=> (clone $hubBase)->where('assigned_pathway', 'Information & Awareness')->count(),
         ];
 

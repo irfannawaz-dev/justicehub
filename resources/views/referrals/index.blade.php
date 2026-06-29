@@ -248,7 +248,8 @@
         </div>
     </div>
 
-    {{-- ═══ Referral Tracker ═══ --}}
+    {{-- Referral Tracker removed --}}
+    @if(false)
     <div style="margin-bottom: 36px;">
         <div style="display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 16px;">
             <div>
@@ -286,8 +287,8 @@
         @else
         <div class="card" style="padding: 0; overflow: hidden;">
             {{-- Table header --}}
-            <div style="display: grid; grid-template-columns: 110px 1fr 180px 200px 200px 80px 100px; gap: 0; border-bottom: 2px solid var(--rule);">
-                @foreach(['REF · DATE','CLIENT & CASE','ROUTE','SERVICE REQUESTED','PIPELINE STATUS','DAYS OPEN','FOLLOW-UP'] as $col)
+            <div style="display: grid; grid-template-columns: 110px 1fr 180px 200px 200px; gap: 0; border-bottom: 2px solid var(--rule);">
+                @foreach(['REF · DATE','CLIENT & CASE','ROUTE','SERVICE REQUESTED','PIPELINE STATUS'] as $col)
                 <div style="padding: 10px 14px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); background: var(--paper); {{ !$loop->last ? 'border-right: 1px solid var(--rule-2);' : '' }}">
                     {{ $col }}
                 </div>
@@ -309,7 +310,7 @@
                 $refDate    = $r['date'] ? \Carbon\Carbon::parse($r['date']) : null;
             @endphp
             <div data-rt-row="{{ $rtStatus }}"
-                 style="display: grid; grid-template-columns: 110px 1fr 180px 200px 200px 80px 100px; gap: 0; align-items: center;
+                 style="display: grid; grid-template-columns: 110px 1fr 180px 200px 200px; gap: 0; align-items: center;
                         border-bottom: 1px solid var(--rule-2); transition: background 100ms;"
                  onmouseenter="this.style.background='var(--paper)'" onmouseleave="this.style.background=''">
 
@@ -368,29 +369,12 @@
                     @endif
                 </div>
 
-                {{-- DAYS OPEN --}}
-                <div style="padding: 13px 14px; text-align: center; border-right: 1px solid var(--rule-2);">
-                    <div class="serif" style="font-size: 20px; font-weight: 500; line-height: 1; color: {{ $daysColor }};">{{ $r['days_open'] }}</div>
-                    <div style="font-size: 10px; color: var(--ink-4); margin-top: 2px;">days</div>
-                </div>
-
-                {{-- FOLLOW-UP --}}
-                <div style="padding: 13px 14px;">
-                    @if($r['follow_up'])
-                    @php $fuDate = \Carbon\Carbon::parse($r['follow_up']); $isPast = $fuDate->isPast(); @endphp
-                    <div style="font-size: 11.5px; font-weight: 500; color: {{ $isPast ? 'var(--burgundy)' : 'var(--ink-2)' }};">
-                        {{ $fuDate->format('d M') }}
-                    </div>
-                    <div style="font-size: 10px; color: var(--ink-4); margin-top: 1px;">{{ $fuDate->format('Y') }}</div>
-                    @else
-                    <span style="font-size: 11px; color: var(--ink-4);">—</span>
-                    @endif
-                </div>
             </div>
             @endforeach
         </div>
         @endif
     </div>
+    @endif
 
     {{-- ═══ MOU Attention ═══ --}}
     <div style="margin-bottom: 24px;">
@@ -695,29 +679,6 @@ function rfFilterPartners(category) {
     });
 }
 
-// ── Referral tracker client-side filter ──────────────────────
-function rtFilter(status, btn) {
-    document.querySelectorAll('[data-rt-filter]').forEach(b => {
-        const isActive = b.dataset.rtFilter === status;
-        b.style.background  = isActive ? 'var(--forest)' : 'transparent';
-        b.style.color       = isActive ? 'var(--cream)'  : 'var(--ink-2)';
-        b.style.borderColor = isActive ? 'var(--forest)' : 'var(--rule)';
-        const badge = b.querySelector('span');
-        if (badge) {
-            badge.style.background = isActive ? 'rgba(255,255,255,.15)' : 'var(--paper)';
-            badge.style.color      = isActive ? 'var(--cream)' : 'var(--ink-3)';
-        }
-    });
-    document.querySelectorAll('[data-rt-row]').forEach(row => {
-        const show = status === 'all' || row.dataset.rtRow === status;
-        row.style.display = show ? '' : 'none';
-    });
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    const rtBtn = document.querySelector('[data-rt-filter="active"]');
-    if (rtBtn) rtFilter('active', rtBtn);
-});
 
 function rfSetUrgency(val) {
     ['Low','Med','High'].forEach(u => {
