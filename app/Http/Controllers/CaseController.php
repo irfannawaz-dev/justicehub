@@ -18,7 +18,11 @@ class CaseController extends Controller
 
         // Role-based case filtering
         if ($user->isLawyer()) {
-            $base->where('assigned_to', $user->name);
+            $base->where('assigned_to', $user->name)
+                 ->whereNotIn('assigned_pathway', [
+                     'Mediation',
+                     'ADR / Dispute Resolution Support',
+                 ]);
         }
         if ($user->isCourtClerk()) {
             $base->where(fn($q) => $q
@@ -175,6 +179,14 @@ class CaseController extends Controller
 
     public function show(CaseRecord $case)
     {
+        // Lawyers cannot access mediation / ADR cases
+        if (auth()->user()->isLawyer() && in_array($case->assigned_pathway, [
+            'Mediation',
+            'ADR / Dispute Resolution Support',
+        ])) {
+            abort(403, 'Lawyers are not permitted to view mediation cases.');
+        }
+
         // Hub scope enforced via Route::bind() in AppServiceProvider
         $case->load(['serviceEncounters', 'documents', 'complaints', 'feedback', 'hub', 'transfers.transferredBy', 'transfers.approvedBy', 'mediationParties', 'mediationDiary', 'caseReferrals.letters', 'caseReferrals.threads', 'messages.sender']);
 
