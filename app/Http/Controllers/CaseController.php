@@ -965,31 +965,28 @@ class CaseController extends Controller
             'body'      => $request->body,
         ]);
 
-        // Notify the other party in the thread
+        // Notify all other parties who should see this thread
         try {
-            $recipients = [];
+            $parties = collect();
 
-            if ($isCoordinator || $isHead) {
-                // Sender is coordinator/head → notify assigned staff/lawyer
-                if ($case->assigned_to) {
-                    $assignee = \App\Models\User::where('name', $case->assigned_to)->first();
-                    if ($assignee && $assignee->id !== $user->id) {
-                        $recipients[] = $assignee;
-                    }
-                }
-            } else {
-                // Sender is assigned lawyer/staff → notify Hub Coordinator(s) at this hub
-                $coordinators = \App\Models\User::where('hub_id', $case->hub_id)
-                    ->whereIn('role', [
-                        \App\Enums\UserRole::HubCoordinator->value,
-                        \App\Enums\UserRole::Head->value,
-                    ])
-                    ->where('id', '!=', $user->id)
-                    ->get();
-                foreach ($coordinators as $c) {
-                    $recipients[] = $c;
-                }
+            // 1. Always notify the assigned person (if set and not the sender)
+            if ($case->assigned_to) {
+                $assignee = \App\Models\User::where('name', $case->assigned_to)->first();
+                if ($assignee) $parties->push($assignee);
             }
+
+            // 2. Always notify Hub Coordinator(s) at this hub
+            $coords = \App\Models\User::where('hub_id', $case->hub_id)
+                ->where('role', \App\Enums\UserRole::HubCoordinator->value)
+                ->get();
+            $parties = $parties->merge($coords);
+
+            // 3. Notify Head users globally
+            $heads = \App\Models\User::where('role', \App\Enums\UserRole::Head->value)->get();
+            $parties = $parties->merge($heads);
+
+            // Exclude the sender, deduplicate
+            $recipients = $parties->unique('id')->where('id', '!=', $user->id)->values();
 
             $preview = mb_strlen($request->body) > 80
                 ? mb_substr($request->body, 0, 80) . '…'
