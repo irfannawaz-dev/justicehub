@@ -629,10 +629,9 @@ function jhInitIntakeWizard() {
         if (step === 5) {
             const pw = getVal('assignedPathway');
             if (!pw) return false;
-            const needsSpecific = ['Legal Advice / Consultation','Court Representation','Mediation','ADR / Dispute Resolution Support'];
+            const needsSpecific = ['Legal Advice / Consultation','Court Representation','Mediation','ADR / Dispute Resolution Support','Government Department / Public Institution'];
             if (needsSpecific.includes(pw) && !getVal('pathwaySpecific')) return false;
             if (pw === 'Court Representation' && getVal('pathwaySpecific') === 'Justice Hub Lawyer' && !getVal('assignedLawyer')) return false;
-            if (pw === 'Government Department / Public Institution' && !getVal('pathwayGovernmentDept')) return false;
             if (pw === 'Civil Society / NGO / CSO / NPO' && !getVal('pathwayNgoName')) return false;
             if (pw === 'Other' && !getVal('pathwayOtherDetails')) return false;
             return true;
