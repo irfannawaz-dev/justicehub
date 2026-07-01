@@ -245,6 +245,68 @@ class ServiceController extends Controller
         ));
     }
 
+    public function adrComplaints(Request $request)
+    {
+        $hubId = $request->input('_active_hub', 'all');
+
+        // Base: ADR / Dispute Resolution Support cases only
+        $q = CaseRecord::query()
+            ->where('assigned_pathway', 'ADR / Dispute Resolution Support')
+            ->when($hubId && $hubId !== 'all', fn($q) => $q->where('hub_id', $hubId));
+
+        $caseIds = (clone $q)->pluck('id');
+
+        // Load all cases with their referrals
+        $cases = (clone $q)->with(['caseReferrals' => fn($sq) => $sq->latest('referral_date')])->get();
+
+        // ── Pipeline buckets (3 stages) ──
+        $pipeline = [
+            'Intake'            => [],
+            'Complaint Filed'   => [],   // holds both Filed & Not Filed
+            'Closed'            => [],   // holds both In Favour & Against
+        ];
+
+        $closedInFavour = 0;
+        $closedAgainst  = 0;
+        $filed          = 0;
+        $notFiled       = 0;
+
+        foreach ($cases as $c) {
+            $latestRef   = $c->caseReferrals->first();
+            $isClosed    = in_array($c->status, [\App\Enums\CaseStatus::Closed, \App\Enums\CaseStatus::Settlement]);
+            $metaOutcome = $c->meta['outcome'] ?? null;
+
+            if ($isClosed) {
+                // Use outcome from resolve popup (stored in case meta)
+                $oc = strtolower($metaOutcome ?? '');
+                if (str_contains($oc, 'favour') || str_contains($oc, 'favor') || str_contains($oc, 'success')) {
+                    $closedInFavour++;
+                } else {
+                    $closedAgainst++;
+                }
+                $pipeline['Closed'][] = $c;
+            } elseif ($latestRef && $latestRef->filing_status === 'Filed') {
+                $filed++;
+                $pipeline['Complaint Filed'][] = $c;
+            } elseif ($latestRef && $latestRef->filing_status === 'Not Filed') {
+                $notFiled++;
+                $pipeline['Complaint Filed'][] = $c;
+            } else {
+                $pipeline['Intake'][] = $c;
+            }
+        }
+
+        $total       = $cases->count();
+        $totalClosed = $closedInFavour + $closedAgainst;
+        $successRate = $totalClosed > 0 ? round(($closedInFavour / $totalClosed) * 100) : 0;
+        $intake      = count($pipeline['Intake']);
+
+        return view('services.adr-complaints', compact(
+            'pipeline', 'total', 'closedInFavour', 'closedAgainst',
+            'totalClosed', 'successRate', 'filed', 'notFiled', 'intake'
+        ));
+    }
+
     public function litigationScorecard(Request $request)
     {
         $hubId = $request->input('_active_hub', 'all');

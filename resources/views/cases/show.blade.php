@@ -382,6 +382,7 @@
             ['id' => 'feedback',   'label' => 'Feedback',    'icon' => 'heart-handshake',  'count' => $case->feedback->count()],
             ['id' => 'complaints', 'label' => 'Complaints',  'icon' => 'alert-triangle',   'count' => $case->complaints->count()],
             ['id' => 'messages',   'label' => 'Case Notes',  'icon' => 'message-square',   'count' => $case->messages->count()],
+            ['id' => 'outcome',    'label' => 'Outcome',     'icon' => 'check-circle-2'],
         ] as $t)
         @php $isActive = $activeTab === $t['id']; @endphp
         <li class="nav-item" role="presentation">
@@ -1229,6 +1230,27 @@
                                 <input type="text" name="referred_by" value="{{ auth()->user()->name }}"
                                     class="inp" style="width:100%; font-size:13px; box-sizing:border-box;" />
                             </div>
+                            <div>
+                                <label class="jh-field-label">Filing Status</label>
+                                <select name="filing_status" id="ref-filing-status" onchange="jhRefFilingToggle(this.value)"
+                                    class="inp" style="width:100%; font-size:13px; box-sizing:border-box;">
+                                    <option value="">— Select —</option>
+                                    <option value="Filed">Filed</option>
+                                    <option value="Not Filed">Not Filed</option>
+                                </select>
+                            </div>
+                            {{-- Filed: tracking number --}}
+                            <div id="ref-tracking-box" style="display:none; grid-column: 1 / -1;">
+                                <label class="jh-field-label">Tracking Number</label>
+                                <input type="text" name="tracking_number" placeholder="Enter tracking / reference number"
+                                    class="inp" style="width:100%; font-size:13px; box-sizing:border-box;" />
+                            </div>
+                            {{-- Not Filed: justification --}}
+                            <div id="ref-justification-box" style="display:none; grid-column: 1 / -1;">
+                                <label class="jh-field-label">Justification for Not Filing</label>
+                                <textarea name="filing_justification" rows="2" placeholder="Explain why this referral was not filed…"
+                                    class="inp" style="width:100%; font-size:13px; box-sizing:border-box; resize:vertical;"></textarea>
+                            </div>
                             <div style="grid-column: 1 / -1;">
                                 <label class="jh-field-label">Reason for Referral</label>
                                 <textarea name="reason" rows="2" placeholder="Briefly describe why this referral is being made."
@@ -1307,10 +1329,34 @@
                                     <div class="jh-intake-label">Referred By</div>
                                     <div class="jh-intake-value">{{ $ref->referred_by ?? '---' }}</div>
                                 </div>
+                                @if($ref->filing_status)
+                                <div>
+                                    <div class="jh-intake-label">Filing Status</div>
+                                    <div class="jh-intake-value">
+                                        <span style="padding:2px 8px; font-size:11px; font-weight:600;
+                                            background:{{ $ref->filing_status === 'Filed' ? 'rgba(22,48,41,0.08)' : 'rgba(138,46,29,0.08)' }};
+                                            color:{{ $ref->filing_status === 'Filed' ? 'var(--forest)' : 'var(--burgundy)' }};">
+                                            {{ $ref->filing_status }}
+                                        </span>
+                                    </div>
+                                </div>
+                                @endif
+                                @if($ref->tracking_number)
+                                <div>
+                                    <div class="jh-intake-label">Tracking Number</div>
+                                    <div class="jh-intake-value mono">{{ $ref->tracking_number }}</div>
+                                </div>
+                                @endif
                                 @if($ref->reason)
                                 <div style="grid-column: 1 / -1;">
                                     <div class="jh-intake-label">Reason</div>
                                     <div style="font-size:13px; color:var(--ink-2); line-height:1.55;">{{ $ref->reason }}</div>
+                                </div>
+                                @endif
+                                @if($ref->filing_justification)
+                                <div style="grid-column: 1 / -1;">
+                                    <div class="jh-intake-label">Justification for Not Filing</div>
+                                    <div style="font-size:13px; color:var(--ink-2); line-height:1.55;">{{ $ref->filing_justification }}</div>
                                 </div>
                                 @endif
                             </div>
@@ -1775,6 +1821,14 @@
                 if (!form) return;
                 var showing = form.style.display !== 'none';
                 form.style.display = showing ? 'none' : '';
+            }
+
+            function jhRefFilingToggle(val) {
+                var trackBox = document.getElementById('ref-tracking-box');
+                var justBox  = document.getElementById('ref-justification-box');
+                if (!trackBox || !justBox) return;
+                trackBox.style.display = val === 'Filed'     ? '' : 'none';
+                justBox.style.display  = val === 'Not Filed' ? '' : 'none';
             }
 
             function jhLetterPicked(refId, input) {
@@ -2248,6 +2302,94 @@
     </div>{{-- tab-messages --}}
     @endif
 
+    {{-- ═══ Outcome Tab ═══ --}}
+    <div class="tab-pane fade {{ $activeTab === 'outcome' ? 'show active' : '' }}"
+         id="tab-outcome" role="tabpanel">
+
+        @php
+            $meta         = $case->meta ?? [];
+            $caseOutcome  = $meta['outcome']         ?? null;
+            $resNote      = $meta['resolution_note'] ?? null;
+            $resolvedAt   = $meta['resolved_at']     ?? null;
+            $resolvedBy   = $meta['resolved_by']     ?? null;
+            $resType      = $case->status; // 'Closed' or 'Settlement'
+
+            $outcomeColors = [
+                'In Favour'  => ['bg' => 'rgba(47,122,77,0.08)',  'border' => '#2f7a4d',         'text' => '#2f7a4d'],
+                'Won'        => ['bg' => 'rgba(47,122,77,0.08)',  'border' => 'var(--moss)',      'text' => 'var(--moss)'],
+                'Partial'    => ['bg' => 'rgba(184,115,25,0.08)', 'border' => 'var(--ochre)',     'text' => 'var(--ochre)'],
+                'Settlement' => ['bg' => 'rgba(22,48,41,0.06)',   'border' => 'var(--forest)',    'text' => 'var(--forest)'],
+                'Withdrawn'  => ['bg' => 'rgba(107,106,101,0.08)','border' => 'var(--ink-3)',     'text' => 'var(--ink-3)'],
+                'Lost'       => ['bg' => 'rgba(138,46,29,0.08)',  'border' => 'var(--burgundy)',  'text' => 'var(--burgundy)'],
+                'Against'    => ['bg' => 'rgba(138,46,29,0.08)',  'border' => 'var(--burgundy)',  'text' => 'var(--burgundy)'],
+            ];
+            $oc = $outcomeColors[$caseOutcome] ?? ['bg' => 'var(--surface)', 'border' => 'var(--rule)', 'text' => 'var(--ink-3)'];
+        @endphp
+
+        <div style="max-width: 640px; margin: 0 auto;">
+
+            @if($caseOutcome)
+            {{-- Resolved state --}}
+
+            {{-- Outcome hero card --}}
+            <div style="background:{{ $oc['bg'] }}; border:2px solid {{ $oc['border'] }}; border-radius:4px; padding:28px 28px 24px; margin-bottom:24px; text-align:center;">
+                <div class="label-cap" style="font-size:9.5px; color:var(--ink-3); margin-bottom:10px;">CASE OUTCOME</div>
+                <div class="serif" style="font-size:40px; font-weight:400; color:{{ $oc['text'] }}; line-height:1; margin-bottom:12px;">
+                    {{ $caseOutcome }}
+                </div>
+                <div style="display:inline-flex; align-items:center; gap:8px; font-size:12px; color:var(--ink-3);">
+                    <span style="background:var(--surface); border:1px solid var(--rule); padding:3px 10px; font-weight:600; font-size:11px; letter-spacing:0.04em;">
+                        {{ $resType }}
+                    </span>
+                    @if($resolvedAt)
+                    <span>&middot; {{ \Carbon\Carbon::parse($resolvedAt)->format('d M Y, H:i') }}</span>
+                    @endif
+                    @if($resolvedBy)
+                    <span>&middot; by <strong style="color:var(--ink-2);">{{ $resolvedBy }}</strong></span>
+                    @endif
+                </div>
+            </div>
+
+            {{-- Resolution Notes --}}
+            @if($resNote)
+            <div style="background:var(--surface); border:1px solid var(--rule); border-radius:3px; padding:20px 22px; margin-bottom:20px;">
+                <div class="label-cap" style="font-size:9.5px; color:var(--ink-3); margin-bottom:10px;">RESOLUTION NOTES</div>
+                <div style="font-size:14px; color:var(--ink); line-height:1.65; white-space:pre-wrap;">{{ $resNote }}</div>
+            </div>
+            @else
+            <div style="background:var(--surface); border:1px solid var(--rule); border-radius:3px; padding:16px 22px; margin-bottom:20px; font-size:12px; color:var(--ink-4); font-style:italic;">
+                No resolution notes recorded.
+            </div>
+            @endif
+
+            {{-- Meta row --}}
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div style="background:var(--surface); border:1px solid var(--rule); border-radius:3px; padding:16px 18px;">
+                    <div class="label-cap" style="font-size:9px; color:var(--ink-4); margin-bottom:6px;">RESOLVED BY</div>
+                    <div style="font-size:13px; font-weight:600; color:var(--ink);">{{ $resolvedBy ?? '—' }}</div>
+                </div>
+                <div style="background:var(--surface); border:1px solid var(--rule); border-radius:3px; padding:16px 18px;">
+                    <div class="label-cap" style="font-size:9px; color:var(--ink-4); margin-bottom:6px;">RESOLVED AT</div>
+                    <div style="font-size:13px; font-weight:600; color:var(--ink);">
+                        {{ $resolvedAt ? \Carbon\Carbon::parse($resolvedAt)->format('d M Y, H:i') : '—' }}
+                    </div>
+                </div>
+            </div>
+
+            @else
+            {{-- Not yet resolved --}}
+            <div style="text-align:center; padding:72px 0; color:var(--ink-4);">
+                <x-lucide-circle-dashed style="width:40px; height:40px; margin:0 auto 14px; display:block; opacity:0.25;" />
+                <div style="font-size:14px; font-weight:600; color:var(--ink-3); margin-bottom:6px;">No outcome recorded yet</div>
+                <div style="font-size:12px; color:var(--ink-4);">
+                    Once the case is resolved, the outcome and notes will appear here.
+                </div>
+            </div>
+            @endif
+
+        </div>
+    </div>{{-- tab-outcome --}}
+
     </div>{{-- end tab-content --}}
 </div>
 
@@ -2389,6 +2531,21 @@
                     <label style="display:block; font-size:9.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin-bottom:8px;">
                         Case Outcome <span style="color:var(--burgundy);">*</span>
                     </label>
+
+                    @if($case->assigned_pathway === 'ADR / Dispute Resolution Support')
+                    {{-- ADR outcomes: 3 options --}}
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 20px;">
+                        @foreach(['In Favour' => '#2f7a4d', 'Against' => 'var(--burgundy)', 'Withdrawn' => 'var(--ink-3)'] as $outcome => $color)
+                        <label style="display:flex; flex-direction:column; align-items:center; gap:5px; padding:14px 6px; border:2px solid var(--rule); cursor:pointer; transition:all 120ms; text-align:center;"
+                               onclick="this.querySelector('input').checked=true; document.querySelectorAll('#resolveForm [name=outcome]').forEach(r => r.closest('label').style.borderColor='var(--rule)'); this.style.borderColor='{{ $color }}';">
+                            <input type="radio" name="outcome" value="{{ $outcome }}" required style="display:none;">
+                            <span style="font-size:13px; font-weight:600; color:{{ $color }};">{{ $outcome }}</span>
+                        </label>
+                        @endforeach
+                    </div>
+                    <input type="hidden" name="resolution_type" value="Closed">
+                    @else
+                    {{-- Standard outcomes: 5 options --}}
                     <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 20px;">
                         @foreach(['Won' => 'var(--moss)', 'Partial' => 'var(--ochre)', 'Lost' => 'var(--burgundy)', 'Withdrawn' => 'var(--ink-3)', 'Settlement' => 'var(--forest)'] as $outcome => $color)
                         <label style="display:flex; flex-direction:column; align-items:center; gap:5px; padding:12px 6px; border:2px solid var(--rule); cursor:pointer; transition:all 120ms; text-align:center;"
@@ -2420,6 +2577,7 @@
                             </div>
                         </label>
                     </div>
+                    @endif
 
                     <label style="display:block; font-size:9.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin-bottom:6px;">Resolution Notes</label>
                     <textarea name="resolution_note" rows="3" placeholder="Court order details, settlement terms, reason for withdrawal…"

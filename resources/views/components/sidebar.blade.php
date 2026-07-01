@@ -14,6 +14,7 @@
         'Service Delivery' => [
             ['route' => 'services.adr',              'label' => 'Mediation Scorecard',  'icon' => 'heart-handshake', 'permission' => 'cases.view'],
             ['route' => 'services.adr-calendar',     'label' => 'Mediation Calendar',   'icon' => 'calendar',        'permission' => 'cases.view'],
+            ['route' => 'services.adr-complaints',   'label' => 'ADR Complaints',        'icon' => 'file-search',     'permission' => 'cases.view'],
             ['route' => 'services.litigation',       'label' => 'Litigation Scorecard',  'icon' => 'gavel',           'permission' => 'cases.view'],
             ['route' => 'services.litigation-calendar','label' => 'Litigation Calendar', 'icon' => 'calendar',        'permission' => 'cases.view'],
             ['route' => 'referrals.index',           'label' => 'Referrals',            'icon' => 'share-2',         'permission' => 'cases.view'],
@@ -132,6 +133,7 @@
                     'intake.create'                => 'intake',
                     'services.adr'                 => 'adr',
                     'services.adr-calendar'        => 'adr',
+                    'services.adr-complaints'      => 'adr-complaints',
                     'services.litigation'          => 'litigation',
                     'services.litigation-calendar' => 'litigation',
                     'referrals.index'              => 'referrals',

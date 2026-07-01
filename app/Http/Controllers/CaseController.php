@@ -594,11 +594,15 @@ class CaseController extends Controller
             : $user->can('cases.approve');
         abort_unless($canResolve, 403, 'Only the assigned Hub Coordinator can resolve this case.');
 
+        $isAdr = $case->assigned_pathway === 'ADR / Dispute Resolution Support';
         $data = $request->validate([
-            'outcome'         => 'required|in:Won,Partial,Lost,Withdrawn,Settlement',
-            'resolution_type' => 'required|in:Closed,Settlement',
+            'outcome'         => 'required|in:Won,Partial,Lost,Withdrawn,Settlement,In Favour,Against',
+            'resolution_type' => $isAdr ? 'nullable|in:Closed,Settlement' : 'required|in:Closed,Settlement',
             'resolution_note' => 'nullable|string|max:2000',
         ]);
+        if ($isAdr) {
+            $data['resolution_type'] = 'Closed';
+        }
 
         $case->update([
             'status'      => $data['resolution_type'],
@@ -622,20 +626,24 @@ class CaseController extends Controller
         ]);
 
         // Notify assigned user and (if different) staff who received the client
-        $notified = [];
-        foreach (array_unique([$case->assigned_to, $case->staff_receiving]) as $name) {
-            if (! $name || in_array($name, $notified)) continue;
-            $targetUser = \App\Models\User::where('name', $name)->where('hub_id', $case->hub_id)->first();
-            if ($targetUser) {
-                $targetUser->notify(new \App\Notifications\CaseNotification(
-                    title:      "Case resolved — {$case->case_uid}",
-                    message:    "Case {$case->case_uid} ({$case->name}) has been resolved as {$data['outcome']}.",
-                    actionText: 'View Case',
-                    actionUrl:  route('cases.show', $case),
-                    type:       'resolved',
-                ));
-                $notified[] = $name;
+        try {
+            $notified = [];
+            foreach (array_unique([$case->assigned_to, $case->staff_receiving]) as $name) {
+                if (! $name || in_array($name, $notified)) continue;
+                $targetUser = \App\Models\User::where('name', $name)->where('hub_id', $case->hub_id)->first();
+                if ($targetUser) {
+                    $targetUser->notify(new \App\Notifications\CaseNotification(
+                        title:      "Case resolved — {$case->case_uid}",
+                        message:    "Case {$case->case_uid} ({$case->name}) has been resolved as {$data['outcome']}.",
+                        actionText: 'View Case',
+                        actionUrl:  route('cases.show', $case),
+                        type:       'resolved',
+                    ));
+                    $notified[] = $name;
+                }
             }
+        } catch (\Exception $e) {
+            \Log::warning("Case resolve notification failed for {$case->case_uid}: " . $e->getMessage());
         }
 
         return back()->with('success', "Case resolved as {$data['outcome']}.");
@@ -784,15 +792,25 @@ class CaseController extends Controller
     public function storeReferral(Request $request, CaseRecord $case)
     {
         $data = $request->validate([
-            'referred_to'   => 'required|string|max:255',
-            'referral_date' => 'required|date',
-            'reason'        => 'nullable|string|max:2000',
-            'referred_by'   => 'nullable|string|max:255',
+            'referred_to'          => 'required|string|max:255',
+            'referral_date'        => 'required|date',
+            'reason'               => 'nullable|string|max:2000',
+            'referred_by'          => 'nullable|string|max:255',
+            'filing_status'        => 'nullable|in:Filed,Not Filed',
+            'tracking_number'      => 'nullable|string|max:255',
+            'filing_justification' => 'nullable|string|max:2000',
         ]);
 
-        $data['case_id']    = $case->id;
-        $data['status']     = 'Active';
+        $data['case_id']     = $case->id;
+        $data['status']      = 'Active';
         $data['referred_by'] = $data['referred_by'] ?? auth()->user()->name;
+
+        // Clear irrelevant field based on filing status
+        if (($data['filing_status'] ?? null) === 'Filed') {
+            $data['filing_justification'] = null;
+        } elseif (($data['filing_status'] ?? null) === 'Not Filed') {
+            $data['tracking_number'] = null;
+        }
 
         \App\Models\CaseReferral::create($data);
 
@@ -946,6 +964,49 @@ class CaseController extends Controller
             'sender_id' => $user->id,
             'body'      => $request->body,
         ]);
+
+        // Notify the other party in the thread
+        try {
+            $recipients = [];
+
+            if ($isCoordinator || $isHead) {
+                // Sender is coordinator/head → notify assigned staff/lawyer
+                if ($case->assigned_to) {
+                    $assignee = \App\Models\User::where('name', $case->assigned_to)->first();
+                    if ($assignee && $assignee->id !== $user->id) {
+                        $recipients[] = $assignee;
+                    }
+                }
+            } else {
+                // Sender is assigned lawyer/staff → notify Hub Coordinator(s) at this hub
+                $coordinators = \App\Models\User::where('hub_id', $case->hub_id)
+                    ->whereIn('role', [
+                        \App\Enums\UserRole::HubCoordinator->value,
+                        \App\Enums\UserRole::Head->value,
+                    ])
+                    ->where('id', '!=', $user->id)
+                    ->get();
+                foreach ($coordinators as $c) {
+                    $recipients[] = $c;
+                }
+            }
+
+            $preview = mb_strlen($request->body) > 80
+                ? mb_substr($request->body, 0, 80) . '…'
+                : $request->body;
+
+            foreach ($recipients as $recipient) {
+                $recipient->notify(new \App\Notifications\CaseNotification(
+                    title:      "New case note — {$case->case_uid}",
+                    message:    "{$user->name}: {$preview}",
+                    actionText: 'View Case Notes',
+                    actionUrl:  route('cases.show', $case) . '#messages',
+                    type:       'message',
+                ));
+            }
+        } catch (\Exception $e) {
+            \Log::warning("Case note notification failed for {$case->case_uid}: " . $e->getMessage());
+        }
 
         return redirect()->route('cases.show', $case)
             ->with('activeTab', 'messages')

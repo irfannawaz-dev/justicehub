@@ -62,6 +62,7 @@ Route::middleware(['auth', 'hub.scope', 'can.write'])->group(function () {
     Route::post('/services/adr-referral', [ServiceController::class, 'storeAdrReferral'])->name('services.adr.referral');
     Route::post('/services/encounters', [ServiceEncounterController::class, 'logFromScorecard'])->name('encounters.log');
     Route::get('/services/adr-calendar', [ServiceController::class, 'adrCalendar'])->name('services.adr-calendar');
+    Route::get('/services/adr-complaints', [ServiceController::class, 'adrComplaints'])->name('services.adr-complaints');
     Route::get('/services/litigation-scorecard', [ServiceController::class, 'litigationScorecard'])->name('services.litigation');
     Route::get('/services/litigation-calendar', [ServiceController::class, 'litigationCalendar'])->name('services.litigation-calendar');
     Route::post('/cases/{case}/litigation-stage', [ServiceController::class, 'updateLitigationStage'])->name('cases.litigation-stage');

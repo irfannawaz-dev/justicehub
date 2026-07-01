@@ -19,6 +19,10 @@ class CaseReferral extends Model
         'status',
         'outcome',
         'referred_by',
+        // Filing status
+        'filing_status',
+        'tracking_number',
+        'filing_justification',
         // Focal person
         'focal_person_name',
         'focal_person_designation',
