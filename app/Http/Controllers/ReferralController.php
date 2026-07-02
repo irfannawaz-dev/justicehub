@@ -163,6 +163,17 @@ class ReferralController extends Controller
         $outgoingActive = $trackerCounts['active'];
         $outgoingClosed = $trackerCounts['completed'] + $trackerCounts['failed'];
 
+        // Referral Network KPI summary (Govt + NGO + Other pathways only)
+        $referralPathways = ['Government Department / Public Institution', 'Civil Society / NGO / CSO / NPO', 'Other'];
+        $referralKpi = \App\Models\CaseRecord::whereIn('assigned_pathway', $referralPathways)
+            ->selectRaw('
+                COUNT(*) as total,
+                SUM(CASE WHEN status IN ("Closed","Settlement") THEN 1 ELSE 0 END) as resolved,
+                SUM(CASE WHEN status NOT IN ("Closed","Settlement") THEN 1 ELSE 0 END) as active,
+                SUM(CASE WHEN referral_type = "Incoming" THEN 1 ELSE 0 END) as incoming,
+                SUM(CASE WHEN referral_type = "Outgoing" THEN 1 ELSE 0 END) as outgoing
+            ')->first();
+
         // Pathway summary — cases grouped by assigned_pathway
         $pathwayOrder = [
             'Government Department / Public Institution',
@@ -252,7 +263,7 @@ class ReferralController extends Controller
             'incomingCases', 'incomingCount',
             'outgoingCount', 'outgoingActive', 'outgoingClosed',
             'pathwaySummary', 'govtBreakdown', 'ngoBreakdown', 'otherBreakdown',
-            'govtCases', 'ngoCases', 'otherCases',
+            'govtCases', 'ngoCases', 'otherCases', 'referralKpi',
         ));
     }
 

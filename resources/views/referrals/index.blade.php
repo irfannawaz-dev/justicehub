@@ -34,6 +34,68 @@ $sections = [
         </div>
     </div>
 
+    {{-- ═══ KPI Summary ═══ --}}
+    @php
+        $total    = $referralKpi->total    ?? 0;
+        $resolved = $referralKpi->resolved ?? 0;
+        $active   = $referralKpi->active   ?? 0;
+        $incoming = $referralKpi->incoming ?? 0;
+        $outgoing = $referralKpi->outgoing ?? 0;
+        $resolvedPct = $total > 0 ? round(($resolved / $total) * 100) : 0;
+    @endphp
+    <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; margin-bottom:36px;">
+
+        {{-- Total --}}
+        <div style="background:var(--paper); border:1px solid var(--rule); border-radius:10px; padding:20px 22px; position:relative; overflow:hidden;">
+            <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--forest);border-radius:10px 0 0 10px;"></div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px;">Total Cases</div>
+            <div style="font-size:36px;font-weight:700;color:var(--ink-1);line-height:1;margin-bottom:6px;">{{ $total }}</div>
+            <div style="font-size:11px;color:var(--ink-3);">Govt · NGO/CSO · Other pathways</div>
+        </div>
+
+        {{-- Resolved --}}
+        <div style="background:var(--paper); border:1px solid var(--rule); border-radius:10px; padding:20px 22px; position:relative; overflow:hidden;">
+            <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:#2f7a4d;border-radius:10px 0 0 10px;"></div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px;">Resolved</div>
+            <div style="font-size:36px;font-weight:700;color:#2f7a4d;line-height:1;margin-bottom:6px;">{{ $resolved }}</div>
+            <div style="height:4px;background:var(--rule-2);border-radius:2px;margin-bottom:6px;">
+                <div style="height:4px;width:{{ $resolvedPct }}%;background:#2f7a4d;border-radius:2px;transition:width .4s;"></div>
+            </div>
+            <div style="font-size:11px;color:var(--ink-3);">{{ $resolvedPct }}% resolution rate</div>
+        </div>
+
+        {{-- Active --}}
+        <div style="background:var(--paper); border:1px solid var(--rule); border-radius:10px; padding:20px 22px; position:relative; overflow:hidden;">
+            <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--ochre);border-radius:10px 0 0 10px;"></div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px;">Active</div>
+            <div style="font-size:36px;font-weight:700;color:var(--ochre);line-height:1;margin-bottom:6px;">{{ $active }}</div>
+            <div style="font-size:11px;color:var(--ink-3);">Pending resolution</div>
+        </div>
+
+        {{-- Incoming --}}
+        <div style="background:var(--paper); border:1px solid var(--rule); border-radius:10px; padding:20px 22px; position:relative; overflow:hidden;">
+            <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--forest);border-radius:10px 0 0 10px;"></div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+                <x-lucide-arrow-down-left style="width:11px;height:11px;color:var(--forest);" />
+                <span style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-3);">Incoming</span>
+            </div>
+            <div style="font-size:36px;font-weight:700;color:var(--ink-1);line-height:1;margin-bottom:6px;">{{ $incoming }}</div>
+            <div style="font-size:11px;color:var(--ink-3);">Referred to us by partners</div>
+        </div>
+
+        {{-- Outgoing --}}
+        <div style="background:var(--paper); border:1px solid var(--rule); border-radius:10px; padding:20px 22px; position:relative; overflow:hidden;">
+            <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--ochre);border-radius:10px 0 0 10px;"></div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+                <x-lucide-arrow-up-right style="width:11px;height:11px;color:var(--ochre);" />
+                <span style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-3);">Outgoing</span>
+            </div>
+            <div style="font-size:36px;font-weight:700;color:var(--ink-1);line-height:1;margin-bottom:6px;">{{ $outgoing }}</div>
+            <div style="font-size:11px;color:var(--ink-3);">We route to external services</div>
+        </div>
+
+    </div>
+
     {{-- ═══ Govt & NGO Sections ═══ --}}
     @foreach($sections as $section)
     @if($section['breakdown']->isNotEmpty())
