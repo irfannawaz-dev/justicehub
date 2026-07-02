@@ -61,12 +61,8 @@ class IntakeController extends Controller
         $roleLabel = $user->role instanceof \App\Enums\UserRole ? $user->role->label() : (string) $user->role;
         $defaultStaffDesignation = trim(($user->emp_id ?? '') . ' - ' . ($user->designation ?? $roleLabel), ' -');
 
-        // Lawyers for assignment when Court Representation is selected — from users table
-        $lawyerQuery = \App\Models\User::where('role', 'lawyer')->orderBy('name');
-        if (! $user->canSeeAllHubs()) {
-            $lawyerQuery->where('hub_id', $user->hub_id);
-        }
-        $lawyers = $lawyerQuery->get(['id', 'name', 'hub_id']);
+        // Lawyers for assignment — show ALL lawyers across all hubs (not filtered by hub)
+        $lawyers = \App\Models\User::where('role', 'lawyer')->orderBy('name')->get(['id', 'name', 'hub_id']);
 
         // Hub Coordinators for pathway display (Mediation / Govt / NGO / Other)
         $coordinatorQuery = \App\Models\User::where('role', 'hub-coordinator')->orderBy('name');

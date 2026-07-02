@@ -139,37 +139,6 @@
                 <h3 class="serif" style="font-size: 22px; font-weight: 500; margin: 0 0 6px 0; color: var(--forest);">Source of Referral</h3>
                 <div style="font-size: 12.5px; color: var(--ink-3); margin-bottom: 20px;">Please select the most relevant option.</div>
 
-                {{-- Referral Type --}}
-                <div style="margin-bottom: 16px;">
-                    <label style="display:block; font-size:10px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3); margin-bottom:8px;">
-                        Referral Type
-                    </label>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                        @foreach(['Incoming' => ['desc' => 'Another organisation referred this client to us', 'icon' => 'arrow-down-left'], 'Outgoing' => ['desc' => 'We are referring this client to another service', 'icon' => 'arrow-up-right']] as $type => $cfg)
-                        <label id="intake-ref-type-{{ strtolower($type) }}"
-                               style="display:flex; align-items:flex-start; gap:10px; padding:12px 14px; border:2px solid var(--rule); cursor:pointer; transition:all 120ms;"
-                               onclick="jhSetReferralType('{{ $type }}')">
-                            <input type="radio" name="referralType" value="{{ $type }}" style="display:none;" {{ old('referralType') === $type ? 'checked' : '' }}>
-                            <div style="width:28px; height:28px; background:var(--paper); border:1px solid var(--rule); display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px;" id="intake-ref-type-icon-{{ strtolower($type) }}">
-                                <x-dynamic-component :component="'lucide-' . $cfg['icon']" style="width:13px;height:13px;color:var(--ink-3);" />
-                            </div>
-                            <div>
-                                <div style="font-size:13px; font-weight:600; color:var(--ink);">{{ $type }}</div>
-                                <div style="font-size:11px; color:var(--ink-3); margin-top:2px;">{{ $cfg['desc'] }}</div>
-                            </div>
-                        </label>
-                        @endforeach
-                    </div>
-                </div>
-
-                {{-- Contact person (shown only for Incoming) --}}
-                <div id="intake-referral-contact-box" style="display:none; margin-bottom:16px;">
-                    <x-form-input name="referralContactPerson"
-                        label="Referred by (person / office name)"
-                        placeholder="e.g. Mr. Ahmed Khan — NADRA Office Dadu"
-                        :value="old('referralContactPerson')" />
-                </div>
-
                 <x-form-select name="heardAboutUs" label="7. How you heard about us?" required lookup-group="intake.referral_source" />
 
                 <div id="intake-other-source-box" style="display:none; margin-top: 12px;">
@@ -299,9 +268,8 @@
                         <option value="{{ $lawyer->id }}" data-hub="{{ $lawyer->hub_id }}">{{ $lawyer->name }}</option>
                         @endforeach
                     </select>
-                    <p id="no-lawyers-msg" style="display:none; font-size:11px; color:var(--ink-4); margin:6px 0 0;">No lawyers found for this hub.</p>
                     @if($lawyers->isEmpty())
-                    <p style="font-size:11px; color:var(--ink-4); margin:6px 0 0;">No lawyers found for this hub. Add staff first.</p>
+                    <p style="font-size:11px; color:var(--ink-4); margin:6px 0 0;">No lawyers found. Add lawyer accounts first.</p>
                     @endif
                 </div>
 
@@ -316,6 +284,34 @@
                     <input type="hidden" name="assignedCoordinator" id="intake-pw-coordinator-hidden">
                 </div>
 
+                {{-- Referral Direction (Govt / NGO-CSO / Other pathways only) --}}
+                <div id="intake-pw-referral-box" style="display:none; margin-top: 16px;">
+                    <label style="display:block; margin-bottom:8px; font-size:10px; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">
+                        Referral Direction
+                    </label>
+                    <div style="display:flex; gap:10px; margin-bottom:10px;">
+                        <button type="button" id="intake-ref-incoming-btn"
+                            onclick="jhSetPathwayReferralType('Incoming')"
+                            style="flex:1; padding:10px 14px; border:2px solid var(--rule); border-radius:6px; background:var(--paper); font-size:12.5px; font-weight:500; color:var(--ink-2); cursor:pointer; transition:all .15s;">
+                            ← Incoming
+                        </button>
+                        <button type="button" id="intake-ref-outgoing-btn"
+                            onclick="jhSetPathwayReferralType('Outgoing')"
+                            style="flex:1; padding:10px 14px; border:2px solid var(--rule); border-radius:6px; background:var(--paper); font-size:12.5px; font-weight:500; color:var(--ink-2); cursor:pointer; transition:all .15s;">
+                            Outgoing →
+                        </button>
+                    </div>
+                    <input type="hidden" name="referralType" id="intake-pw-referral-type-hidden">
+
+                    <div id="intake-pw-referral-contact-box" style="display:none; margin-top:10px;">
+                        <label style="display:block; margin-bottom:6px; font-size:10px; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">
+                            Contact Person / Office Name
+                        </label>
+                        <input type="text" name="referralContactPerson" class="inp"
+                               placeholder="e.g. Mr. Ahmed Khan / District Court Office"
+                               value="{{ old('referralContactPerson') }}">
+                    </div>
+                </div>
 
                 {{-- NGO --}}
                 <div id="intake-pw-ngo-box" style="display:none; margin-top: 12px;">
@@ -485,36 +481,5 @@ document.getElementById('jh-intake-form').addEventListener('submit', function() 
     }
 })();
 
-// ── Referral Type toggle ──────────────────────────────────────
-function jhSetReferralType(type) {
-    // Check the hidden radio
-    document.querySelectorAll('[name="referralType"]').forEach(r => r.checked = (r.value === type));
-
-    // Style the cards
-    ['incoming','outgoing'].forEach(function(t) {
-        const card = document.getElementById('intake-ref-type-' + t);
-        const icon = document.getElementById('intake-ref-type-icon-' + t);
-        const isSelected = t === type.toLowerCase();
-        if (card) {
-            card.style.borderColor = isSelected ? 'var(--forest)' : 'var(--rule)';
-            card.style.background  = isSelected ? 'rgba(22,48,41,0.04)' : '';
-        }
-        if (icon) {
-            icon.style.background   = isSelected ? 'var(--forest)' : 'var(--paper)';
-            icon.style.borderColor  = isSelected ? 'var(--forest)' : 'var(--rule)';
-            icon.querySelectorAll('svg').forEach(s => s.style.color = isSelected ? '#fff' : 'var(--ink-3)');
-        }
-    });
-
-    // Show contact person box only for Incoming
-    const box = document.getElementById('intake-referral-contact-box');
-    if (box) box.style.display = (type === 'Incoming') ? '' : 'none';
-}
-
-// Restore state on page load (e.g. validation failure old values)
-document.addEventListener('DOMContentLoaded', function() {
-    const checked = document.querySelector('[name="referralType"]:checked');
-    if (checked) jhSetReferralType(checked.value);
-});
 </script>
 </x-layouts.app>

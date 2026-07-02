@@ -86,7 +86,7 @@ class ReferralController extends Controller
             : $partners->where('category', $partnerFilter);
 
         // Filter counts
-        $filterCounts = collect($categoryConfig)->mapWithKeys(fn ($cfg, $cat) => [
+        $filterCounts = collect($categoryConfig)->mapWithKeys(fn ($_, $cat) => [
             $cat => $partners->where('category', $cat)->count(),
         ]);
 
@@ -151,6 +151,96 @@ class ReferralController extends Controller
             : 0;
         $avgResponseHrs = 0;
 
+        // Incoming referrals — cases registered with referral_type = 'Incoming'
+        $incomingCases = CaseRecord::where('referral_type', 'Incoming')
+            ->orderByDesc('intake_date')
+            ->get(['id', 'case_uid', 'name', 'primary_issue', 'hub_id', 'intake_date',
+                   'referral_source', 'referral_contact_person', 'status']);
+        $incomingCount = $incomingCases->count();
+
+        // Outgoing counts
+        $outgoingCount  = $referralTracker->count();
+        $outgoingActive = $trackerCounts['active'];
+        $outgoingClosed = $trackerCounts['completed'] + $trackerCounts['failed'];
+
+        // Pathway summary — cases grouped by assigned_pathway
+        $pathwayOrder = [
+            'Government Department / Public Institution',
+            'Civil Society / NGO / CSO / NPO',
+            'Other',
+        ];
+        $pathwayIcons = [
+            'Court Representation'                        => 'scale',
+            'Legal Advice / Consultation'                 => 'message-circle',
+            'Mediation'                                   => 'handshake',
+            'ADR / Dispute Resolution Support'            => 'git-merge',
+            'Government Department / Public Institution'  => 'building-2',
+            'Civil Society / NGO / CSO / NPO'             => 'users',
+            'Other'                                       => 'circle-dot',
+        ];
+        $rawCounts = CaseRecord::whereNotNull('assigned_pathway')
+            ->selectRaw('assigned_pathway, COUNT(*) as total,
+                SUM(CASE WHEN referral_type = "Incoming" THEN 1 ELSE 0 END) as incoming,
+                SUM(CASE WHEN referral_type = "Outgoing" THEN 1 ELSE 0 END) as outgoing')
+            ->groupBy('assigned_pathway')
+            ->get()
+            ->keyBy('assigned_pathway');
+
+        $pathwaySummary = collect($pathwayOrder)->map(fn($p) => [
+            'label'    => $p,
+            'icon'     => $pathwayIcons[$p] ?? 'circle-dot',
+            'total'    => $rawCounts[$p]->total    ?? 0,
+            'incoming' => $rawCounts[$p]->incoming ?? 0,
+            'outgoing' => $rawCounts[$p]->outgoing ?? 0,
+        ])->filter(fn($p) => $p['total'] > 0)->values();
+
+        // Specific breakdown per pathway
+        $govtBreakdown = CaseRecord::where('assigned_pathway', 'Government Department / Public Institution')
+            ->whereNotNull('pathway_govt_dept')
+            ->selectRaw('pathway_govt_dept as name,
+                COUNT(*) as total,
+                SUM(CASE WHEN referral_type = "Incoming" THEN 1 ELSE 0 END) as incoming,
+                SUM(CASE WHEN referral_type = "Outgoing" THEN 1 ELSE 0 END) as outgoing')
+            ->groupBy('pathway_govt_dept')
+            ->orderByDesc('total')
+            ->get();
+
+        $ngoBreakdown = CaseRecord::where('assigned_pathway', 'Civil Society / NGO / CSO / NPO')
+            ->whereNotNull('pathway_ngo_name')
+            ->selectRaw('pathway_ngo_name as name,
+                COUNT(*) as total,
+                SUM(CASE WHEN referral_type = "Incoming" THEN 1 ELSE 0 END) as incoming,
+                SUM(CASE WHEN referral_type = "Outgoing" THEN 1 ELSE 0 END) as outgoing')
+            ->groupBy('pathway_ngo_name')
+            ->orderByDesc('total')
+            ->get();
+
+        $otherBreakdown = CaseRecord::where('assigned_pathway', 'Other')
+            ->selectRaw('COUNT(*) as total,
+                SUM(CASE WHEN referral_type = "Incoming" THEN 1 ELSE 0 END) as incoming,
+                SUM(CASE WHEN referral_type = "Outgoing" THEN 1 ELSE 0 END) as outgoing')
+            ->first();
+
+        // Cases grouped for expandable lists
+        $govtCases = CaseRecord::where('assigned_pathway', 'Government Department / Public Institution')
+            ->whereNotNull('pathway_govt_dept')
+            ->orderBy('intake_date', 'desc')
+            ->get(['id', 'case_uid', 'name', 'primary_issue', 'urgency', 'status',
+                   'referral_type', 'referral_contact_person', 'pathway_govt_dept', 'hub_id'])
+            ->groupBy('pathway_govt_dept');
+
+        $ngoCases = CaseRecord::where('assigned_pathway', 'Civil Society / NGO / CSO / NPO')
+            ->whereNotNull('pathway_ngo_name')
+            ->orderBy('intake_date', 'desc')
+            ->get(['id', 'case_uid', 'name', 'primary_issue', 'urgency', 'status',
+                   'referral_type', 'referral_contact_person', 'pathway_ngo_name', 'hub_id'])
+            ->groupBy('pathway_ngo_name');
+
+        $otherCases = CaseRecord::where('assigned_pathway', 'Other')
+            ->orderBy('intake_date', 'desc')
+            ->get(['id', 'case_uid', 'name', 'primary_issue', 'urgency', 'status',
+                   'referral_type', 'referral_contact_person', 'pathway_other_details', 'hub_id']);
+
         return view('referrals.index', compact(
             'partners', 'filteredPartners',
             'totalActive', 'totalCompleted', 'totalFailed',
@@ -159,6 +249,10 @@ class ReferralController extends Controller
             'mouAttention', 'partnerFilter', 'filterCounts',
             'activeCases', 'referralTracker', 'trackerCounts',
             'partnerStats',
+            'incomingCases', 'incomingCount',
+            'outgoingCount', 'outgoingActive', 'outgoingClosed',
+            'pathwaySummary', 'govtBreakdown', 'ngoBreakdown', 'otherBreakdown',
+            'govtCases', 'ngoCases', 'otherCases',
         ));
     }
 
