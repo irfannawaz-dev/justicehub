@@ -38,7 +38,6 @@ class CaseRecord extends Model
         'union_council', 'tehsil', 'district', 'language',
         // Intake
         'intake_date', 'intake_time', 'mode', 'source', 'referral_source',
-        'referral_type', 'referral_contact_person',
         'consent', 'no_consent_reason', 'returning_client',
         'staff_receiving', 'staff_designation',
         // Classification
