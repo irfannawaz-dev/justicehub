@@ -7,6 +7,7 @@ use App\Enums\CaseDisposition;
 use App\Enums\UrgencyLevel;
 use App\Enums\RiskLevel;
 use App\Traits\HasHubScope;
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CaseRecord extends Model
 {
-    use SoftDeletes, HasHubScope;
+    use SoftDeletes, HasHubScope, Auditable;
 
     protected $table = 'cases';
 

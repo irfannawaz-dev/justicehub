@@ -206,7 +206,13 @@ class CaseController extends Controller
             ->where('is_active', true)
             ->whereNotIn('role', ['viewer', 'me-lead', 'complaint-investigator'])
             ->orderBy('name')
-            ->get(['id', 'name', 'role']);
+            ->get(['id', 'name', 'role', 'hub_id', 'designation']);
+
+        // All active staff across hubs (for pathway transfers to different hubs)
+        $allStaff = \App\Models\User::where('is_active', true)
+            ->whereNotIn('role', ['viewer', 'me-lead', 'complaint-investigator'])
+            ->orderBy('hub_id')->orderBy('name')
+            ->get(['id', 'name', 'role', 'hub_id', 'designation']);
 
         $pendingTransfer = $case->transfers->where('status', 'pending')->first();
 
@@ -465,7 +471,7 @@ class CaseController extends Controller
 
         $caseReferrals = $case->caseReferrals;
 
-        return view('cases.show', compact('case', 'assignableUsers', 'pendingTransfer', 'timeline', 'cmsData', 'mstep', 'caseReferrals'));
+        return view('cases.show', compact('case', 'assignableUsers', 'allStaff', 'pendingTransfer', 'timeline', 'cmsData', 'mstep', 'caseReferrals'));
     }
 
     public function verifyDocument(Request $request, \App\Models\Document $document)
@@ -598,6 +604,7 @@ class CaseController extends Controller
         $data = $request->validate([
             'outcome'         => 'required|in:Won,Partial,Lost,Withdrawn,Settlement,In Favour,Against',
             'resolution_type' => $isAdr ? 'nullable|in:Closed,Settlement' : 'required|in:Closed,Settlement',
+            'disposed_date'   => 'required|date',
             'resolution_note' => 'nullable|string|max:2000',
         ]);
         if ($isAdr) {
@@ -609,6 +616,7 @@ class CaseController extends Controller
             'last_update' => now(),
             'meta'        => array_merge($case->meta ?? [], [
                 'outcome'         => $data['outcome'],
+                'disposed_date'   => $data['disposed_date'],
                 'resolution_note' => $data['resolution_note'],
                 'resolved_at'     => now()->toDateTimeString(),
                 'resolved_by'     => auth()->user()->name,
@@ -653,10 +661,15 @@ class CaseController extends Controller
     {
         abort_unless($request->user()->can('cases.edit'), 403);
 
+        $isPathway = $request->input('transfer_type') === 'pathway';
+
         $data = $request->validate([
-            'to_assignee'   => 'required|string|max:150',
-            'transfer_date' => 'required|date',
-            'reason'        => 'required|string|min:10|max:1000',
+            'transfer_type'       => 'required|in:staff,pathway',
+            'to_assignee'         => 'required|string|max:150',
+            'to_pathway'          => $isPathway ? 'required|string|max:255' : 'nullable',
+            'to_pathway_specific' => 'nullable|string|max:255',
+            'transfer_date'       => 'required|date',
+            'reason'              => 'required|string|min:10|max:1000',
         ]);
 
         // Block if a pending transfer already exists
@@ -665,22 +678,30 @@ class CaseController extends Controller
         }
 
         $transfer = \App\Models\CaseTransfer::create([
-            'case_id'         => $case->id,
-            'from_assignee'   => $case->assigned_to,
-            'to_assignee'     => $data['to_assignee'],
-            'transferred_by'  => $request->user()->id,
-            'transfer_date'   => $data['transfer_date'],
-            'reason'          => $data['reason'],
-            'status'          => 'pending',
+            'case_id'              => $case->id,
+            'transfer_type'        => $data['transfer_type'],
+            'from_assignee'        => $case->assigned_to,
+            'to_assignee'          => $data['to_assignee'],
+            'from_pathway'         => $case->assigned_pathway,
+            'to_pathway'           => $data['to_pathway'] ?? null,
+            'to_pathway_specific'  => $data['to_pathway_specific'] ?? null,
+            'transferred_by'       => $request->user()->id,
+            'transfer_date'        => $data['transfer_date'],
+            'reason'               => $data['reason'],
+            'status'               => 'pending',
         ]);
 
         // Log on timeline
+        $logNote = $isPathway
+            ? "Pathway transfer requested: {$case->assigned_pathway} → {$data['to_pathway']}, staff {$transfer->from_assignee} → {$data['to_assignee']}. Reason: {$data['reason']}"
+            : "Staff reassignment requested: {$transfer->from_assignee} → {$data['to_assignee']}. Reason: {$data['reason']}";
+
         \App\Models\ServiceEncounter::create([
             'case_id'      => $case->id,
             'date'         => now()->toDateString(),
             'type'         => 'Transfer Request',
             'performed_by' => $request->user()->name,
-            'note'         => "Reassignment requested from {$transfer->from_assignee} to {$data['to_assignee']}. Reason: {$data['reason']}",
+            'note'         => $logNote,
         ]);
 
         // Notify Head / approvers
@@ -689,10 +710,14 @@ class CaseController extends Controller
             ->where('id', '!=', $request->user()->id)
             ->get();
 
+        $notifMsg = $isPathway
+            ? "{$request->user()->name} requested pathway transfer for {$case->case_uid}: {$case->assigned_pathway} → {$data['to_pathway']}, assign to {$data['to_assignee']}. Reason: {$data['reason']}"
+            : "{$request->user()->name} requested reassignment of {$case->case_uid} from {$transfer->from_assignee} to {$data['to_assignee']}. Reason: {$data['reason']}";
+
         foreach ($approvers as $approver) {
             $approver->notify(new \App\Notifications\CaseNotification(
                 title:      "Transfer request — {$case->case_uid}",
-                message:    "{$request->user()->name} requested reassignment of {$case->case_uid} from {$transfer->from_assignee} to {$data['to_assignee']}. Reason: {$data['reason']}",
+                message:    $notifMsg,
                 actionText: 'Review Case',
                 actionUrl:  route('cases.show', $case),
                 type:       'updated',
@@ -714,31 +739,47 @@ class CaseController extends Controller
             'status'        => 'approved',
             'approved_by'   => $request->user()->id,
             'decided_at'    => now(),
-            'approval_note' => $data['approval_note'],
+            'approval_note' => $data['approval_note'] ?? null,
         ]);
 
         // Actually reassign the case
-        $case->update([
+        $updateData = [
             'assigned_to' => $transfer->to_assignee,
             'last_update' => now()->toDateString(),
-        ]);
+        ];
+
+        // If pathway transfer, also update the pathway
+        if ($transfer->transfer_type === 'pathway' && $transfer->to_pathway) {
+            $updateData['assigned_pathway']   = $transfer->to_pathway;
+            $updateData['pathway_specific']   = $transfer->to_pathway_specific;
+        }
+
+        $case->update($updateData);
 
         // Log on timeline
+        $logNote = $transfer->transfer_type === 'pathway'
+            ? "Pathway transfer approved. {$transfer->from_pathway} → {$transfer->to_pathway}, staff {$transfer->from_assignee} → {$transfer->to_assignee}."
+            : "Transfer approved. Case reassigned from {$transfer->from_assignee} to {$transfer->to_assignee}.";
+
         \App\Models\ServiceEncounter::create([
             'case_id'      => $case->id,
             'date'         => now()->toDateString(),
             'type'         => 'Transfer Approved',
             'performed_by' => $request->user()->name,
-            'note'         => "Transfer approved. Case reassigned from {$transfer->from_assignee} to {$transfer->to_assignee}." . ($data['approval_note'] ? " Note: {$data['approval_note']}" : ''),
+            'note'         => $logNote . (!empty($data['approval_note']) ? " Note: {$data['approval_note']}" : ''),
         ]);
 
         // Notify old and new assignee
+        $notifMsg = $transfer->transfer_type === 'pathway'
+            ? "Case {$case->case_uid} transferred: {$transfer->from_pathway} → {$transfer->to_pathway}, assigned to {$transfer->to_assignee}."
+            : "Case {$case->case_uid} reassigned from {$transfer->from_assignee} to {$transfer->to_assignee}.";
+
         foreach ([$transfer->from_assignee, $transfer->to_assignee] as $name) {
-            $target = \App\Models\User::where('name', $name)->where('hub_id', $case->hub_id)->first();
+            $target = \App\Models\User::where('name', $name)->first();
             if ($target) {
                 $target->notify(new \App\Notifications\CaseNotification(
                     title:      "Case transfer approved — {$case->case_uid}",
-                    message:    "Case {$case->case_uid} ({$case->name}) has been reassigned from {$transfer->from_assignee} to {$transfer->to_assignee}.",
+                    message:    $notifMsg,
                     actionText: 'View Case',
                     actionUrl:  route('cases.show', $case),
                     type:       'assigned',
@@ -746,7 +787,11 @@ class CaseController extends Controller
             }
         }
 
-        return back()->with('success', "Transfer approved. Case reassigned to {$transfer->to_assignee}.");
+        $successMsg = $transfer->transfer_type === 'pathway'
+            ? "Transfer approved. Case moved to {$transfer->to_pathway} and assigned to {$transfer->to_assignee}."
+            : "Transfer approved. Case reassigned to {$transfer->to_assignee}.";
+
+        return back()->with('success', $successMsg);
     }
 
     public function rejectTransfer(Request $request, CaseRecord $case, \App\Models\CaseTransfer $transfer)
@@ -943,6 +988,44 @@ class CaseController extends Controller
         return redirect()->route('cases.show', $case)
             ->with('success', 'Referral deleted.')
             ->with('activeTab', 'referrals');
+    }
+
+    // ── Edit Intake ─────────────────────────────────────────────────────────────
+    public function updateIntake(Request $request, CaseRecord $case)
+    {
+        $user = $request->user();
+        abort_unless($user->can('cases.edit') || ($user->isHubCoordinator() && $case->assigned_to === $user->name), 403);
+
+        $data = $request->validate([
+            'name'                => 'required|string|max:255',
+            'father_husband_name' => 'nullable|string|max:255',
+            'gender'              => 'nullable|string|max:50',
+            'age'                 => 'nullable|integer|min:0|max:120',
+            'cnic'                => 'nullable|string|max:15',
+            'primary_contact'     => 'nullable|string|max:30',
+            'alternative_contact' => 'nullable|string|max:30',
+            'marital_status'      => 'nullable|string|max:50',
+            'religion'            => 'nullable|string|max:50',
+            'education_level'     => 'nullable|string|max:100',
+            'occupation'          => 'nullable|string|max:100',
+            'income_bracket'      => 'nullable|string|max:100',
+            'disability_status'   => 'nullable|string|max:100',
+            'district'            => 'nullable|string|max:100',
+            'tehsil'              => 'nullable|string|max:100',
+            'union_council'       => 'nullable|string|max:100',
+            'language'            => 'nullable|string|max:50',
+            'referral_source'     => 'nullable|string|max:255',
+            'primary_issue'       => 'nullable|string|max:100',
+            'secondary_issue'     => 'nullable|string|max:100',
+            'urgency'             => 'nullable|string|max:50',
+            'issue_description'   => 'nullable|string|max:5000',
+        ]);
+
+        $case->update(array_merge($data, ['last_update' => now()]));
+
+        return redirect()->route('cases.show', $case)
+            ->with('activeTab', 'overview')
+            ->with('success', 'Intake information updated.');
     }
 
     // ── Case Messages (Coordinator ↔ Lawyer/Mediator) ─────────────────────────

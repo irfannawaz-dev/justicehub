@@ -24,3 +24,4 @@ Homestead.yaml
 Thumbs.db
 *.xlsx
 *.xls
+database/seeders/TestReferralCasesSeeder.php

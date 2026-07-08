@@ -157,7 +157,12 @@
         <div style="flex:1;">
             <div style="font-size:12.5px; font-weight:600; color:var(--ink);">Transfer pending approval</div>
             <div style="font-size:12px; color:var(--ink-3); margin-top:2px;">
-                From <strong>{{ $pendingTransfer->from_assignee }}</strong> → <strong>{{ $pendingTransfer->to_assignee }}</strong>
+                @if($pendingTransfer->transfer_type === 'pathway')
+                    Pathway: <strong>{{ $pendingTransfer->from_pathway }}</strong> → <strong>{{ $pendingTransfer->to_pathway }}</strong>
+                    · Staff: <strong>{{ $pendingTransfer->from_assignee }}</strong> → <strong>{{ $pendingTransfer->to_assignee }}</strong>
+                @else
+                    Staff: <strong>{{ $pendingTransfer->from_assignee }}</strong> → <strong>{{ $pendingTransfer->to_assignee }}</strong>
+                @endif
                 · Requested by {{ $pendingTransfer->transferredBy->name }} on {{ $pendingTransfer->transfer_date->format('M d, Y') }}
                 · <em>{{ $pendingTransfer->reason }}</em>
             </div>
@@ -486,6 +491,11 @@
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
                             <x-lucide-clipboard-list style="width: 15px; height: 15px; color: var(--forest);" />
                             <div class="label-cap" style="font-size: 10px;">Intake & Assessment</div>
+                            @if($canEdit)
+                            <button onclick="jhOpenModal('edit-intake')" style="margin-left:auto; padding:4px 12px; font-size:11px; font-weight:600; background:none; border:1px solid var(--rule); color:var(--ink-3); cursor:pointer; font-family:inherit; display:inline-flex; align-items:center; gap:5px;">
+                                <x-lucide-pencil style="width:11px;height:11px;" /> Edit
+                            </button>
+                            @endif
                         </div>
                         <div>
                             <div class="jh-intake-row">
@@ -529,6 +539,19 @@
                                             <x-lucide-x-circle style="width:12px;height:12px;display:inline;vertical-align:-1px;margin-right:4px;" />
                                             No{{ $case->no_consent_reason ? ' — ' . $case->no_consent_reason : '' }}
                                         </span>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="jh-intake-row">
+                                <div class="jh-intake-label">Recurring Client</div>
+                                <div class="jh-intake-value">
+                                    @if($case->returning_client)
+                                        <span style="color: var(--ochre);">
+                                            <x-lucide-refresh-cw style="width:12px;height:12px;display:inline;vertical-align:-1px;margin-right:4px;" />
+                                            Yes &middot; returning client
+                                        </span>
+                                    @else
+                                        <span style="color: var(--ink-4);">No</span>
                                     @endif
                                 </div>
                             </div>
@@ -1017,28 +1040,24 @@
                             @foreach($partyLabels as $i => $partyLabel)
                             <div style="{{ $i === 0 ? 'margin-bottom: 22px; padding-bottom: 22px; border-bottom: 1px solid var(--rule-2);' : '' }}">
                                 <div style="font-size: 11px; font-weight: 700; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px;">{{ $partyLabel }}</div>
+                                <input type="hidden" name="parties[{{ $i }}][role]" value="{{ $i === 0 ? 'Applicant' : 'Respondent' }}">
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
                                     <div>
                                         <label style="font-size: 11px; font-weight: 600; color: var(--ink-3); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em;">Full name</label>
-                                        <input type="text" name="parties[{{ $i }}][name]" placeholder="Party name" required class="inp" style="width: 100%; font-size: 13px; box-sizing: border-box;" />
-                                    </div>
-                                    <div>
-                                        <label style="font-size: 11px; font-weight: 600; color: var(--ink-3); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em;">Role</label>
-                                        <select name="parties[{{ $i }}][role]" class="inp" style="width: 100%; font-size: 13px; box-sizing: border-box;">
-                                            <option>Respondent</option>
-                                            <option>Applicant</option>
-                                            <option>Witness</option>
-                                            <option>Representative</option>
-                                            <option>Other</option>
-                                        </select>
+                                        <input type="text" name="parties[{{ $i }}][name]" placeholder="Party name" required class="inp"
+                                            style="width:100%; font-size:13px; box-sizing:border-box;{{ $i === 0 ? ' background:#f0efe9; cursor:default;' : '' }}"
+                                            value="{{ $i === 0 ? $case->name : '' }}" {{ $i === 0 ? 'readonly' : '' }} />
                                     </div>
                                     <div>
                                         <label style="font-size: 11px; font-weight: 600; color: var(--ink-3); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em;">Phone</label>
-                                        <input type="tel" name="parties[{{ $i }}][phone]" placeholder="+92 ..." class="inp" style="width: 100%; font-size: 13px; box-sizing: border-box;" oninput="this.value=this.value.replace(/[^0-9+\-\s()]/g,'')" />
+                                        <input type="tel" name="parties[{{ $i }}][phone]" placeholder="+92 ..." class="inp"
+                                            style="width:100%; font-size:13px; box-sizing:border-box;{{ $i === 0 ? ' background:#f0efe9; cursor:default;' : '' }}"
+                                            value="{{ $i === 0 ? $case->primary_contact : '' }}" {{ $i === 0 ? 'readonly' : '' }}
+                                            oninput="this.value=this.value.replace(/[^0-9+\-\s()]/g,'')" />
                                     </div>
-                                    <div>
+                                    <div style="grid-column: span 2;">
                                         <label style="font-size: 11px; font-weight: 600; color: var(--ink-3); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em;">Note (optional)</label>
-                                        <input type="text" name="parties[{{ $i }}][note]" placeholder="How to reach them..." class="inp" style="width: 100%; font-size: 13px; box-sizing: border-box;" />
+                                        <input type="text" name="parties[{{ $i }}][note]" placeholder="How to reach them..." class="inp" style="width:100%; font-size:13px; box-sizing:border-box;" />
                                     </div>
                                 </div>
                             </div>
@@ -1067,12 +1086,17 @@
                         <form method="POST" action="{{ route('mediation.consent.update', $case) }}">
                             @csrf
                             <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px;">
-                                @foreach($parties as $party)
+                                @foreach($parties as $pIdx => $party)
                                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: var(--paper); border: 1px solid var(--rule); border-radius: 4px;">
                                     <div>
                                         <div style="font-size: 13px; font-weight: 600; color: var(--ink);">{{ $party->name }}</div>
                                         <div style="font-size: 12px; color: var(--ink-3); margin-top: 1px;">{{ $party->role }}{{ $party->phone ? ' · ' . $party->phone : '' }}</div>
                                     </div>
+                                    @if($pIdx === 0)
+                                    {{-- Party 1 (Applicant) — auto-agreed, read-only --}}
+                                    <input type="hidden" name="consent[{{ $party->id }}]" value="agreed">
+                                    <span style="display:inline-block; padding:6px 14px; font-size:12px; font-weight:600; background:var(--forest); color:var(--cream); border:1.5px solid var(--forest); user-select:none;">Agreed</span>
+                                    @else
                                     <div style="display: flex; gap: 6px;">
                                         @foreach(['agreed' => 'Agreed', 'declined' => 'Declined', 'awaiting' => 'Awaiting'] as $val => $lbl)
                                         <label style="cursor: pointer;">
@@ -1087,6 +1111,7 @@
                                         </label>
                                         @endforeach
                                     </div>
+                                    @endif
                                 </div>
                                 @endforeach
                             </div>
@@ -1213,7 +1238,9 @@
                                 @php
                                     $autoReferredTo = $case->pathway_govt_dept
                                         ?? $case->pathway_ngo_name
-                                        ?? (in_array($case->assigned_pathway, ['ADR / Dispute Resolution Support']) ? $case->assigned_pathway : '');
+                                        ?? $case->pathway_specific
+                                        ?? $case->assigned_pathway
+                                        ?? '';
                                 @endphp
                                 <input type="text" name="referred_to" required placeholder="Organisation name"
                                     value="{{ old('referred_to', $autoReferredTo) }}"
@@ -2309,6 +2336,7 @@
         @php
             $meta         = $case->meta ?? [];
             $caseOutcome  = $meta['outcome']         ?? null;
+            $disposedDate = $meta['disposed_date']   ?? null;
             $resNote      = $meta['resolution_note'] ?? null;
             $resolvedAt   = $meta['resolved_at']     ?? null;
             $resolvedBy   = $meta['resolved_by']     ?? null;
@@ -2363,7 +2391,13 @@
             @endif
 
             {{-- Meta row --}}
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+                <div style="background:var(--surface); border:1px solid var(--rule); border-radius:3px; padding:16px 18px;">
+                    <div class="label-cap" style="font-size:9px; color:var(--ink-4); margin-bottom:6px;">DISPOSED OFF DATE</div>
+                    <div style="font-size:13px; font-weight:600; color:var(--ink);">
+                        {{ $disposedDate ? \Carbon\Carbon::parse($disposedDate)->format('d M Y') : '—' }}
+                    </div>
+                </div>
                 <div style="background:var(--surface); border:1px solid var(--rule); border-radius:3px; padding:16px 18px;">
                     <div class="label-cap" style="font-size:9px; color:var(--ink-4); margin-bottom:6px;">RESOLVED BY</div>
                     <div style="font-size:13px; font-weight:600; color:var(--ink);">{{ $resolvedBy ?? '—' }}</div>
@@ -2393,28 +2427,155 @@
     </div>{{-- end tab-content --}}
 </div>
 
-{{-- ═══ Reassign Case Modal ═══ --}}
+{{-- ═══ Edit Intake Modal ═══ --}}
+@if($canEdit)
+<x-jh-modal name="edit-intake" title="Edit Intake Information" max-width="680px">
+    <form method="POST" action="{{ route('cases.update-intake', $case) }}">
+        @csrf @method('PATCH')
+
+        {{-- Client Details --}}
+        <div style="font-size:9.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin-bottom:12px; padding-bottom:6px; border-bottom:1px solid var(--rule);">Client Details</div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+            <x-form-input name="name" label="Full Name" required :value="$case->name" />
+            <x-form-input name="father_husband_name" label="Father / Husband Name" :value="$case->father_husband_name" />
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:16px;">
+            <x-form-select name="gender" label="Gender" required lookup-group="intake.gender" :selected="$case->gender" />
+            <x-form-input name="age" label="Age" type="number" min="0" max="120" :value="$case->age" />
+            <x-form-input name="cnic" label="CNIC" :value="$case->cnic" maxlength="15" />
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+            <x-form-input name="primary_contact" label="Primary Contact" :value="$case->primary_contact" />
+            <x-form-input name="alternative_contact" label="Alternative Contact" :value="$case->alternative_contact" />
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:16px;">
+            <x-form-select name="marital_status" label="Marital Status" lookup-group="intake.marital_status" :selected="$case->marital_status" />
+            <x-form-select name="religion" label="Religion" lookup-group="intake.religion" :selected="$case->religion" />
+            <x-form-select name="education_level" label="Education Level" lookup-group="intake.education_level" :selected="$case->education_level" />
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:16px;">
+            <x-form-input name="occupation" label="Occupation" :value="$case->occupation" />
+            <x-form-select name="income_bracket" label="Income Bracket" lookup-group="intake.income_bracket" :selected="$case->income_bracket" />
+            <x-form-select name="disability_status" label="Disability Status" lookup-group="intake.disability_status" :selected="$case->disability_status" />
+        </div>
+
+        {{-- Address --}}
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:16px;">
+            <x-form-input name="district" label="District" :value="$case->district" />
+            <x-form-input name="tehsil" label="Tehsil / Taluka" :value="$case->tehsil" />
+            <x-form-input name="union_council" label="Union Council" :value="$case->union_council" />
+        </div>
+
+        {{-- Intake --}}
+        <div style="font-size:9.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin:16px 0 12px; padding-bottom:6px; border-bottom:1px solid var(--rule);">Intake & Assessment</div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+            <x-form-select name="language" label="Preferred Language" lookup-group="intake.preferred_language" :selected="$case->language" />
+            <x-form-select name="referral_source" label="Referral Source" lookup-group="intake.referral_source" :selected="$case->referral_source" />
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:16px;">
+            <x-form-select name="primary_issue" label="Primary Legal Issue" lookup-group="case.primary_issue" :selected="$case->primary_issue" />
+            <x-form-input name="secondary_issue" label="Secondary Issue" :value="$case->secondary_issue" />
+            <x-form-select name="urgency" label="Urgency" lookup-group="case.urgency" :selected="$case->urgency->value" />
+        </div>
+
+        <div style="margin-bottom:16px;">
+            <x-form-input name="issue_description" label="Issue Description" type="textarea" :value="$case->issue_description" />
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+            <button type="button" class="btn-ghost" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn-primary" style="display:inline-flex; align-items:center; gap:6px;">
+                <x-lucide-save style="width:12px;height:12px;" /> Save Changes
+            </button>
+        </div>
+    </form>
+</x-jh-modal>
+@endif
+
+{{-- ═══ Reassign / Transfer Case Modal ═══ --}}
 @if($canEdit && !$isResolved && !$pendingTransfer)
-<x-jh-modal name="reassign-case" title="Reassign / Transfer Case" max-width="520px">
-    <form method="POST" action="{{ route('cases.reassign', $case) }}">
+<x-jh-modal name="reassign-case" title="Transfer Case" max-width="560px">
+    <form method="POST" action="{{ route('cases.reassign', $case) }}" id="jhTransferForm">
         @csrf
         <p style="font-size:13px;color:var(--ink-2);margin:0 0 16px 0;">
-            Reassigning <strong>{{ $case->case_uid }}</strong> currently assigned to <strong>{{ $case->assigned_to ?? 'Unassigned' }}</strong>.
-            A reason and approval are required for accountability.
+            <strong>{{ $case->case_uid }}</strong> · Currently:
+            <strong>{{ $case->assigned_pathway ?? 'No pathway' }}</strong> → <strong>{{ $case->assigned_to ?? 'Unassigned' }}</strong>
         </p>
+
+        {{-- Transfer Type --}}
+        <div style="margin-bottom:16px;">
+            <label style="display:block;margin-bottom:6px;font-size:10px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-3);">
+                Transfer Type <span style="color:var(--burgundy);">*</span>
+            </label>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                <label style="display:flex; align-items:center; gap:10px; padding:12px 14px; border:2px solid var(--forest); cursor:pointer; background:rgba(22,48,41,0.04);"
+                       id="jh-tt-staff-label">
+                    <input type="radio" name="transfer_type" value="staff" checked onchange="jhTransferTypeChange(this.value)"
+                           style="accent-color:var(--forest); width:15px; height:15px;">
+                    <div>
+                        <div style="font-size:13px; font-weight:600; color:var(--ink);">Reassign Staff</div>
+                        <div style="font-size:11px; color:var(--ink-3);">Same pathway, different person</div>
+                    </div>
+                </label>
+                <label style="display:flex; align-items:center; gap:10px; padding:12px 14px; border:2px solid var(--rule); cursor:pointer;"
+                       id="jh-tt-pathway-label">
+                    <input type="radio" name="transfer_type" value="pathway" onchange="jhTransferTypeChange(this.value)"
+                           style="accent-color:var(--forest); width:15px; height:15px;">
+                    <div>
+                        <div style="font-size:13px; font-weight:600; color:var(--ink);">Change Pathway</div>
+                        <div style="font-size:11px; color:var(--ink-3);">Move to different service track</div>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        {{-- Pathway section (hidden by default) --}}
+        <div id="jh-transfer-pathway-section" style="display:none; margin-bottom:16px; padding:14px; border:1px solid var(--rule); background:var(--surface);">
+            <div style="font-size:9.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); margin-bottom:10px;">
+                Current: <span style="color:var(--forest);">{{ $case->assigned_pathway ?? '—' }}</span>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div>
+                    <label style="display:block;margin-bottom:4px;font-size:10px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-3);">
+                        New Pathway <span style="color:var(--burgundy);">*</span>
+                    </label>
+                    <select name="to_pathway" id="jh-transfer-pathway" class="inp" style="width:100%; font-size:12px;" onchange="jhTransferPathwayChange(this.value)">
+                        <option value="">— Select pathway —</option>
+                        @foreach(['Legal Advice / Consultation', 'Court Representation', 'Mediation', 'ADR / Dispute Resolution Support', 'Government Department / Public Institution', 'Civil Society / NGO / CSO / NPO'] as $pw)
+                            @if($pw !== $case->assigned_pathway)
+                            <option value="{{ $pw }}">{{ $pw }}</option>
+                            @endif
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label style="display:block;margin-bottom:4px;font-size:10px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-3);">
+                        Specific (optional)
+                    </label>
+                    <input type="text" name="to_pathway_specific" class="inp" style="width:100%; font-size:12px;" placeholder="e.g. Justice Hub Lawyer">
+                </div>
+            </div>
+        </div>
+
+        {{-- Assign To --}}
         <div style="margin-bottom:14px;">
             <label style="display:block;margin-bottom:6px;font-size:10px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-3);">
                 Assign To <span style="color:var(--burgundy);">*</span>
             </label>
-            <select name="to_assignee" class="inp" required>
+            <select name="to_assignee" id="jh-transfer-assignee" class="inp" required>
                 <option value="">— Select staff member —</option>
-                @foreach($assignableUsers as $u)
+                @foreach($allStaff as $u)
                     @if($u->name !== $case->assigned_to)
-                    <option value="{{ $u->name }}">{{ $u->name }} ({{ $u->designation ?: $u->role->label() }})</option>
+                    <option value="{{ $u->name }}" data-hub="{{ $u->hub_id }}" data-role="{{ $u->role->value }}">
+                        {{ $u->name }} ({{ $u->designation ?: $u->role->label() }}{{ $u->hub_id !== $case->hub_id ? ' · ' . $u->hub_id : '' }})
+                    </option>
                     @endif
                 @endforeach
             </select>
         </div>
+
         <div style="margin-bottom:14px;">
             <label style="display:block;margin-bottom:6px;font-size:10px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-3);">
                 Effective Date <span style="color:var(--burgundy);">*</span>
@@ -2429,7 +2590,7 @@
         </div>
         <div style="padding:10px 14px;background:var(--parchment);border:1px solid var(--rule);font-size:11.5px;color:var(--ink-3);margin-bottom:20px;">
             <x-lucide-info style="width:12px;height:12px;display:inline;vertical-align:-1px;margin-right:5px;" />
-            This request will be sent for approval. The case will not be reassigned until approved.
+            This request will be sent for approval. The case will not be transferred until approved.
         </div>
         <div style="display:flex;justify-content:flex-end;gap:10px;">
             <button type="button" class="btn-ghost" data-bs-dismiss="modal">Cancel</button>
@@ -2439,6 +2600,53 @@
         </div>
     </form>
 </x-jh-modal>
+<script>
+function jhTransferTypeChange(type) {
+    var pwSection = document.getElementById('jh-transfer-pathway-section');
+    var staffLabel = document.getElementById('jh-tt-staff-label');
+    var pathwayLabel = document.getElementById('jh-tt-pathway-label');
+    var pwSelect = document.getElementById('jh-transfer-pathway');
+
+    if (type === 'pathway') {
+        pwSection.style.display = '';
+        staffLabel.style.borderColor = 'var(--rule)';
+        staffLabel.style.background = '';
+        pathwayLabel.style.borderColor = 'var(--forest)';
+        pathwayLabel.style.background = 'rgba(22,48,41,0.04)';
+        if (pwSelect) pwSelect.required = true;
+    } else {
+        pwSection.style.display = 'none';
+        staffLabel.style.borderColor = 'var(--forest)';
+        staffLabel.style.background = 'rgba(22,48,41,0.04)';
+        pathwayLabel.style.borderColor = 'var(--rule)';
+        pathwayLabel.style.background = '';
+        if (pwSelect) { pwSelect.required = false; pwSelect.value = ''; }
+        // Show all staff when in staff mode
+        jhFilterStaff('');
+    }
+}
+function jhTransferPathwayChange(pw) {
+    jhFilterStaff(pw);
+}
+function jhFilterStaff(pw) {
+    var sel = document.getElementById('jh-transfer-assignee');
+    if (!sel) return;
+    var roleMap = {
+        'Court Representation': ['lawyer'],
+        'Legal Advice / Consultation': ['lawyer', 'hub-coordinator'],
+        'Mediation': ['hub-coordinator'],
+        'ADR / Dispute Resolution Support': ['hub-coordinator'],
+    };
+    var allowedRoles = pw && roleMap[pw] ? roleMap[pw] : null;
+    Array.from(sel.options).forEach(function(opt) {
+        if (!opt.value) return;
+        if (!allowedRoles) { opt.style.display = ''; return; }
+        var role = opt.dataset.role || '';
+        opt.style.display = allowedRoles.includes(role) || role === 'head' ? '' : 'none';
+        if (opt.style.display === 'none' && opt.selected) { opt.selected = false; sel.value = ''; }
+    });
+}
+</script>
 @endif
 
 {{-- ═══ Reject Transfer Modal ═══ --}}
@@ -2578,6 +2786,10 @@
                         </label>
                     </div>
                     @endif
+
+                    <label style="display:block; font-size:9.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin-bottom:6px;">Disposed Off Date <span style="color:var(--burgundy);">*</span></label>
+                    <input type="date" name="disposed_date" required value="{{ now()->format('Y-m-d') }}"
+                           style="width:100%; padding:9px 12px; border:1px solid var(--rule); background:var(--parchment); color:var(--ink); font-size:13px; font-family:inherit; box-sizing:border-box; border-radius:2px; margin-bottom:16px;" />
 
                     <label style="display:block; font-size:9.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin-bottom:6px;">Resolution Notes</label>
                     <textarea name="resolution_note" rows="3" placeholder="Court order details, settlement terms, reason for withdrawal…"

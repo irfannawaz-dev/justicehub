@@ -1,13 +1,125 @@
 <!DOCTYPE html>
-<html lang="en">
+@php
+    $lang = request('lang', 'en');
+    $isRtl = in_array($lang, ['ur', 'sd']);
+
+    $t = [
+        'en' => [
+            'pageTitle'       => 'Intake Token',
+            'printHint'       => 'To print 4 slips per A4, choose <b>4 pages per sheet</b> in your print dialog.',
+            'back'            => '← Back',
+            'print'           => '🖨 Print',
+            'clientIntake'    => 'Client Intake Token',
+            'justiceHub'      => 'Justice Hub',
+            'tagline'         => 'A One-Stop Solution Closer to Communities',
+            'date'            => 'Date',
+            'staff'           => 'Staff',
+            'clientInfo'      => 'Client Information',
+            'fullName'        => 'Full Name',
+            'fatherHusband'   => 'Father / Husband',
+            'gender'          => 'Gender',
+            'age'             => 'Age',
+            'cnic'            => 'CNIC',
+            'mobile'          => 'Mobile',
+            'address'         => 'Address',
+            'pathwaySection'  => 'Pathway & Assignment',
+            'referredFrom'    => 'Referred From',
+            'pathway'         => 'Pathway',
+            'specific'        => 'Specific',
+            'assignedStaff'   => 'Assigned Lawyer / Staff',
+            'staffContact'    => 'Staff Contact',
+            'clientSig'       => 'Client Signature / Thumb',
+            'staffSig'        => 'Staff Signature',
+            'officeStamp'     => 'Office Stamp',
+            'slaccLabel'      => 'SLACC · 24/7 Toll-Free',
+            'slaccSub'        => 'Free legal advice, any time.',
+            'feedbackLabel'   => 'LAS · Feedback',
+            'feedbackSub'     => 'Questions or complaints.',
+        ],
+        'ur' => [
+            'pageTitle'       => 'انٹیک ٹوکن',
+            'printHint'       => 'A4 پر 4 سلپ پرنٹ کرنے کے لیے، پرنٹ ڈائیلاگ میں <b>4 صفحات فی شیٹ</b> منتخب کریں۔',
+            'back'            => 'واپس ←',
+            'print'           => '🖨 پرنٹ',
+            'clientIntake'    => 'کلائنٹ انٹیک ٹوکن',
+            'justiceHub'      => 'جسٹس ہب',
+            'tagline'         => 'کمیونٹیز کے قریب ایک مکمل حل',
+            'date'            => 'تاریخ',
+            'staff'           => 'اسٹاف',
+            'clientInfo'      => 'کلائنٹ کی معلومات',
+            'fullName'        => 'پورا نام',
+            'fatherHusband'   => 'والد / شوہر',
+            'gender'          => 'جنس',
+            'age'             => 'عمر',
+            'cnic'            => 'شناختی کارڈ',
+            'mobile'          => 'موبائل',
+            'address'         => 'پتہ',
+            'pathwaySection'  => 'پاتھ وے اور تفویض',
+            'referredFrom'    => 'حوالہ',
+            'pathway'         => 'پاتھ وے',
+            'specific'        => 'مخصوص',
+            'assignedStaff'   => 'مقرر وکیل / اسٹاف',
+            'staffContact'    => 'اسٹاف رابطہ',
+            'clientSig'       => 'کلائنٹ دستخط / انگوٹھا',
+            'staffSig'        => 'اسٹاف دستخط',
+            'officeStamp'     => 'دفتری مہر',
+            'slaccLabel'      => 'SLACC · 24/7 ٹول فری',
+            'slaccSub'        => 'مفت قانونی مشورہ، کسی بھی وقت۔',
+            'feedbackLabel'   => 'LAS · آراء',
+            'feedbackSub'     => 'سوالات یا شکایات۔',
+        ],
+        'sd' => [
+            'pageTitle'       => 'انٽيڪ ٽوڪن',
+            'printHint'       => 'A4 تي 4 سلپ ڇپائڻ لاءِ، پرنٽ ڊائلاگ ۾ <b>4 صفحا في شيٽ</b> چونڊيو.',
+            'back'            => 'واپس ←',
+            'print'           => '🖨 ڇاپيو',
+            'clientIntake'    => 'ڪلائنٽ انٽيڪ ٽوڪن',
+            'justiceHub'      => 'جسٽس هب',
+            'tagline'         => 'ڪميونٽيز جي ويجهو هڪ مڪمل حل',
+            'date'            => 'تاريخ',
+            'staff'           => 'اسٽاف',
+            'clientInfo'      => 'ڪلائنٽ جي ڄاڻ',
+            'fullName'        => 'پورو نالو',
+            'fatherHusband'   => 'پيءُ / مڙس',
+            'gender'          => 'جنس',
+            'age'             => 'عمر',
+            'cnic'            => 'سڃاڻپ ڪارڊ',
+            'mobile'          => 'موبائيل',
+            'address'         => 'پتو',
+            'pathwaySection'  => 'پاٿ وي ۽ تفويض',
+            'referredFrom'    => 'حوالو',
+            'pathway'         => 'پاٿ وي',
+            'specific'        => 'مخصوص',
+            'assignedStaff'   => 'مقرر وڪيل / اسٽاف',
+            'staffContact'    => 'اسٽاف رابطو',
+            'clientSig'       => 'ڪلائنٽ دستخط / آڱوٺو',
+            'staffSig'        => 'اسٽاف دستخط',
+            'officeStamp'     => 'آفيس مهر',
+            'slaccLabel'      => 'SLACC · 24/7 ٽول فري',
+            'slaccSub'        => 'مفت قانوني صلاح، ڪنهن به وقت.',
+            'feedbackLabel'   => 'LAS · راءِ',
+            'feedbackSub'     => 'سوال يا شڪايتون.',
+        ],
+    ];
+
+    $l = $t[$lang] ?? $t['en'];
+
+    $intakeDate = $case->intake_date ? \Carbon\Carbon::parse($case->intake_date)->format('d M Y') : '—';
+    $address    = $case->full_address ?? trim(implode(', ', array_filter([$case->union_council, $case->tehsil, $case->district])), ', ') ?: '—';
+@endphp
+<html lang="{{ $lang }}" dir="{{ $isRtl ? 'rtl' : 'ltr' }}">
 <head>
     <meta charset="UTF-8">
-    <title>Intake Token — {{ $case->case_uid }}</title>
+    <title>{{ $l['pageTitle'] }} — {{ $case->case_uid }}</title>
+    @if($isRtl)
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+    @endif
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Segoe UI', Arial, sans-serif;
+            font-family: {{ $isRtl ? "'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Mehr Nastaliq', " : '' }}'Segoe UI', Arial, sans-serif;
             background: #ccc;
             display: flex;
             flex-direction: column;
@@ -15,6 +127,7 @@
             justify-content: flex-start;
             padding: 28px 16px;
             min-height: 100vh;
+            direction: {{ $isRtl ? 'rtl' : 'ltr' }};
         }
 
         .no-print {
@@ -23,12 +136,39 @@
             gap: 10px;
             margin-bottom: 16px;
             width: 105mm;
+            direction: ltr;
         }
         .no-print .hint {
             flex: 1;
             font-size: 10px;
             color: #555;
             font-family: 'Segoe UI', Arial, sans-serif;
+        }
+
+        .lang-btns {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 10px;
+            width: 105mm;
+            direction: ltr;
+        }
+        .lang-btns a {
+            padding: 5px 14px;
+            font-size: 11px;
+            font-weight: 600;
+            text-decoration: none;
+            border: 1px solid #bbb;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            cursor: pointer;
+        }
+        .lang-btns a.active {
+            background: #111;
+            color: #fff;
+            border-color: #111;
+        }
+        .lang-btns a:not(.active) {
+            background: #fff;
+            color: #333;
         }
 
         /* ── Slip card: A6 size ── */
@@ -47,6 +187,7 @@
             padding: 5px 7px;
             border-bottom: 1.5px solid #111;
             gap: 6px;
+            direction: ltr;
         }
         .sl-las .las-word {
             font-size: 15px;
@@ -54,11 +195,13 @@
             color: #111;
             letter-spacing: 3px;
             line-height: 1;
+            font-family: 'Segoe UI', Arial, sans-serif;
         }
         .sl-las .las-rule { height: 1.5px; background: #c9a227; margin: 2px 0; }
         .sl-las .las-sub {
             font-size: 5px; font-weight: 700; letter-spacing: 1px;
             text-transform: uppercase; color: #111; white-space: nowrap;
+            font-family: 'Segoe UI', Arial, sans-serif;
         }
         .sl-center {
             flex: 1; text-align: center;
@@ -66,14 +209,14 @@
             padding: 0 6px;
         }
         .sl-center .eyebrow {
-            font-size: 5px; letter-spacing: 2px; text-transform: uppercase;
+            font-size: {{ $isRtl ? '7px' : '5px' }}; letter-spacing: {{ $isRtl ? '0' : '2px' }}; text-transform: uppercase;
             color: #c9a227; font-weight: 700;
         }
         .sl-center h1 {
-            font-size: 12px; font-weight: 900; color: #111;
-            letter-spacing: 3px; text-transform: uppercase; line-height: 1.1;
+            font-size: {{ $isRtl ? '14px' : '12px' }}; font-weight: 900; color: #111;
+            letter-spacing: {{ $isRtl ? '0' : '3px' }}; text-transform: {{ $isRtl ? 'none' : 'uppercase' }}; line-height: {{ $isRtl ? '1.6' : '1.1' }};
         }
-        .sl-center .tagline { font-size: 5px; color: #999; font-style: italic; }
+        .sl-center .tagline { font-size: {{ $isRtl ? '6px' : '5px' }}; color: #999; font-style: italic; }
         .sl-seal {
             width: 34px; height: 34px; border: 1.5px solid #111; border-radius: 50%;
             display: flex; flex-direction: column; align-items: center;
@@ -83,24 +226,24 @@
             content: ''; position: absolute; inset: 3px;
             border-radius: 50%; border: 0.5px solid #c9a227;
         }
-        .sl-seal .seal-jh { font-size: 10px; font-weight: 900; color: #111; line-height: 1; }
-        .sl-seal .seal-sub { font-size: 4px; color: #555; letter-spacing: 1px; text-transform: uppercase; font-weight: 700; }
+        .sl-seal .seal-jh { font-size: 10px; font-weight: 900; color: #111; line-height: 1; font-family: 'Segoe UI', Arial, sans-serif; }
+        .sl-seal .seal-sub { font-size: 4px; color: #555; letter-spacing: 1px; text-transform: uppercase; font-weight: 700; font-family: 'Segoe UI', Arial, sans-serif; }
 
         /* ── Hub bar ── */
         .sl-hub {
             display: flex; justify-content: space-between; align-items: center;
             padding: 2px 7px; border-bottom: 0.5px solid #bbb; background: #f5f5f5;
         }
-        .sl-hub .hub-name { font-size: 7.5px; font-weight: 700; color: #111; }
-        .sl-hub .hub-phone { font-size: 7px; color: #555; }
+        .sl-hub .hub-name { font-size: {{ $isRtl ? '9px' : '7.5px' }}; font-weight: 700; color: #111; }
+        .sl-hub .hub-phone { font-size: 7px; color: #555; direction: ltr; }
 
         /* ── Reference ── */
         .sl-ref {
             display: flex; align-items: center; justify-content: space-between;
             padding: 5px 7px; border-bottom: 1px solid #ccc; background: #fafafa;
         }
-        .ref-num { font-size: 13px; font-weight: 900; color: #111; letter-spacing: 1px; line-height: 1; }
-        .ref-meta { font-size: 6px; color: #555; margin-top: 2px; }
+        .ref-num { font-size: 13px; font-weight: 900; color: #111; letter-spacing: 1px; line-height: 1; font-family: 'Segoe UI', monospace; direction: ltr; }
+        .ref-meta { font-size: {{ $isRtl ? '7px' : '6px' }}; color: #555; margin-top: 2px; }
         .ref-meta b { color: #111; }
         .ref-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
         .badge {
@@ -108,72 +251,74 @@
             padding: 2px 5px; border: 0.5px solid #bbb;
             font-size: 5.5px; font-weight: 700; letter-spacing: 0.5px;
             text-transform: uppercase; color: #444;
+            font-family: 'Segoe UI', Arial, sans-serif;
         }
         .badge.active { border-color: #2e7d32; color: #2e7d32; }
         .badge .dot { width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
 
         /* ── Section label ── */
         .sl-sec {
-            font-size: 5.5px; font-weight: 800; letter-spacing: 2px;
-            text-transform: uppercase; color: #444;
+            font-size: {{ $isRtl ? '8px' : '5.5px' }}; font-weight: 800; letter-spacing: {{ $isRtl ? '0' : '2px' }};
+            text-transform: {{ $isRtl ? 'none' : 'uppercase' }}; color: #444;
             background: #efefef; border-top: 0.5px solid #ccc;
             border-bottom: 0.5px solid #ccc; padding: 2px 7px;
         }
 
         /* ── Field rows ── */
         .sl-row { display: flex; border-bottom: 0.5px solid #e8e8e8; }
-        .fc { flex: 1; padding: 3px 7px 3px; border-right: 0.5px solid #e8e8e8; }
-        .fc:last-child { border-right: none; }
+        .fc { flex: 1; padding: 3px 7px 3px; border-{{ $isRtl ? 'left' : 'right' }}: 0.5px solid #e8e8e8; }
+        .fc:last-child { border-{{ $isRtl ? 'left' : 'right' }}: none; }
         .fc.w2 { flex: 2; }
         .fc.w3 { flex: 3; }
         .fc .lbl {
-            font-size: 5px; font-weight: 800; text-transform: uppercase;
-            letter-spacing: 1.2px; color: #bbb; margin-bottom: 1px;
+            font-size: {{ $isRtl ? '6.5px' : '5px' }}; font-weight: 800; text-transform: {{ $isRtl ? 'none' : 'uppercase' }};
+            letter-spacing: {{ $isRtl ? '0' : '1.2px' }}; color: #bbb; margin-bottom: 1px;
         }
-        .fc .val { font-size: 8px; color: #111; font-weight: 600; line-height: 1.3; }
-        .fc .val.mono { font-family: 'Courier New', monospace; font-size: 7.5px; letter-spacing: 0.3px; }
+        .fc .val { font-size: {{ $isRtl ? '9px' : '8px' }}; color: #111; font-weight: 600; line-height: {{ $isRtl ? '1.7' : '1.3' }}; }
+        .fc .val.mono { font-family: 'Courier New', monospace; font-size: 7.5px; letter-spacing: 0.3px; direction: ltr; display: inline-block; }
         .fc .val.em { color: #1a2e4a; font-weight: 700; border-bottom: 1px solid #c9a227; padding-bottom: 1px; }
 
         /* ── Signatures ── */
         .sl-sigs { display: flex; border-top: 0.5px solid #ccc; }
-        .sig { flex: 1; padding: 3px 7px 5px; border-right: 0.5px solid #e8e8e8; }
-        .sig:last-child { border-right: none; }
-        .sig .lbl { font-size: 5px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #bbb; margin-bottom: 10px; }
+        .sig { flex: 1; padding: 3px 7px 5px; border-{{ $isRtl ? 'left' : 'right' }}: 0.5px solid #e8e8e8; }
+        .sig:last-child { border-{{ $isRtl ? 'left' : 'right' }}: none; }
+        .sig .lbl { font-size: {{ $isRtl ? '6.5px' : '5px' }}; font-weight: 800; text-transform: {{ $isRtl ? 'none' : 'uppercase' }}; letter-spacing: {{ $isRtl ? '0' : '1px' }}; color: #bbb; margin-bottom: 10px; }
         .sig-line { border-top: 0.5px solid #bbb; }
 
         /* ── Footer ── */
         .sl-footer { display: flex; border-top: 1px solid #222; margin-top: auto; }
-        .fc-foot { flex: 1; padding: 3px 7px; border-right: 0.5px solid #ccc; }
-        .fc-foot:last-child { border-right: none; }
-        .f-lbl { font-size: 5px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 1px; }
-        .f-sub { font-size: 5.5px; color: #888; line-height: 1.3; margin-bottom: 1px; }
-        .f-num { font-size: 10px; font-weight: 900; color: #111; letter-spacing: 0.5px; }
+        .fc-foot { flex: 1; padding: 3px 7px; border-{{ $isRtl ? 'left' : 'right' }}: 0.5px solid #ccc; }
+        .fc-foot:last-child { border-{{ $isRtl ? 'left' : 'right' }}: none; }
+        .f-lbl { font-size: {{ $isRtl ? '6.5px' : '5px' }}; font-weight: 800; text-transform: {{ $isRtl ? 'none' : 'uppercase' }}; letter-spacing: {{ $isRtl ? '0' : '1.2px' }}; color: #999; margin-bottom: 1px; }
+        .f-sub { font-size: {{ $isRtl ? '7px' : '5.5px' }}; color: #888; line-height: {{ $isRtl ? '1.7' : '1.3' }}; margin-bottom: 1px; }
+        .f-num { font-size: 10px; font-weight: 900; color: #111; letter-spacing: 0.5px; font-family: 'Segoe UI', monospace; direction: ltr; display: inline-block; }
 
         /* ── Print: A6 page so 4 fit on A4 ── */
         @page { margin: 0; size: 105mm 148mm; }
         @media print {
             body { background: none; padding: 0; align-items: flex-start; }
-            .no-print { display: none !important; }
+            .no-print, .lang-btns { display: none !important; }
             .slip { width: 105mm; border: 0.5px solid #888; }
         }
     </style>
 </head>
 <body>
 
-@php
-    $intakeDate = $case->intake_date ? \Carbon\Carbon::parse($case->intake_date)->format('d M Y') : '—';
-    $address    = $case->full_address ?? trim(implode(', ', array_filter([$case->union_council, $case->tehsil, $case->district])), ', ') ?: '—';
-@endphp
+<div class="lang-btns no-print">
+    <a href="?lang=en" class="{{ $lang === 'en' ? 'active' : '' }}">English</a>
+    <a href="?lang=ur" class="{{ $lang === 'ur' ? 'active' : '' }}">اردو</a>
+    <a href="?lang=sd" class="{{ $lang === 'sd' ? 'active' : '' }}">سنڌي</a>
+</div>
 
 <div class="no-print">
-    <div class="hint">💡 To print 4 slips per A4, choose <b>4 pages per sheet</b> in your print dialog.</div>
+    <div class="hint">{!! $l['printHint'] !!}</div>
     <button onclick="window.history.back()"
         style="padding:6px 12px; background:#fff; color:#333; border:1px solid #bbb; font-size:11px; cursor:pointer; font-family:inherit;">
-        ← Back
+        {{ $l['back'] }}
     </button>
     <button onclick="window.print()"
         style="padding:6px 14px; background:#111; color:#fff; border:none; font-size:11px; font-weight:700; cursor:pointer; font-family:inherit;">
-        🖨 Print
+        {{ $l['print'] }}
     </button>
 </div>
 
@@ -187,9 +332,9 @@
             <div class="las-sub">Legal Aid Society</div>
         </div>
         <div class="sl-center">
-            <div class="eyebrow">Client Intake Token</div>
-            <h1>Justice Hub</h1>
-            <div class="tagline">A One-Stop Solution Closer to Communities</div>
+            <div class="eyebrow">{{ $l['clientIntake'] }}</div>
+            <h1>{{ $l['justiceHub'] }}</h1>
+            <div class="tagline">{{ $l['tagline'] }}</div>
         </div>
         <div class="sl-seal">
             <div class="seal-jh">JH</div>
@@ -199,7 +344,7 @@
 
     {{-- Hub bar --}}
     <div class="sl-hub">
-        <div class="hub-name">Justice Hub &mdash; {{ $case->hub?->name ?? $case->hub_id }}</div>
+        <div class="hub-name">{{ $l['justiceHub'] }} &mdash; {{ $case->hub?->name ?? $case->hub_id }}</div>
         @if($case->hub?->phone)
         <div class="hub-phone">{{ $case->hub->phone }}</div>
         @endif
@@ -210,8 +355,8 @@
         <div>
             <div class="ref-num">{{ $case->case_uid }}</div>
             <div class="ref-meta">
-                Date: <b>{{ $intakeDate }}</b>
-                &nbsp;·&nbsp; Staff: <b>{{ $case->staff_receiving ?? '—' }}</b>
+                {{ $l['date'] }}: <b>{{ $intakeDate }}</b>
+                &nbsp;·&nbsp; {{ $l['staff'] }}: <b>{{ $case->staff_receiving ?? '—' }}</b>
             </div>
         </div>
         <div class="ref-badges">
@@ -227,67 +372,67 @@
     </div>
 
     {{-- Client Info --}}
-    <div class="sl-sec">Client Information</div>
+    <div class="sl-sec">{{ $l['clientInfo'] }}</div>
 
     <div class="sl-row">
         <div class="fc w2">
-            <div class="lbl">Full Name</div>
+            <div class="lbl">{{ $l['fullName'] }}</div>
             <div class="val">{{ $case->name }}</div>
         </div>
         <div class="fc w2">
-            <div class="lbl">Father / Husband</div>
+            <div class="lbl">{{ $l['fatherHusband'] }}</div>
             <div class="val">{{ $case->father_husband_name ?? '—' }}</div>
         </div>
         <div class="fc">
-            <div class="lbl">Gender</div>
+            <div class="lbl">{{ $l['gender'] }}</div>
             <div class="val">{{ $case->gender ?? '—' }}</div>
         </div>
         <div class="fc">
-            <div class="lbl">Age</div>
+            <div class="lbl">{{ $l['age'] }}</div>
             <div class="val">{{ $case->age ? $case->age . 'y' : '—' }}</div>
         </div>
     </div>
 
     <div class="sl-row">
         <div class="fc w2">
-            <div class="lbl">CNIC</div>
+            <div class="lbl">{{ $l['cnic'] }}</div>
             <div class="val mono">{{ $case->cnic ?? '—' }}</div>
         </div>
         <div class="fc w2">
-            <div class="lbl">Mobile</div>
+            <div class="lbl">{{ $l['mobile'] }}</div>
             <div class="val mono">{{ $case->primary_contact ?? '—' }}</div>
         </div>
         <div class="fc w2">
-            <div class="lbl">Address</div>
+            <div class="lbl">{{ $l['address'] }}</div>
             <div class="val" style="font-size:7px;">{{ $address }}</div>
         </div>
     </div>
 
     {{-- Pathway --}}
-    <div class="sl-sec">Pathway &amp; Assignment</div>
+    <div class="sl-sec">{{ $l['pathwaySection'] }}</div>
 
     <div class="sl-row">
         <div class="fc">
-            <div class="lbl">Referred From</div>
+            <div class="lbl">{{ $l['referredFrom'] }}</div>
             <div class="val">{{ $case->referral_source ?? '—' }}</div>
         </div>
         <div class="fc">
-            <div class="lbl">Pathway</div>
+            <div class="lbl">{{ $l['pathway'] }}</div>
             <div class="val">{{ $case->assigned_pathway ?? '—' }}</div>
         </div>
         <div class="fc">
-            <div class="lbl">Specific</div>
+            <div class="lbl">{{ $l['specific'] }}</div>
             <div class="val">{{ $case->pathway_specific ?? '—' }}</div>
         </div>
     </div>
 
     <div class="sl-row">
         <div class="fc w2">
-            <div class="lbl">Assigned Lawyer / Staff</div>
+            <div class="lbl">{{ $l['assignedStaff'] }}</div>
             <div class="val em">{{ $case->assigned_to ?? '—' }}</div>
         </div>
         <div class="fc w2">
-            <div class="lbl">Staff Contact</div>
+            <div class="lbl">{{ $l['staffContact'] }}</div>
             <div class="val mono">{{ $lawyerPhone ?? '—' }}</div>
         </div>
     </div>
@@ -295,15 +440,15 @@
     {{-- Signatures --}}
     <div class="sl-sigs">
         <div class="sig">
-            <div class="lbl">Client Signature / Thumb</div>
+            <div class="lbl">{{ $l['clientSig'] }}</div>
             <div class="sig-line"></div>
         </div>
         <div class="sig">
-            <div class="lbl">Staff Signature</div>
+            <div class="lbl">{{ $l['staffSig'] }}</div>
             <div class="sig-line"></div>
         </div>
         <div class="sig">
-            <div class="lbl">Office Stamp</div>
+            <div class="lbl">{{ $l['officeStamp'] }}</div>
             <div class="sig-line"></div>
         </div>
     </div>
@@ -311,13 +456,13 @@
     {{-- Footer --}}
     <div class="sl-footer">
         <div class="fc-foot">
-            <div class="f-lbl">SLACC · 24/7 Toll-Free</div>
-            <div class="f-sub">Free legal advice, any time.</div>
+            <div class="f-lbl">{{ $l['slaccLabel'] }}</div>
+            <div class="f-sub">{{ $l['slaccSub'] }}</div>
             <div class="f-num">0800-70806</div>
         </div>
         <div class="fc-foot">
-            <div class="f-lbl">LAS · Feedback</div>
-            <div class="f-sub">Questions or complaints.</div>
+            <div class="f-lbl">{{ $l['feedbackLabel'] }}</div>
+            <div class="f-sub">{{ $l['feedbackSub'] }}</div>
             <div class="f-num">0345-8270806</div>
         </div>
     </div>

@@ -20,14 +20,14 @@ class MediationController extends Controller
             'parties.*.note'    => 'nullable|string|max:500',
         ]);
 
-        foreach ($request->parties as $party) {
+        foreach ($request->parties as $i => $party) {
             MediationParty::create([
                 'case_id'        => $case->id,
                 'name'           => $party['name'],
                 'role'           => $party['role'],
                 'phone'          => $party['phone'] ?? null,
                 'note'           => $party['note'] ?? null,
-                'consent_status' => 'awaiting',
+                'consent_status' => $i == 0 ? 'agreed' : 'awaiting',
             ]);
         }
 

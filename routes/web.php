@@ -6,6 +6,7 @@ use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EvidenceController;
 use App\Http\Controllers\FeedbackController;
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\ImpactController;
 use App\Http\Controllers\IndicatorController;
 use App\Http\Controllers\IntakeController;
@@ -49,6 +50,7 @@ Route::middleware(['auth', 'hub.scope', 'can.write'])->group(function () {
     // ── Intake ───────────────────────────────────────────────────────
     Route::get('/intake', [IntakeController::class, 'create'])->name('intake.create');
     Route::post('/intake', [IntakeController::class, 'store'])->name('intake.store');
+    Route::patch('/cases/{case}/update-intake', [CaseController::class, 'updateIntake'])->name('cases.update-intake');
 
     // ── Service Encounters ───────────────────────────────────────────
     Route::post('/cases/{case}/encounters', [ServiceEncounterController::class, 'store'])->name('encounters.store');
@@ -125,6 +127,9 @@ Route::middleware(['auth', 'hub.scope', 'can.write'])->group(function () {
 
     // ── Impact Reports ───────────────────────────────────────────────
     Route::get('/impact', [ImpactController::class, 'index'])->name('impact.index');
+
+    // ── Activity Log ────────────────────────────────────────────────
+    Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
     Route::post('/impact/export', [ImpactController::class, 'export'])->name('impact.export');
 
     // ── Settings ─────────────────────────────────────────────────────

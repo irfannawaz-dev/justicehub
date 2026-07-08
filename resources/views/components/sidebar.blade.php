@@ -29,7 +29,8 @@
             ['route' => 'learning.index',   'label' => 'Learning & VfM',   'icon' => 'graduation-cap',  'permission' => 'indicators.view'],
         ],
         'Reporting' => [
-            ['route' => 'impact.index', 'label' => 'Impact Reports', 'icon' => 'flag', 'permission' => 'reports.view'],
+            ['route' => 'impact.index',       'label' => 'Impact Reports', 'icon' => 'flag',          'permission' => 'reports.view'],
+            ['route' => 'activity-log.index', 'label' => 'Activity Log',   'icon' => 'scroll-text',   'permission' => 'reports.view'],
         ],
         'System' => [
             ['route' => 'settings.index', 'label' => 'Settings',         'icon' => 'settings', 'permission' => 'settings.view'],
@@ -145,6 +146,7 @@
                     'staff.index'                  => 'staff',
                     'learning.index'               => 'learning',
                     'impact.index'                 => 'impact',
+                    'activity-log.index'           => 'activity-log',
                 ];
                 $visibleItems = array_filter($items, function($item) use ($user, $moduleOff, $routeModuleMap) {
                     if (!$user->can($item['permission'])) return false;

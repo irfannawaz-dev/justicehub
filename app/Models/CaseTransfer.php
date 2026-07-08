@@ -8,7 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class CaseTransfer extends Model
 {
     protected $fillable = [
-        'case_id', 'from_assignee', 'to_assignee',
+        'case_id', 'transfer_type', 'from_assignee', 'to_assignee',
+        'from_pathway', 'to_pathway', 'to_pathway_specific',
         'transferred_by', 'transfer_date', 'reason',
         'status', 'approved_by', 'decided_at', 'approval_note',
     ];
