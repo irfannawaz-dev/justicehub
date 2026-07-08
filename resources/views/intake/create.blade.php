@@ -257,6 +257,11 @@
                     </div>
                 </div>
 
+                {{-- Department / Complaint Against (shown for Provincial Ombudsman) --}}
+                <div id="intake-pw-complaint-dept-box" style="display:none; margin-top: 12px;">
+                    <x-form-select name="complaintDepartment" label="Department / Complaint Against" required lookup-group="intake.complaint_department" />
+                </div>
+
                 {{-- Lawyer assignment (Court Representation → Justice Hub Lawyer) --}}
                 <div id="intake-pw-lawyer-box" style="display:none; margin-top: 12px;">
                     <label style="display:block; margin-bottom:6px; font-size:10px; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">
@@ -282,35 +287,6 @@
                            style="background:var(--parchment);cursor:default;"
                            value="" placeholder="— Coordinator for selected hub —">
                     <input type="hidden" name="assignedCoordinator" id="intake-pw-coordinator-hidden">
-                </div>
-
-                {{-- Referral Direction (Govt / NGO-CSO / Other pathways only) --}}
-                <div id="intake-pw-referral-box" style="display:none; margin-top: 16px;">
-                    <label style="display:block; margin-bottom:8px; font-size:10px; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">
-                        Referral Direction
-                    </label>
-                    <div style="display:flex; gap:10px; margin-bottom:10px;">
-                        <button type="button" id="intake-ref-incoming-btn"
-                            onclick="jhSetPathwayReferralType('Incoming')"
-                            style="flex:1; padding:10px 14px; border:2px solid var(--rule); border-radius:6px; background:var(--paper); font-size:12.5px; font-weight:500; color:var(--ink-2); cursor:pointer; transition:all .15s;">
-                            ← Incoming
-                        </button>
-                        <button type="button" id="intake-ref-outgoing-btn"
-                            onclick="jhSetPathwayReferralType('Outgoing')"
-                            style="flex:1; padding:10px 14px; border:2px solid var(--rule); border-radius:6px; background:var(--paper); font-size:12.5px; font-weight:500; color:var(--ink-2); cursor:pointer; transition:all .15s;">
-                            Outgoing →
-                        </button>
-                    </div>
-                    <input type="hidden" name="referralType" id="intake-pw-referral-type-hidden">
-
-                    <div id="intake-pw-referral-contact-box" style="display:none; margin-top:10px;">
-                        <label style="display:block; margin-bottom:6px; font-size:10px; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">
-                            Contact Person / Office Name
-                        </label>
-                        <input type="text" name="referralContactPerson" class="inp"
-                               placeholder="e.g. Mr. Ahmed Khan / District Court Office"
-                               value="{{ old('referralContactPerson') }}">
-                    </div>
                 </div>
 
                 {{-- NGO --}}

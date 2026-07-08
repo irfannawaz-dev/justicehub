@@ -348,32 +348,6 @@ window.jhCloseModal = function (name) {
 };
 
 // ─────────────────────────────────────────────────────────────
-// Intake — Pathway Referral Type toggle (Govt / NGO / Other)
-// ─────────────────────────────────────────────────────────────
-window.jhSetPathwayReferralType = function (val) {
-    const hidden  = document.getElementById('intake-pw-referral-type-hidden');
-    const contact = document.getElementById('intake-pw-referral-contact-box');
-    const inBtn   = document.getElementById('intake-ref-incoming-btn');
-    const outBtn  = document.getElementById('intake-ref-outgoing-btn');
-    if (!hidden) return;
-
-    // Toggle active style
-    const active   = { background: 'var(--forest)', borderColor: 'var(--forest)', color: '#fff' };
-    const inactive = { background: 'var(--paper)',  borderColor: 'var(--rule)',    color: 'var(--ink-2)' };
-    if (hidden.value === val) {
-        // deselect
-        hidden.value = '';
-        [inBtn, outBtn].forEach(b => { if (b) Object.assign(b.style, inactive); });
-        if (contact) contact.style.display = 'none';
-    } else {
-        hidden.value = val;
-        if (inBtn)  Object.assign(inBtn.style,  val === 'Incoming' ? active : inactive);
-        if (outBtn) Object.assign(outBtn.style, val === 'Outgoing' ? active : inactive);
-        if (contact) contact.style.display = (val === 'Incoming') ? '' : 'none';
-    }
-};
-
-// ─────────────────────────────────────────────────────────────
 // Password visibility toggle
 // ─────────────────────────────────────────────────────────────
 window.jhTogglePassword = function (btn) {
@@ -731,30 +705,23 @@ function jhInitIntakeWizard() {
         if (box) box.style.display = (lawyerPathways.includes(pw) && sp === 'Justice Hub Lawyer') ? '' : 'none';
         updateValidationHint();
     }
-    const pathwaySpecificSel = form.querySelector('[name="pathwaySpecific"]');
-    if (pathwaySpecificSel) pathwaySpecificSel.addEventListener('change', updateLawyerBox);
-
-    // ── Referral Direction box (Govt / NGO / Other pathways) ──────
-    const referralPathways = ['Government Department / Public Institution', 'Civil Society / NGO / CSO / NPO', 'Other'];
-    function updatePathwayReferralBox() {
-        const pw  = getVal('assignedPathway');
-        const box = document.getElementById('intake-pw-referral-box');
+    // Show complaint department when Provincial Ombudsman selected
+    function updateComplaintDeptBox() {
+        const sp  = getVal('pathwaySpecific');
+        const box = document.getElementById('intake-pw-complaint-dept-box');
         if (!box) return;
-        if (referralPathways.includes(pw)) {
-            box.style.display = '';
-        } else {
-            box.style.display = 'none';
-            // reset state when hidden
-            const hidden   = document.getElementById('intake-pw-referral-type-hidden');
-            const contact  = document.getElementById('intake-pw-referral-contact-box');
-            if (hidden)  hidden.value = '';
-            if (contact) contact.style.display = 'none';
-            ['intake-ref-incoming-btn','intake-ref-outgoing-btn'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) { el.style.background = 'var(--paper)'; el.style.borderColor = 'var(--rule)'; el.style.color = 'var(--ink-2)'; }
-            });
-        }
+        const show = sp && (sp.toLowerCase().includes('ombudsman') || sp.toLowerCase().includes('mohtasib'));
+        box.style.display = show ? '' : 'none';
+        var sel = box.querySelector('select');
+        if (sel) sel.required = show;
+        if (!show && sel) sel.value = '';
+        updateValidationHint();
     }
+
+    const pathwaySpecificSel = form.querySelector('[name="pathwaySpecific"]');
+    if (pathwaySpecificSel) pathwaySpecificSel.addEventListener('change', function() { updateLawyerBox(); updateComplaintDeptBox(); });
+
+    function updatePathwayReferralBox() {}
 
     // Show Hub Coordinator for Mediation / Govt / NGO / Other pathways
     const coordinatorPathways = ['Mediation', 'ADR / Dispute Resolution Support', 'Government Department / Public Institution', 'Civil Society / NGO / CSO / NPO', 'Other'];

@@ -175,6 +175,7 @@ class IntakeController extends Controller
                 'pathway_govt_dept'  => $request->pathwayGovernmentDept,
                 'pathway_ngo_name'   => $request->pathwayNgoName,
                 'pathway_other_details' => $request->pathwayOtherDetails,
+                'complaint_department' => $request->complaintDepartment,
                 'is_gbv'             => str_contains(strtolower($request->category ?? ''), 'gbv'),
                 'is_child'           => str_contains(strtolower($request->category ?? ''), 'juvenile') || str_contains(strtolower($request->category ?? ''), 'child'),
                 'is_minority'        => false,

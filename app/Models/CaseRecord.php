@@ -53,6 +53,7 @@ class CaseRecord extends Model
         // Pathway
         'assigned_pathway', 'pathway_specific', 'pathway_specific_other',
         'pathway_govt_dept', 'pathway_ngo_name', 'pathway_other_details',
+        'complaint_department',
         // Approval
         'pathway_manager', 'approval_decision', 'requested_at',
         'rejection_reason', 'rejected_by', 'rejected_at',
