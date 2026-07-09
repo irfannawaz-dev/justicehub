@@ -147,6 +147,7 @@ Route::middleware(['auth', 'hub.scope', 'can.write'])->group(function () {
 
     // ── Lookup Admin (Head / lookups.manage only) ────────────────
     Route::post('/settings/lookups/groups', [LookupAdminController::class, 'storeGroup'])->name('lookups.group.store');
+    Route::get('/settings/lookups/options/json', [LookupAdminController::class, 'groupOptions'])->name('lookups.options.json');
     Route::post('/settings/lookups/options', [LookupAdminController::class, 'storeOption'])->name('lookups.option.store');
     Route::patch('/settings/lookups/options/{lookup}', [LookupAdminController::class, 'updateOption'])->name('lookups.option.update');
     Route::post('/settings/lookups/options/{lookup}/toggle', [LookupAdminController::class, 'toggleOption'])->name('lookups.option.toggle');

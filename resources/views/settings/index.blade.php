@@ -364,11 +364,12 @@
                     >+ Group</button>
                 </div>
 
-                {{-- Group list — links navigate to ?lookup_group=xxx --}}
+                {{-- Group list — AJAX loaded --}}
                 <div style="max-height: 520px; overflow-y: auto;" class="jh-scroll" id="lookup-group-list">
                     @foreach($lookupGroupKeys as $gk)
-                    <a href="{{ request()->fullUrlWithQuery(['lookup_group' => $gk]) }}#jh-lookup-manager"
+                    <a href="#"
                        data-group-link="{{ $gk }}"
+                       onclick="jhLoadLookupGroup('{{ $gk }}', this); return false;"
                        style="width: 100%; text-align: left; padding: 9px 14px; border: none; cursor: pointer;
                               font-family: inherit; font-size: 11.5px; display: block;
                               border-bottom: 1px solid var(--rule-2); text-decoration: none;
@@ -383,180 +384,11 @@
                 </div>
             </div>
 
-            {{-- ── Right panel: options for selected group only ──────── --}}
-            <div>
-                @if($activeLookupGroup)
-                @php $groupKey = $activeLookupGroup; $options = $activeLookupOptions; @endphp
-                <div>
-
-                    {{-- Group header + Add option form --}}
-                    <div style="background: var(--paper); border: 1px solid var(--rule); padding: 14px 16px; margin-bottom: 10px;">
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
-                            <div>
-                                <div class="mono" style="font-size: 13px; font-weight: 600; color: var(--ink);">{{ $groupKey }}</div>
-                                <div style="font-size: 11px; color: var(--ink-4); margin-top: 2px;">
-                                    {{ $options->where('is_active', true)->count() }} active &middot;
-                                    {{ $options->where('is_active', false)->count() }} inactive
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Add option form --}}
-                        <details style="margin-top: 4px;">
-                            <summary style="font-size: 12px; color: var(--forest); cursor: pointer; font-weight: 500; list-style: none; display: flex; align-items: center; gap: 6px;">
-                                <x-lucide-plus style="width: 13px; height: 13px;" /> Add new option to this group
-                            </summary>
-                            <form method="POST" action="{{ route('lookups.option.store') }}" style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 8px; align-items: end;">
-                                @csrf
-                                <input type="hidden" name="group_key" value="{{ $groupKey }}" />
-                                <div>
-                                    <label style="font-size: 10px; color: var(--ink-3); display: block; margin-bottom: 4px;">Label <span style="color: var(--burgundy);">*</span></label>
-                                    <input type="text" name="label" required placeholder="e.g. Land Dispute" class="inp" style="width: 100%; font-size: 12px;" />
-                                </div>
-                                <div>
-                                    <label style="font-size: 10px; color: var(--ink-3); display: block; margin-bottom: 4px;">Value (slug) <span style="color: var(--burgundy);">*</span></label>
-                                    <input type="text" name="value" required placeholder="e.g. land-dispute" class="inp mono" style="width: 100%; font-size: 12px;" />
-                                </div>
-                                <div>
-                                    <label style="font-size: 10px; color: var(--ink-3); display: block; margin-bottom: 4px;">Parent (optional)</label>
-                                    <input type="text" name="parent_value" list="pv-{{ Str::slug($groupKey) }}"
-                                           placeholder="e.g. Legal Advice / Consultation"
-                                           class="inp" style="width: 100%; font-size: 12px;" />
-                                    <datalist id="pv-{{ Str::slug($groupKey) }}">
-                                        @foreach($options->pluck('parent_value')->filter()->unique()->sort() as $pv)
-                                        <option value="{{ $pv }}">
-                                        @endforeach
-                                        @foreach($options->sortBy('label') as $opt)
-                                        <option value="{{ $opt->label }}">
-                                        @endforeach
-                                    </datalist>
-                                </div>
-                                <button type="submit" class="btn-primary" style="padding: 7px 16px; font-size: 12px; white-space: nowrap; height: fit-content;">Add</button>
-                            </form>
-                        </details>
-                    </div>
-
-                    {{-- Options table --}}
-                    <div style="border: 1px solid var(--rule); background: var(--paper);">
-                        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-                            <thead>
-                                <tr style="border-bottom: 1px solid var(--rule);">
-                                    <th style="padding: 9px 12px; text-align: left; font-size: 9.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; width: 60px;">Order</th>
-                                    <th style="padding: 9px 12px; text-align: left; font-size: 9.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); font-weight: 600;">Label</th>
-                                    <th style="padding: 9px 12px; text-align: left; font-size: 9.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; width: 140px;">Value</th>
-                                    <th style="padding: 9px 12px; text-align: left; font-size: 9.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; width: 110px;">Parent</th>
-                                    <th style="padding: 9px 12px; text-align: center; font-size: 9.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; width: 80px;">Status</th>
-                                    <th style="padding: 9px 12px; width: 80px;"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($options->sortBy('sort_order') as $opt)
-                                <tr style="border-bottom: 1px solid var(--rule-2);" data-edit-row>
-
-                                    {{-- Edit form cell (hidden by default) --}}
-                                    <td data-edit-form colspan="6" style="display:none; padding: 10px 12px;">
-                                        <form method="POST" action="{{ route('lookups.option.update', $opt) }}" style="display: grid; grid-template-columns: 80px 1fr; gap: 8px; align-items: center;">
-                                            @csrf
-                                            @method('PATCH')
-                                            <div>
-                                                <label style="font-size: 10px; color: var(--ink-3); display: block; margin-bottom: 3px;">Order</label>
-                                                <input type="number" name="sort_order" value="{{ $opt->sort_order }}" min="0" max="9999" class="inp mono" style="width: 68px; font-size: 12px;" required />
-                                            </div>
-                                            <div>
-                                                <label style="font-size: 10px; color: var(--ink-3); display: block; margin-bottom: 3px;">Label</label>
-                                                <input type="text" name="label" value="{{ $opt->label }}" class="inp" style="width: 100%; font-size: 12px;" required />
-                                            </div>
-                                            <div style="grid-column: 1 / -1; display: flex; gap: 8px; margin-top: 4px;">
-                                                <button type="submit" class="btn-primary" style="padding: 5px 14px; font-size: 11.5px;">Save</button>
-                                                <button type="button" data-cancel-edit style="padding: 5px 14px; font-size: 11.5px; background: transparent; border: 1px solid var(--rule); cursor: pointer; font-family: inherit; color: var(--ink-3);">Cancel</button>
-                                            </div>
-                                        </form>
-                                    </td>
-
-                                    {{-- Read-only cells (visible by default) --}}
-                                    <td data-read-view style="padding: 9px 12px; text-align: center;">
-                                        <span class="mono" style="font-size: 11.5px; color: var(--ink-3);">{{ $opt->sort_order }}</span>
-                                    </td>
-                                    <td data-read-view style="padding: 9px 12px; font-size: 12.5px; color: var(--ink); {{ !$opt->is_active ? 'opacity: 0.45; text-decoration: line-through;' : '' }}">
-                                        {{ $opt->label }}
-                                    </td>
-                                    <td data-read-view style="padding: 9px 12px;">
-                                        <span class="mono" style="font-size: 11px; color: var(--ink-3);">{{ $opt->value }}</span>
-                                    </td>
-                                    <td data-read-view style="padding: 9px 12px;">
-                                        @if($opt->parent_value)
-                                        <span class="mono" style="font-size: 10.5px; color: var(--ink-4); background: var(--parchment); padding: 2px 6px; border: 1px solid var(--rule-2);">{{ $opt->parent_value }}</span>
-                                        @else
-                                        <span style="color: var(--ink-4); font-size: 11px;">—</span>
-                                        @endif
-                                    </td>
-
-                                    {{-- Status badge --}}
-                                    <td data-status-cell style="padding: 9px 12px; text-align: center;">
-                                        @if($opt->is_active)
-                                        <span style="font-size: 9.5px; font-weight: 600; letter-spacing: 0.04em; padding: 2px 7px; background: rgba(74,122,92,0.14); color: var(--moss); text-transform: uppercase;">Active</span>
-                                        @else
-                                        <span style="font-size: 9.5px; font-weight: 600; letter-spacing: 0.04em; padding: 2px 7px; background: rgba(138,46,29,0.10); color: var(--burgundy); text-transform: uppercase;">Off</span>
-                                        @endif
-                                    </td>
-
-                                    {{-- Actions --}}
-                                    <td data-action-cell style="padding: 8px 12px; text-align: right; white-space: nowrap;">
-                                        {{-- Edit button --}}
-                                        <button type="button"
-                                            data-edit-btn
-                                            title="Edit label / order"
-                                            style="padding: 4px 8px; background: transparent; border: 1px solid var(--rule-2); cursor: pointer; color: var(--ink-3); margin-right: 4px; font-family: inherit; font-size: 11px; transition: all 120ms;"
-                                            onmouseenter="this.style.borderColor='var(--forest)';this.style.color='var(--forest)'"
-                                            onmouseleave="this.style.borderColor='var(--rule-2)';this.style.color='var(--ink-3)'"
-                                        ><x-lucide-pencil style="width: 11px; height: 11px;" /></button>
-
-                                        {{-- Toggle active/inactive --}}
-                                        <form method="POST" action="{{ route('lookups.option.toggle', $opt) }}" style="display: inline;">
-                                            @csrf
-                                            <button type="submit"
-                                                title="{{ $opt->is_active ? 'Deactivate' : 'Activate' }}"
-                                                style="padding: 4px 8px; background: transparent; border: 1px solid var(--rule-2); cursor: pointer; font-family: inherit; font-size: 11px; transition: all 120ms;
-                                                    {{ $opt->is_active ? 'color: var(--ochre);' : 'color: var(--moss);' }}"
-                                                onmouseenter="this.style.borderColor=this.style.color"
-                                                onmouseleave="this.style.borderColor='var(--rule-2)'"
-                                            >
-                                                @if($opt->is_active)
-                                                    <x-lucide-eye-off style="width: 11px; height: 11px;" />
-                                                @else
-                                                    <x-lucide-eye style="width: 11px; height: 11px;" />
-                                                @endif
-                                            </button>
-                                        </form>
-
-                                        {{-- Delete option --}}
-                                        <form method="POST" action="{{ route('lookups.option.destroy', $opt) }}" style="display: inline;"
-                                              onsubmit="return confirm('Delete option \'{{ addslashes($opt->label ?? $opt->value) }}\'? This cannot be undone.')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit"
-                                                title="Delete permanently"
-                                                style="padding: 4px 8px; background: transparent; border: 1px solid var(--rule-2); cursor: pointer; color: var(--burgundy); font-family: inherit; font-size: 11px; transition: all 120ms;"
-                                                onmouseenter="this.style.borderColor='var(--burgundy)'"
-                                                onmouseleave="this.style.borderColor='var(--rule-2)'"
-                                            ><x-lucide-trash-2 style="width: 11px; height: 11px;" /></button>
-                                        </form>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                        @if($options->isEmpty())
-                        <div style="padding: 20px; text-align: center; color: var(--ink-4); font-size: 12px;">No options in this group yet.</div>
-                        @endif
-                    </div>
-                </div>
-                @else
+            {{-- ── Right panel: AJAX-loaded options ──────────────────── --}}
+            <div id="lookup-right-panel">
                 <div style="padding: 48px 24px; text-align: center; color: var(--ink-4); border: 1px solid var(--rule); background: var(--paper);">
-                    <x-lucide-mouse-pointer-click style="width:28px;height:28px;margin-bottom:12px;opacity:0.4;" />
                     <div style="font-size: 13px;">Select a group from the left to manage its options.</div>
                 </div>
-                @endif
             </div>
         </div>
     </div>
@@ -1036,4 +868,121 @@
         Cross-session preference persistence, audit logging of every CMS write, end-to-end document storage with version history, and an SMS feedback channel. Hub-level data exports and an offline-first mobile companion are on the roadmap for paralegal field use.
     </div>
 </div>
+
+{{-- ══ AJAX Lookup Group Loader ══ --}}
+<script>
+var _lookupCsrf = '{{ csrf_token() }}';
+var _lookupJsonUrl = '{{ route("lookups.options.json") }}';
+var _lookupStoreUrl = '{{ route("lookups.option.store") }}';
+var _lookupUpdateUrl = '/settings/lookups/options/';
+var _lookupToggleUrl = '/settings/lookups/options/';
+var _lookupDestroyUrl = '/settings/lookups/options/';
+
+function jhLoadLookupGroup(groupKey, linkEl) {
+    // Highlight active link
+    document.querySelectorAll('#lookup-group-list a').forEach(function(a) {
+        a.style.background = 'transparent';
+        a.style.color = 'var(--ink-3)';
+        a.style.fontWeight = '400';
+    });
+    if (linkEl) {
+        linkEl.style.background = 'var(--forest)';
+        linkEl.style.color = 'var(--cream)';
+        linkEl.style.fontWeight = '600';
+    }
+
+    var panel = document.getElementById('lookup-right-panel');
+    panel.innerHTML = '<div style="padding:40px; text-align:center; color:var(--ink-4); font-size:12px;">Loading...</div>';
+
+    fetch(_lookupJsonUrl + '?group_key=' + encodeURIComponent(groupKey), { headers: { 'Accept': 'application/json' } })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var gk = data.group_key;
+            var opts = data.options || [];
+            var html = '';
+
+            // Header + Add form
+            html += '<div style="background:var(--paper);border:1px solid var(--rule);padding:14px 16px;margin-bottom:10px;">';
+            html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">';
+            html += '<div><div class="mono" style="font-size:13px;font-weight:600;color:var(--ink);">' + gk + '</div>';
+            html += '<div style="font-size:11px;color:var(--ink-4);margin-top:2px;">' + data.active_count + ' active &middot; ' + data.inactive_count + ' inactive</div></div></div>';
+            html += '<details style="margin-top:4px;"><summary style="font-size:12px;color:var(--forest);cursor:pointer;font-weight:500;list-style:none;display:flex;align-items:center;gap:6px;">+ Add new option to this group</summary>';
+            html += '<form method="POST" action="' + _lookupStoreUrl + '" style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:end;">';
+            html += '<input type="hidden" name="_token" value="' + _lookupCsrf + '">';
+            html += '<input type="hidden" name="group_key" value="' + gk + '">';
+            html += '<div><label style="font-size:10px;color:var(--ink-3);display:block;margin-bottom:4px;">Label *</label>';
+            html += '<input type="text" name="label" required placeholder="e.g. Land Dispute" class="inp" style="width:100%;font-size:12px;"></div>';
+            html += '<div><label style="font-size:10px;color:var(--ink-3);display:block;margin-bottom:4px;">Value (slug) *</label>';
+            html += '<input type="text" name="value" required placeholder="e.g. land-dispute" class="inp mono" style="width:100%;font-size:12px;"></div>';
+            html += '<div><label style="font-size:10px;color:var(--ink-3);display:block;margin-bottom:4px;">Parent (optional)</label>';
+            html += '<input type="text" name="parent_value" placeholder="e.g. Legal Advice" class="inp" style="width:100%;font-size:12px;"></div>';
+            html += '<button type="submit" class="btn-primary" style="padding:7px 16px;font-size:12px;white-space:nowrap;height:fit-content;">Add</button>';
+            html += '</form></details></div>';
+
+            // Options table
+            html += '<div style="border:1px solid var(--rule);background:var(--paper);">';
+            html += '<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead>';
+            html += '<tr style="border-bottom:1px solid var(--rule);">';
+            var ths = ['Order', 'Label', 'Value', 'Parent', 'Status', ''];
+            var thWidths = ['60px', '', '140px', '110px', '80px', '80px'];
+            ths.forEach(function(t, i) {
+                html += '<th style="padding:9px 12px;text-align:' + (t === 'Status' ? 'center' : 'left') + ';font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-3);font-weight:600;' + (thWidths[i] ? 'width:' + thWidths[i] + ';' : '') + '">' + t + '</th>';
+            });
+            html += '</tr></thead><tbody>';
+
+            if (opts.length === 0) {
+                html += '</tbody></table><div style="padding:20px;text-align:center;color:var(--ink-4);font-size:12px;">No options in this group yet.</div>';
+            } else {
+                opts.forEach(function(o) {
+                    var active = o.is_active ? true : false;
+                    var statusBadge = active
+                        ? '<span style="font-size:9.5px;font-weight:600;letter-spacing:0.04em;padding:2px 7px;background:rgba(74,122,92,0.14);color:var(--moss);text-transform:uppercase;">Active</span>'
+                        : '<span style="font-size:9.5px;font-weight:600;letter-spacing:0.04em;padding:2px 7px;background:rgba(138,46,29,0.10);color:var(--burgundy);text-transform:uppercase;">Off</span>';
+                    var parentCell = o.parent_value
+                        ? '<span class="mono" style="font-size:10.5px;color:var(--ink-4);background:var(--parchment);padding:2px 6px;border:1px solid var(--rule-2);">' + o.parent_value + '</span>'
+                        : '<span style="color:var(--ink-4);font-size:11px;">&mdash;</span>';
+                    var labelStyle = !active ? 'opacity:0.45;text-decoration:line-through;' : '';
+
+                    html += '<tr style="border-bottom:1px solid var(--rule-2);">';
+                    html += '<td style="padding:9px 12px;text-align:center;"><span class="mono" style="font-size:11.5px;color:var(--ink-3);">' + o.sort_order + '</span></td>';
+                    html += '<td style="padding:9px 12px;font-size:12.5px;color:var(--ink);' + labelStyle + '">' + o.label + '</td>';
+                    html += '<td style="padding:9px 12px;"><span class="mono" style="font-size:11px;color:var(--ink-3);">' + o.value + '</span></td>';
+                    html += '<td style="padding:9px 12px;">' + parentCell + '</td>';
+                    html += '<td style="padding:9px 12px;text-align:center;">' + statusBadge + '</td>';
+
+                    // Actions
+                    html += '<td style="padding:8px 12px;text-align:right;white-space:nowrap;">';
+                    // Toggle
+                    html += '<form method="POST" action="' + _lookupToggleUrl + o.id + '/toggle" style="display:inline;">';
+                    html += '<input type="hidden" name="_token" value="' + _lookupCsrf + '">';
+                    html += '<button type="submit" title="' + (active ? 'Deactivate' : 'Activate') + '" style="padding:4px 8px;background:transparent;border:1px solid var(--rule-2);cursor:pointer;font-family:inherit;font-size:11px;' + (active ? 'color:var(--ochre);' : 'color:var(--moss);') + '">';
+                    html += active ? '&#x1F6AB;' : '&#x2705;';
+                    html += '</button></form> ';
+                    // Delete
+                    html += '<form method="POST" action="' + _lookupDestroyUrl + o.id + '" style="display:inline;" onsubmit="return confirm(\'Delete this option?\');">';
+                    html += '<input type="hidden" name="_token" value="' + _lookupCsrf + '">';
+                    html += '<input type="hidden" name="_method" value="DELETE">';
+                    html += '<button type="submit" title="Delete" style="padding:4px 8px;background:transparent;border:1px solid var(--rule-2);cursor:pointer;color:var(--burgundy);font-family:inherit;font-size:11px;">&#x1F5D1;</button>';
+                    html += '</form>';
+                    html += '</td></tr>';
+                });
+                html += '</tbody></table>';
+            }
+            html += '</div>';
+
+            panel.innerHTML = html;
+        })
+        .catch(function() {
+            panel.innerHTML = '<div style="padding:40px;text-align:center;color:var(--burgundy);font-size:12px;">Failed to load group options.</div>';
+        });
+}
+
+// Auto-load if there was already an active group (from URL param on page load)
+@if($activeLookupGroup)
+document.addEventListener('DOMContentLoaded', function() {
+    var link = document.querySelector('[data-group-link="{{ $activeLookupGroup }}"]');
+    jhLoadLookupGroup('{{ $activeLookupGroup }}', link);
+});
+@endif
+</script>
 </x-layouts.app>

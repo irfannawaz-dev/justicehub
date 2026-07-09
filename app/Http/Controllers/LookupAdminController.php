@@ -152,6 +152,30 @@ class LookupAdminController extends Controller
     // Used by the drag-and-drop up/down buttons
     // ─────────────────────────────────────────────────────────────
 
+    /**
+     * Return options for a group as JSON (used by AJAX lookup panel).
+     */
+    public function groupOptions(Request $request)
+    {
+        $this->guard($request);
+
+        $groupKey = $request->input('group_key');
+        if (! $groupKey) {
+            return response()->json(['options' => []]);
+        }
+
+        $options = Lookup::where('group_key', $groupKey)
+            ->orderBy('sort_order')
+            ->get(['id', 'group_key', 'label', 'value', 'parent_value', 'sort_order', 'is_active']);
+
+        return response()->json([
+            'group_key'     => $groupKey,
+            'active_count'  => $options->where('is_active', true)->count(),
+            'inactive_count'=> $options->where('is_active', false)->count(),
+            'options'       => $options,
+        ]);
+    }
+
     public function reorderGroup(Request $request)
     {
         $this->guard($request);
