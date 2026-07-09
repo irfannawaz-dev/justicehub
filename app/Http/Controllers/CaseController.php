@@ -233,7 +233,7 @@ class CaseController extends Controller
                         'interviewEligibleForZakat', 'complainantName', 'partyName',
                         'caseApprovalStatus', 'approvalDate',
                         'vakalatnamaSubmissionDate', 'caseFileDate',
-                        'lawyer1', 'reasonOfChange',
+                        'lawyer1',
                         'courtName', 'levelOfCourt', 'caseNumber',
                         'firNumber', 'policeStation', 'natureOfCase', 'typeOfCase',
                         'mainCaseCategory', 'caseFiledUnderAct', 'caseFiledOther',
@@ -257,7 +257,7 @@ class CaseController extends Controller
                         'caseFiledUnderAct', 'caseDecision', 'caseDisposalDate',
                         'ctcStatus', 'approvalDate', 'caseApprovalStatus',
                         'vakalatnamaSubmissionDate', 'caseFileDate',
-                        'reasonOfChange', 'additionalComment',
+                        'additionalComment',
                     ]);
 
                 // Hearings from hearings table
@@ -453,7 +453,6 @@ class CaseController extends Controller
             if ($h->vakalatnamaSubmissionDate) $parts[] = "Vakalatnama: {$h->vakalatnamaSubmissionDate}";
             if ($h->caseFileDate)              $parts[] = "Case filed: {$h->caseFileDate}";
             if ($h->caseDisposalDate)          $parts[] = "Disposed: {$h->caseDisposalDate}";
-            if ($h->reasonOfChange)            $parts[] = "Reason: {$h->reasonOfChange}";
             if ($h->additionalComment)         $parts[] = $h->additionalComment;
 
             $timeline->push([
