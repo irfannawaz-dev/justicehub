@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\FinanceConfig;
 use App\Models\Hub;
 use App\Models\Lookup;
+use App\Services\DashboardMetricsService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
@@ -76,10 +78,17 @@ class SettingsController extends Controller
             ->where('key', 'like', 'module_%')
             ->pluck('value', 'key');
 
+        // Cache settings
+        $cacheSettings = [
+            'enabled' => DB::table('settings')->where('key', 'cache_enabled')->value('value') ?? 'on',
+            'ttl'     => DB::table('settings')->where('key', 'cache_ttl')->value('value') ?? '300',
+        ];
+
         return view('settings.index', compact(
             'lookupData', 'lookupGroupKeys', 'activeLookupGroup',
             'activeLookupOptions', 'lookupTotalGroups', 'lookupTotalOptions',
-            'locationData', 'partners', 'partnerCategories', 'moduleSettings'
+            'locationData', 'partners', 'partnerCategories', 'moduleSettings',
+            'cacheSettings'
         ));
     }
 
@@ -329,5 +338,47 @@ class SettingsController extends Controller
         $count = $q->delete();
 
         return back()->with('success', "Deleted {$count} location(s).");
+    }
+
+    // ── Cache Management ────────────────────────────────────────
+
+    public function toggleCache()
+    {
+        $current = DB::table('settings')->where('key', 'cache_enabled')->value('value') ?? 'on';
+        $newValue = ($current === 'off') ? 'on' : 'off';
+
+        DB::table('settings')->updateOrInsert(
+            ['key' => 'cache_enabled'],
+            ['value' => $newValue, 'updated_at' => now(), 'created_at' => now()]
+        );
+
+        // Clear the meta-cache so the toggle takes effect immediately
+        Cache::forget('jh.settings.cache_enabled');
+
+        return back()->with('success', 'Dashboard cache ' . ($newValue === 'on' ? 'enabled' : 'disabled') . '.');
+    }
+
+    public function updateCacheTtl(Request $request)
+    {
+        $request->validate(['ttl' => 'required|in:120,300,600,900,1800']);
+
+        DB::table('settings')->updateOrInsert(
+            ['key' => 'cache_ttl'],
+            ['value' => $request->ttl, 'updated_at' => now(), 'created_at' => now()]
+        );
+
+        Cache::forget('jh.settings.cache_ttl');
+
+        $minutes = (int)$request->ttl / 60;
+        return back()->with('success', "Cache duration set to {$minutes} minutes.");
+    }
+
+    public function flushCache()
+    {
+        DashboardMetricsService::flush();
+        Cache::forget('jh.settings.cache_enabled');
+        Cache::forget('jh.settings.cache_ttl');
+
+        return back()->with('success', 'All dashboard caches cleared.');
     }
 }

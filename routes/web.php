@@ -160,6 +160,11 @@ Route::middleware(['auth', 'hub.scope', 'can.write'])->group(function () {
     // ── Module Toggle ────────────────────────────────────────────────
     Route::post('/settings/modules/{key}/toggle', [SettingsController::class, 'toggleModule'])->name('settings.module.toggle');
 
+    // ── Cache Management ────────────────────────────────────────────
+    Route::post('/settings/cache/toggle', [SettingsController::class, 'toggleCache'])->name('settings.cache.toggle');
+    Route::post('/settings/cache/ttl',    [SettingsController::class, 'updateCacheTtl'])->name('settings.cache.ttl');
+    Route::post('/settings/cache/flush',  [SettingsController::class, 'flushCache'])->name('settings.cache.flush');
+
     // ── Partner Organisations ────────────────────────────────────────
     Route::post('/settings/partners/category',    [SettingsController::class, 'storePartnerCategory'])->name('settings.partner.category.store');
     Route::post('/settings/partners',             [SettingsController::class, 'storePartner'])->name('settings.partner.store');

@@ -369,23 +369,48 @@ class DashboardMetricsService
 
     public function all(): array
     {
+        // Check if caching is enabled via settings
+        $cacheEnabled = self::cacheEnabled();
+        if (! $cacheEnabled) {
+            return $this->compute();
+        }
+
+        $version   = (int) Cache::get('jh.cache.version', 0);
         $hubPart   = !empty($this->hubIds) ? implode(',', $this->hubIds) : ($this->hubId ?? 'all');
         $svcPart   = !empty($this->services) ? implode(',', $this->services) : ($this->service ?? 'all');
         $userPart  = $this->assignedTo ?? ($this->pathwayFilter ? implode(',', $this->pathwayFilter) : 'all');
         $datePart  = ($this->dateFrom ?? '') . '_' . ($this->dateTo ?? '');
-        $cacheKey  = 'dashboard.metrics.' . $hubPart . '.' . ($this->period ?? 'all') . '.' . $svcPart . '.' . $userPart . '.' . $datePart;
-        $ttl = config('justice_hub.dashboard.metrics_cache_ttl', 300);
+        $cacheKey  = "dashboard.metrics.v{$version}.{$hubPart}." . ($this->period ?? 'all') . ".{$svcPart}.{$userPart}.{$datePart}";
+        $ttl       = self::cacheTtl();
 
         return Cache::remember($cacheKey, $ttl, fn() => $this->compute());
     }
 
-    /** Flush dashboard cache (call after any data-mutating action). */
-    public static function flush(?string $hubId = null): void
+    /**
+     * Flush ALL JusticeHub caches by incrementing the version counter.
+     * Old cache entries expire naturally at their TTL (no need to delete them).
+     */
+    public static function flush(): void
     {
-        if ($hubId) {
-            Cache::forget('dashboard.metrics.' . $hubId);
-        }
-        Cache::forget('dashboard.metrics.all');
+        $current = (int) Cache::get('jh.cache.version', 0);
+        Cache::forever('jh.cache.version', $current + 1);
+        IndicatorDerivationService::flush();
+    }
+
+    /** Check if caching is enabled (cached for 60s to avoid DB hit every request). */
+    public static function cacheEnabled(): bool
+    {
+        return Cache::remember('jh.settings.cache_enabled', 60, function () {
+            return DB::table('settings')->where('key', 'cache_enabled')->value('value') ?? 'on';
+        }) !== 'off';
+    }
+
+    /** Get cache TTL in seconds (cached for 60s). */
+    public static function cacheTtl(): int
+    {
+        return (int) Cache::remember('jh.settings.cache_ttl', 60, function () {
+            return DB::table('settings')->where('key', 'cache_ttl')->value('value') ?? 300;
+        });
     }
 
     private function compute(): array

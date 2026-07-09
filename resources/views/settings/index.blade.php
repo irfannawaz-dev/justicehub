@@ -157,6 +157,72 @@
     </div>
 
     {{-- ═══════════════════════════════════════════════════════════════
+        Section — Performance & Caching
+        ═══════════════════════════════════════════════════════════════ --}}
+    @if($user->can('lookups.manage'))
+    <div style="margin-bottom: 28px;">
+        <div style="margin-bottom: 12px;">
+            <div class="label-cap" style="font-size: 9.5px; margin-bottom: 4px;">Performance</div>
+            <h3 class="serif" style="font-size: 19px; font-weight: 500; margin: 0; color: var(--ink);">Dashboard Cache</h3>
+            <div style="font-size: 11.5px; color: var(--ink-3); margin-top: 4px;">
+                Caching stores dashboard data in the database so repeat page loads skip expensive queries. Data refreshes automatically when cases are created or updated.
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; max-width: 920px;">
+
+            {{-- Cache toggle --}}
+            <div class="card" style="padding: 22px 24px;">
+                <div class="label-cap" style="font-size: 9px; margin-bottom: 10px;">Status</div>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+                    <div style="font-size: 14px; font-weight: 600; color: {{ ($cacheSettings['enabled'] ?? 'on') === 'on' ? 'var(--forest)' : 'var(--ink-3)' }};">
+                        {{ ($cacheSettings['enabled'] ?? 'on') === 'on' ? 'Enabled' : 'Disabled' }}
+                    </div>
+                    <div style="width: 10px; height: 10px; border-radius: 50%; background: {{ ($cacheSettings['enabled'] ?? 'on') === 'on' ? 'var(--forest)' : 'var(--ink-4)' }};"></div>
+                </div>
+                <form method="POST" action="{{ route('settings.cache.toggle') }}">
+                    @csrf
+                    <button type="submit" class="btn-ghost" style="width: 100%; font-size: 12px;">
+                        {{ ($cacheSettings['enabled'] ?? 'on') === 'on' ? 'Disable Cache' : 'Enable Cache' }}
+                    </button>
+                </form>
+            </div>
+
+            {{-- Cache TTL --}}
+            <div class="card" style="padding: 22px 24px;">
+                <div class="label-cap" style="font-size: 9px; margin-bottom: 10px;">Cache Duration</div>
+                <div style="font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 14px;">
+                    {{ (int)($cacheSettings['ttl'] ?? 300) / 60 }} minutes
+                </div>
+                <form method="POST" action="{{ route('settings.cache.ttl') }}" style="display: flex; gap: 8px;">
+                    @csrf
+                    <select name="ttl" class="inp" style="flex: 1; font-size: 12px;">
+                        @foreach([120 => '2 min', 300 => '5 min', 600 => '10 min', 900 => '15 min', 1800 => '30 min'] as $val => $label)
+                        <option value="{{ $val }}" @selected(($cacheSettings['ttl'] ?? '300') == $val)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    <button type="submit" class="btn-ghost" style="font-size: 12px; white-space: nowrap;">Set</button>
+                </form>
+            </div>
+
+            {{-- Flush cache --}}
+            <div class="card" style="padding: 22px 24px;">
+                <div class="label-cap" style="font-size: 9px; margin-bottom: 10px;">Manual Flush</div>
+                <div style="font-size: 12px; color: var(--ink-3); margin-bottom: 14px; line-height: 1.5;">
+                    Clear all cached data immediately. Dashboards will recompute on next load.
+                </div>
+                <form method="POST" action="{{ route('settings.cache.flush') }}">
+                    @csrf
+                    <button type="submit" class="btn-ghost" style="width: 100%; font-size: 12px; color: var(--burgundy); border-color: var(--burgundy);">
+                        Clear All Caches
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- ═══════════════════════════════════════════════════════════════
         Section 4 — About
         ═══════════════════════════════════════════════════════════════ --}}
     <div style="margin-bottom: 28px;">

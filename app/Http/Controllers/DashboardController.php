@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\UserRole;
 use App\Services\DashboardMetricsService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -78,93 +79,23 @@ class DashboardController extends Controller
             default    => 'Good evening',
         };
 
-        // Additional inline metrics — apply same filters
-        $q = \App\Models\CaseRecord::query();
-        if (!empty($hubIds)) {
-            $q->whereIn('hub_id', $hubIds);
-        }
-        if ($user->isLawyer()) {
-            $q->where('assigned_to', $user->name);
-        }
-        if ($user->isCourtClerk()) {
-            $q->where(fn($sq) => $sq->where('disposition', 'litigation')
-                ->orWhereIn('assigned_pathway', ['Representation in Court', 'Court Representation']));
-        }
-        if ($dateFrom || $dateTo) {
-            if ($dateFrom) $q->where('intake_date', '>=', $dateFrom);
-            if ($dateTo)   $q->where('intake_date', '<=', $dateTo);
-        } elseif ($period && $period !== 'All time') {
-            $from = match ($period) {
-                'Today'        => now()->startOfDay(),
-                'Last 7 days'  => now()->subDays(7)->startOfDay(),
-                'Last 30 days' => now()->subDays(30)->startOfDay(),
-                'Last 90 days' => now()->subDays(90)->startOfDay(),
-                'Year to date' => now()->startOfYear(),
-                default        => null,
-            };
-            if ($from) $q->where('intake_date', '>=', $from->toDateString());
-        }
-        if (!empty($services)) {
-            $q->where(function ($sq) use ($services) {
-                foreach ($services as $svc) {
-                    $sq->orWhere('assigned_pathway', 'like', '%' . $svc . '%');
-                }
-            });
-        }
-        if (!empty($districts)) {
-            $q->whereIn('district', $districts);
-        }
+        // ── Cached inline metrics (highRisk, referralSources, hubDist, etc.) ──
+        // These ~12 queries are wrapped in a single cache entry per filter combo.
+        $version  = (int) Cache::get('jh.cache.version', 0);
+        $extraKey = "dashboard.extras.v{$version}." . implode('.', $hubIds ?: ['all'])
+                  . '.' . ($period ?? 'all')
+                  . '.' . implode('.', $services ?: ['all'])
+                  . '.' . implode('.', $districts ?: ['all'])
+                  . '.' . ($user->isLawyer() ? $user->name : '_')
+                  . '.' . ($dateFrom ?? '') . '_' . ($dateTo ?? '');
 
-        $highRisk    = (clone $q)->where('risk', 'High')->count();
-        $casesLast7  = (clone $q)->where('intake_date', '>=', now()->subDays(7)->toDateString())->count();
-        $resolvedLast7 = (clone $q)->whereIn('status', ['Closed', 'Settlement'])
-                            ->where('updated_at', '>=', now()->subDays(7))->count();
+        $extras = DashboardMetricsService::cacheEnabled()
+            ? Cache::remember($extraKey, DashboardMetricsService::cacheTtl(), fn() => $this->computeDashboardExtras($hubIds, $user, $period, $dateFrom, $dateTo, $services, $districts))
+            : $this->computeDashboardExtras($hubIds, $user, $period, $dateFrom, $dateTo, $services, $districts);
 
-        // Referral sources for command-center
-        $referralSources = (clone $q)->select('referral_source', DB::raw('COUNT(*) as cnt'))
-            ->whereNotNull('referral_source')->where('referral_source', '!=', '')
-            ->groupBy('referral_source')->orderByDesc('cnt')->limit(8)
-            ->pluck('cnt', 'referral_source')->toArray();
-
-        // Primary issue distribution
-        $primaryIssues = (clone $q)->select('primary_issue', DB::raw('COUNT(*) as cnt'))
-            ->whereNotNull('primary_issue')->where('primary_issue', '!=', '')
-            ->groupBy('primary_issue')->orderByDesc('cnt')->limit(8)
-            ->pluck('cnt', 'primary_issue')->toArray();
-
-        // Hub distribution for geographic section — respects all active filters
-        $hubColorPalette = ['#4a7a5c', '#163029', '#b87319', '#7e57c2', '#6b6a65', '#8a2e1d'];
-        $hubQuery = \App\Models\Hub::where('is_active', true);
-        if (!empty($hubIds)) {
-            $hubQuery->whereIn('id', $hubIds);
-        }
-        $hubDist = $hubQuery->get()
-            ->map(function ($h) use ($q) {
-                $cnt = (clone $q)->where('hub_id', $h->id)->count();
-                return ['id' => $h->id, 'name' => $h->name, 'count' => $cnt];
-            })
-            ->sortByDesc('count')
-            ->values();
-        $hubTotal = $hubDist->sum('count') ?: 1;
-        $hubDist = $hubDist->map(function ($h, $i) use ($hubColorPalette, $hubTotal) {
-            $h['pct']   = round(($h['count'] / $hubTotal) * 100, 1);
-            $h['color'] = $hubColorPalette[$i % count($hubColorPalette)];
-            return $h;
-        });
-
-        // Available districts: merge configured lookups + any custom values in cases
-        $lookupDistricts = \App\Models\Lookup::where('group_key', 'intake.district')
-            ->where('is_active', true)->orderBy('sort_order')->pluck('value')->toArray();
-        $caseDistricts = \App\Models\CaseRecord::query()
-            ->whereNotNull('district')->where('district', '!=', '')
-            ->distinct()->pluck('district')->toArray();
-        $availableDistricts = collect(array_unique(array_merge($lookupDistricts, $caseDistricts)))
-            ->sort()->values()->toArray();
-
-        return view('dashboards.command-center', compact(
-            'm', 'greeting', 'highRisk', 'casesLast7', 'resolvedLast7', 'hubDist',
-            'referralSources', 'primaryIssues', 'activeFilters', 'dateFrom', 'dateTo',
-            'availableDistricts'
+        return view('dashboards.command-center', array_merge(
+            compact('m', 'greeting', 'activeFilters', 'dateFrom', 'dateTo'),
+            $extras
         ));
     }
 
@@ -320,5 +251,93 @@ class DashboardController extends Controller
             'lcd', 'sources', 'categories', 'statusBreakdown', 'advisors',
             'pathways', 'hubBreakdown', 'hubNames', 'hubs', 'hubId', 'todayCases', 'monthlyTrend'
         ));
+    }
+
+    /**
+     * Compute the dashboard "extras" (highRisk, referralSources, hubDist, etc.)
+     * Extracted so it can be wrapped in Cache::remember() by commandCenter().
+     */
+    private function computeDashboardExtras(array $hubIds, $user, ?string $period, ?string $dateFrom, ?string $dateTo, array $services, array $districts): array
+    {
+        $q = \App\Models\CaseRecord::query();
+        if (!empty($hubIds)) {
+            $q->whereIn('hub_id', $hubIds);
+        }
+        if ($user->isLawyer()) {
+            $q->where('assigned_to', $user->name);
+        }
+        if ($user->isCourtClerk()) {
+            $q->where(fn($sq) => $sq->where('disposition', 'litigation')
+                ->orWhereIn('assigned_pathway', ['Representation in Court', 'Court Representation']));
+        }
+        if ($dateFrom || $dateTo) {
+            if ($dateFrom) $q->where('intake_date', '>=', $dateFrom);
+            if ($dateTo)   $q->where('intake_date', '<=', $dateTo);
+        } elseif ($period && $period !== 'All time') {
+            $from = match ($period) {
+                'Today'        => now()->startOfDay(),
+                'Last 7 days'  => now()->subDays(7)->startOfDay(),
+                'Last 30 days' => now()->subDays(30)->startOfDay(),
+                'Last 90 days' => now()->subDays(90)->startOfDay(),
+                'Year to date' => now()->startOfYear(),
+                default        => null,
+            };
+            if ($from) $q->where('intake_date', '>=', $from->toDateString());
+        }
+        if (!empty($services)) {
+            $q->where(function ($sq) use ($services) {
+                foreach ($services as $svc) {
+                    $sq->orWhere('assigned_pathway', 'like', '%' . $svc . '%');
+                }
+            });
+        }
+        if (!empty($districts)) {
+            $q->whereIn('district', $districts);
+        }
+
+        $highRisk      = (clone $q)->where('risk', 'High')->count();
+        $casesLast7    = (clone $q)->where('intake_date', '>=', now()->subDays(7)->toDateString())->count();
+        $resolvedLast7 = (clone $q)->whereIn('status', ['Closed', 'Settlement'])
+                            ->where('updated_at', '>=', now()->subDays(7))->count();
+
+        $referralSources = (clone $q)->select('referral_source', DB::raw('COUNT(*) as cnt'))
+            ->whereNotNull('referral_source')->where('referral_source', '!=', '')
+            ->groupBy('referral_source')->orderByDesc('cnt')->limit(8)
+            ->pluck('cnt', 'referral_source')->toArray();
+
+        $primaryIssues = (clone $q)->select('primary_issue', DB::raw('COUNT(*) as cnt'))
+            ->whereNotNull('primary_issue')->where('primary_issue', '!=', '')
+            ->groupBy('primary_issue')->orderByDesc('cnt')->limit(8)
+            ->pluck('cnt', 'primary_issue')->toArray();
+
+        $hubColorPalette = ['#4a7a5c', '#163029', '#b87319', '#7e57c2', '#6b6a65', '#8a2e1d'];
+        $hubQuery = \App\Models\Hub::where('is_active', true);
+        if (!empty($hubIds)) {
+            $hubQuery->whereIn('id', $hubIds);
+        }
+        $hubDist = $hubQuery->get()
+            ->map(function ($h) use ($q) {
+                $cnt = (clone $q)->where('hub_id', $h->id)->count();
+                return ['id' => $h->id, 'name' => $h->name, 'count' => $cnt];
+            })
+            ->sortByDesc('count')
+            ->values();
+        $hubTotal = $hubDist->sum('count') ?: 1;
+        $hubDist = $hubDist->map(function ($h, $i) use ($hubColorPalette, $hubTotal) {
+            $h['pct']   = round(($h['count'] / $hubTotal) * 100, 1);
+            $h['color'] = $hubColorPalette[$i % count($hubColorPalette)];
+            return $h;
+        });
+
+        $lookupDistricts = \App\Models\Lookup::where('group_key', 'intake.district')
+            ->where('is_active', true)->orderBy('sort_order')->pluck('value')->toArray();
+        $caseDistricts = \App\Models\CaseRecord::query()
+            ->whereNotNull('district')->where('district', '!=', '')
+            ->distinct()->pluck('district')->toArray();
+        $availableDistricts = collect(array_unique(array_merge($lookupDistricts, $caseDistricts)))
+            ->sort()->values()->toArray();
+
+        return compact('highRisk', 'casesLast7', 'resolvedLast7', 'hubDist',
+            'referralSources', 'primaryIssues', 'availableDistricts');
     }
 }

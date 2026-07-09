@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\CaseRecord;
 use App\Models\ServiceEncounter;
+use App\Services\DashboardMetricsService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class ServiceController extends Controller
@@ -13,29 +15,38 @@ class ServiceController extends Controller
     {
         $hubId = $request->input('_active_hub', 'all');
 
-        // ── Mediation only: pathway = 'Mediation' ──
-        $q = CaseRecord::query()->where('assigned_pathway', 'Mediation');
-        if ($hubId && $hubId !== 'all') $q->where('hub_id', $hubId);
+        // ── Cached KPI metrics (10 COUNT queries → 1 cache lookup after first load) ──
+        $version   = (int) Cache::get('jh.cache.version', 0);
+        $scKey     = "scorecard.mediation.v{$version}.{$hubId}";
+        $computeKpis = function () use ($hubId) {
+            $q = CaseRecord::query()->where('assigned_pathway', 'Mediation');
+            if ($hubId && $hubId !== 'all') $q->where('hub_id', $hubId);
 
-        $total    = (clone $q)->count();
-        $settled  = (clone $q)->whereIn('status', ['Settlement', 'Closed'])->count();
-        $active   = (clone $q)->whereIn('status', ['Active', 'Pending Approval'])->count();
-        $gbv      = (clone $q)->where('is_gbv', true)->count();
-        $female   = (clone $q)->where('gender', 'Female')->count();
-        $minority = (clone $q)->where('is_minority', true)->count();
-        $child    = (clone $q)->where('is_child', true)->count();
-        $disability = (clone $q)->where('is_disability', true)->count();
-        $rate     = $total > 0 ? round(($settled / $total) * 100) : 0;
+            $total    = (clone $q)->count();
+            $settled  = (clone $q)->whereIn('status', ['Settlement', 'Closed'])->count();
+            $active   = (clone $q)->whereIn('status', ['Active', 'Pending Approval'])->count();
+            $gbv      = (clone $q)->where('is_gbv', true)->count();
+            $female   = (clone $q)->where('gender', 'Female')->count();
+            $minority = (clone $q)->where('is_minority', true)->count();
+            $child    = (clone $q)->where('is_child', true)->count();
+            $disability = (clone $q)->where('is_disability', true)->count();
+            $rate     = $total > 0 ? round(($settled / $total) * 100) : 0;
 
-        $caseIds           = (clone $q)->pluck('id');
-        $servicesDelivered = ServiceEncounter::whereIn('case_id', $caseIds)->count();
+            $caseIds           = (clone $q)->pluck('id');
+            $servicesDelivered = ServiceEncounter::whereIn('case_id', $caseIds)->count();
 
-        $resolvedCases  = (clone $q)->whereIn('status', ['Closed', 'Settlement'])->get(['intake_date', 'last_update', 'created_at']);
-        $totalDays      = $resolvedCases->sum(fn($c) =>
-            $c->intake_date && ($c->last_update ?? $c->created_at)
-                ? $c->intake_date->diffInDays($c->last_update ?? $c->created_at) : 0
-        );
-        $avgDays = $resolvedCases->count() > 0 ? round($totalDays / $resolvedCases->count()) : 0;
+            $resolvedCases  = (clone $q)->whereIn('status', ['Closed', 'Settlement'])->get(['intake_date', 'last_update', 'created_at']);
+            $totalDays      = $resolvedCases->sum(fn($c) =>
+                $c->intake_date && ($c->last_update ?? $c->created_at)
+                    ? $c->intake_date->diffInDays($c->last_update ?? $c->created_at) : 0
+            );
+            $avgDays = $resolvedCases->count() > 0 ? round($totalDays / $resolvedCases->count()) : 0;
+
+            return compact('total', 'settled', 'active', 'gbv', 'female', 'minority', 'child', 'disability', 'rate', 'servicesDelivered', 'avgDays');
+        };
+        extract(DashboardMetricsService::cacheEnabled()
+            ? Cache::remember($scKey, DashboardMetricsService::cacheTtl(), $computeKpis)
+            : $computeKpis());
 
         $cases = (clone $q)->with(['serviceEncounters' => fn($sq) => $sq->orderBy('date')])->latest('intake_date')->get();
 
@@ -247,105 +258,113 @@ class ServiceController extends Controller
 
     public function adrComplaints(Request $request)
     {
-        $hubId = $request->input('_active_hub', 'all');
+        $hubId   = $request->input('_active_hub', 'all');
+        $version = (int) Cache::get('jh.cache.version', 0);
+        $scKey   = "scorecard.adr-complaints.v{$version}.{$hubId}";
 
-        // Base: ADR / Dispute Resolution Support cases only
-        $q = CaseRecord::query()
-            ->where('assigned_pathway', 'ADR / Dispute Resolution Support')
-            ->when($hubId && $hubId !== 'all', fn($q) => $q->where('hub_id', $hubId));
+        $computeComplaints = function () use ($hubId) {
+            $q = CaseRecord::query()
+                ->where('assigned_pathway', 'ADR / Dispute Resolution Support')
+                ->when($hubId && $hubId !== 'all', fn($q) => $q->where('hub_id', $hubId));
 
-        $caseIds = (clone $q)->pluck('id');
+            $cases = (clone $q)->with(['caseReferrals' => fn($sq) => $sq->latest('referral_date')])->get();
 
-        // Load all cases with their referrals
-        $cases = (clone $q)->with(['caseReferrals' => fn($sq) => $sq->latest('referral_date')])->get();
+            $pipeline = ['Intake' => [], 'Complaint Filed' => [], 'Closed' => []];
+            $closedInFavour = 0; $closedAgainst = 0; $filed = 0; $notFiled = 0;
 
-        // ── Pipeline buckets (3 stages) ──
-        $pipeline = [
-            'Intake'            => [],
-            'Complaint Filed'   => [],   // holds both Filed & Not Filed
-            'Closed'            => [],   // holds both In Favour & Against
-        ];
+            foreach ($cases as $c) {
+                $latestRef   = $c->caseReferrals->first();
+                $isClosed    = in_array($c->status, [\App\Enums\CaseStatus::Closed, \App\Enums\CaseStatus::Settlement]);
+                $metaOutcome = $c->meta['outcome'] ?? null;
 
-        $closedInFavour = 0;
-        $closedAgainst  = 0;
-        $filed          = 0;
-        $notFiled       = 0;
-
-        foreach ($cases as $c) {
-            $latestRef   = $c->caseReferrals->first();
-            $isClosed    = in_array($c->status, [\App\Enums\CaseStatus::Closed, \App\Enums\CaseStatus::Settlement]);
-            $metaOutcome = $c->meta['outcome'] ?? null;
-
-            if ($isClosed) {
-                // Use outcome from resolve popup (stored in case meta)
-                $oc = strtolower($metaOutcome ?? '');
-                if (str_contains($oc, 'favour') || str_contains($oc, 'favor') || str_contains($oc, 'success')) {
-                    $closedInFavour++;
+                if ($isClosed) {
+                    $oc = strtolower($metaOutcome ?? '');
+                    if (str_contains($oc, 'favour') || str_contains($oc, 'favor') || str_contains($oc, 'success')) {
+                        $closedInFavour++;
+                    } else {
+                        $closedAgainst++;
+                    }
+                    $pipeline['Closed'][] = $c;
+                } elseif ($latestRef && $latestRef->filing_status === 'Filed') {
+                    $filed++;
+                    $pipeline['Complaint Filed'][] = $c;
+                } elseif ($latestRef && $latestRef->filing_status === 'Not Filed') {
+                    $notFiled++;
+                    $pipeline['Complaint Filed'][] = $c;
                 } else {
-                    $closedAgainst++;
+                    $pipeline['Intake'][] = $c;
                 }
-                $pipeline['Closed'][] = $c;
-            } elseif ($latestRef && $latestRef->filing_status === 'Filed') {
-                $filed++;
-                $pipeline['Complaint Filed'][] = $c;
-            } elseif ($latestRef && $latestRef->filing_status === 'Not Filed') {
-                $notFiled++;
-                $pipeline['Complaint Filed'][] = $c;
-            } else {
-                $pipeline['Intake'][] = $c;
             }
-        }
 
-        $total       = $cases->count();
-        $totalClosed = $closedInFavour + $closedAgainst;
-        $successRate = $totalClosed > 0 ? round(($closedInFavour / $totalClosed) * 100) : 0;
-        $intake      = count($pipeline['Intake']);
+            $total       = $cases->count();
+            $totalClosed = $closedInFavour + $closedAgainst;
+            $successRate = $totalClosed > 0 ? round(($closedInFavour / $totalClosed) * 100) : 0;
+            $intake      = count($pipeline['Intake']);
 
-        return view('services.adr-complaints', compact(
-            'pipeline', 'total', 'closedInFavour', 'closedAgainst',
-            'totalClosed', 'successRate', 'filed', 'notFiled', 'intake'
-        ));
+            return compact('pipeline', 'total', 'closedInFavour', 'closedAgainst', 'totalClosed', 'successRate', 'filed', 'notFiled', 'intake');
+        };
+
+        $data = DashboardMetricsService::cacheEnabled()
+            ? Cache::remember($scKey, DashboardMetricsService::cacheTtl(), $computeComplaints)
+            : $computeComplaints();
+
+        return view('services.adr-complaints', $data);
     }
 
     public function litigationScorecard(Request $request)
     {
-        $hubId = $request->input('_active_hub', 'all');
+        $hubId   = $request->input('_active_hub', 'all');
+        $version = (int) Cache::get('jh.cache.version', 0);
+        $litKey  = "scorecard.litigation.v{$version}.{$hubId}";
+
+        $computeLitKpis = function () use ($hubId) {
+            $q = CaseRecord::query()->where(function ($sq) {
+                $sq->where('disposition', 'litigation')
+                   ->orWhere('assigned_pathway', 'Representation in Court')
+                   ->orWhere('assigned_pathway', 'Court Representation');
+            });
+            if ($hubId && $hubId !== 'all') $q->where('hub_id', $hubId);
+
+            $total       = (clone $q)->count();
+            $activeCount = (clone $q)->whereNotIn('status', ['Closed', 'Settlement', 'Rejected'])->count();
+            $favourable  = (clone $q)->whereIn('status', ['Closed', 'Settlement'])->count();
+            $favRate     = $total > 0 ? round(($favourable / $total) * 100) : 0;
+            $criminal    = (clone $q)->where('primary_issue', 'like', '%Criminal%')->count();
+            $juvenile    = (clone $q)->where('is_child', true)->count();
+            $civil       = max(0, $total - $criminal - $juvenile);
+
+            $resolvedCases = (clone $q)->whereIn('status', ['Closed', 'Settlement'])
+                ->get(['intake_date', 'last_update', 'created_at']);
+            $totalDays = $resolvedCases->sum(fn($c) =>
+                $c->intake_date && ($c->last_update ?? $c->created_at)
+                    ? $c->intake_date->diffInDays($c->last_update ?? $c->created_at) : 0
+            );
+            $avgDays = $resolvedCases->count() > 0 ? round($totalDays / $resolvedCases->count()) : 0;
+
+            $quarterStart = now()->startOfQuarter();
+            $litCaseIds   = (clone $q)->pluck('id');
+            $hearingsThisQuarter = ServiceEncounter::whereIn('case_id', $litCaseIds)
+                ->where(fn($sq) => $sq->where('type', 'like', '%Court%')
+                    ->orWhere('type', 'like', '%Hearing%')
+                    ->orWhere('type', 'like', '%Litigation%'))
+                ->where('date', '>=', $quarterStart)
+                ->count();
+
+            return compact('total', 'activeCount', 'favourable', 'favRate', 'criminal', 'juvenile', 'civil', 'avgDays', 'hearingsThisQuarter');
+        };
+
+        extract(DashboardMetricsService::cacheEnabled()
+            ? Cache::remember($litKey, DashboardMetricsService::cacheTtl(), $computeLitKpis)
+            : $computeLitKpis());
+
+        // Pipeline + CMS sync — NOT cached (used for drag-drop interaction)
         $q = CaseRecord::query()->where(function ($sq) {
             $sq->where('disposition', 'litigation')
                ->orWhere('assigned_pathway', 'Representation in Court')
                ->orWhere('assigned_pathway', 'Court Representation');
         });
         if ($hubId && $hubId !== 'all') $q->where('hub_id', $hubId);
-
-        $total       = (clone $q)->count();
-        $activeCount = (clone $q)->whereNotIn('status', ['Closed', 'Settlement', 'Rejected'])->count();
-        $favourable  = (clone $q)->whereIn('status', ['Closed', 'Settlement'])->count();
-        $favRate     = $total > 0 ? round(($favourable / $total) * 100) : 0;
-        $criminal    = (clone $q)->where('primary_issue', 'like', '%Criminal%')->count();
-        $juvenile    = (clone $q)->where('is_child', true)->count();
-        $civil       = max(0, $total - $criminal - $juvenile);
-
-        // Average days to disposal for resolved cases
-        $resolvedCases = (clone $q)->whereIn('status', ['Closed', 'Settlement'])
-            ->get(['intake_date', 'last_update', 'created_at']);
-        $totalDays = $resolvedCases->sum(fn($c) =>
-            $c->intake_date && ($c->last_update ?? $c->created_at)
-                ? $c->intake_date->diffInDays($c->last_update ?? $c->created_at)
-                : 0
-        );
-        $avgDays = $resolvedCases->count() > 0 ? round($totalDays / $resolvedCases->count()) : 0;
-
-        // Hearings this quarter
-        $quarterStart = now()->startOfQuarter();
-        $litCaseIds   = (clone $q)->pluck('id');
-        $hearingsThisQuarter = ServiceEncounter::whereIn('case_id', $litCaseIds)
-            ->where(function ($sq) {
-                $sq->where('type', 'like', '%Court%')
-                   ->orWhere('type', 'like', '%Hearing%')
-                   ->orWhere('type', 'like', '%Litigation%');
-            })
-            ->where('date', '>=', $quarterStart)
-            ->count();
+        $litCaseIds = (clone $q)->pluck('id');
 
         // Cases with encounters for kanban
         $cases = (clone $q)
@@ -675,6 +694,8 @@ class ServiceController extends Controller
             'changed_at' => now(),
         ]);
 
+        \App\Services\DashboardMetricsService::flush();
+
         return response()->json([
             'success'    => true,
             'from'       => $fromStage,
@@ -711,6 +732,8 @@ class ServiceController extends Controller
             'changed_by' => $request->user()->id,
             'changed_at' => now(),
         ]);
+
+        \App\Services\DashboardMetricsService::flush();
 
         return response()->json([
             'success'    => true,

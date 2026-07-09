@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Enums\UserRole;
 use App\Models\CaseRecord;
 use App\Models\Complaint;
+use App\Models\ServiceEncounter;
+use App\Observers\CacheInvalidationObserver;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -17,6 +19,10 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // ── Auto-flush dashboard cache when data changes ──
+        CaseRecord::observe(CacheInvalidationObserver::class);
+        ServiceEncounter::observe(CacheInvalidationObserver::class);
+
         // ── Hub-scoped route model binding ──────────────────────
         Route::bind('case', function ($value) {
             $case = CaseRecord::findOrFail($value);
