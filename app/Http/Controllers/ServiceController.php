@@ -48,6 +48,10 @@ class ServiceController extends Controller
             ? Cache::remember($scKey, DashboardMetricsService::cacheTtl(), $computeKpis)
             : $computeKpis());
 
+        // Re-create query for pipeline (not cached — used for drag-drop)
+        $q = CaseRecord::query()->where('assigned_pathway', 'Mediation');
+        if ($hubId && $hubId !== 'all') $q->where('hub_id', $hubId);
+
         $cases = (clone $q)->with(['serviceEncounters' => fn($sq) => $sq->orderBy('date')])->latest('intake_date')->get();
 
         // ── Mediation-specific pipeline stages ──
