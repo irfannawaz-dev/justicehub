@@ -2552,9 +2552,11 @@
                 </div>
                 <div>
                     <label style="display:block;margin-bottom:4px;font-size:10px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-3);">
-                        Specific (optional)
+                        Specific <span style="color:var(--burgundy);">*</span>
                     </label>
-                    <input type="text" name="to_pathway_specific" class="inp" style="width:100%; font-size:12px;" placeholder="e.g. Justice Hub Lawyer">
+                    <select name="to_pathway_specific" id="jh-transfer-specific" class="inp" style="width:100%; font-size:12px;">
+                        <option value="">— Select —</option>
+                    </select>
                 </div>
             </div>
         </div>
@@ -2627,6 +2629,27 @@ function jhTransferTypeChange(type) {
 }
 function jhTransferPathwayChange(pw) {
     jhFilterStaff(pw);
+    jhUpdateTransferSpecific(pw);
+}
+function jhUpdateTransferSpecific(pw) {
+    var sel = document.getElementById('jh-transfer-specific');
+    if (!sel) return;
+    var map = {
+        'Legal Advice / Consultation': ['SLACC', 'Justice Hub Lawyer', 'NAZ Assist', 'Other'],
+        'Court Representation': ['Justice Hub Lawyer', 'Other'],
+        'Mediation': ['Justice Hub Accredited Mediator', 'MICADR', 'Other'],
+        'ADR / Dispute Resolution Support': ['Provincial Ombudsman / Mohtasib', 'Federal Ombudsman', 'Other'],
+        'Government Department / Public Institution': {!! json_encode(
+            \App\Models\Partner::where('category', 'Government')->pluck('name')->push('Other')->unique()->values()
+        ) !!},
+        'Civil Society / NGO / CSO / NPO': {!! json_encode(
+            \App\Models\Partner::where('category', 'NGO')->pluck('name')->push('Other')->unique()->values()
+        ) !!},
+    };
+    var opts = map[pw] || [];
+    sel.innerHTML = '<option value="">— Select —</option>' + opts.map(function(o) {
+        return '<option value="' + o + '">' + o + '</option>';
+    }).join('');
 }
 function jhFilterStaff(pw) {
     var sel = document.getElementById('jh-transfer-assignee');
