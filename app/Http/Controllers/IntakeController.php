@@ -107,6 +107,7 @@ class IntakeController extends Controller
             'preferredLanguage' => 'required|string',
             'category'          => 'required|string',
             'urgencyLevel'      => 'required|string',
+            'issueDescription'  => 'required|string|max:2000',
             'assignedPathway'   => 'required|string',
         ]);
 

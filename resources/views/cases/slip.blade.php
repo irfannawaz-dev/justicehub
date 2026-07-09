@@ -104,8 +104,145 @@
 
     $l = $t[$lang] ?? $t['en'];
 
-    $intakeDate = $case->intake_date ? \Carbon\Carbon::parse($case->intake_date)->format('d M Y') : '—';
-    $address    = $case->full_address ?? trim(implode(', ', array_filter([$case->union_council, $case->tehsil, $case->district])), ', ') ?: '—';
+    // ── Data value translations (English → Urdu / Sindhi) ──
+    $dataTranslations = [
+        'ur' => [
+            // Gender
+            'Male' => 'مرد', 'Female' => 'عورت', 'Other' => 'دیگر', 'Transgender' => 'خواجہ سرا',
+            // Marital Status
+            'Single' => 'غیر شادی شدہ', 'Married' => 'شادی شدہ', 'Divorced' => 'طلاق یافتہ', 'Widowed' => 'بیوہ/بیوا', 'Separated' => 'علیحدہ',
+            // Case Status
+            'Active' => 'فعال', 'Closed' => 'بند', 'Settlement' => 'تصفیہ', 'Pending Approval' => 'منظوری زیر التوا', 'Rejected' => 'مسترد',
+            // Urgency
+            'Immediate' => 'فوری', 'High' => 'اعلیٰ', 'Medium' => 'درمیانی', 'Low' => 'کم',
+            // Risk
+            'High risk' => 'زیادہ خطرہ', 'Medium risk' => 'درمیانی خطرہ', 'Low risk' => 'کم خطرہ',
+            // Pathways
+            'Legal Advice / Consultation' => 'قانونی مشورہ / مشاورت',
+            'Court Representation' => 'عدالتی نمائندگی',
+            'Representation in Court' => 'عدالت میں نمائندگی',
+            'Mediation' => 'ثالثی',
+            'ADR / Dispute Resolution Support' => 'متبادل تنازعات حل',
+            'Government Department / Public Institution' => 'سرکاری محکمہ / عوامی ادارہ',
+            'Civil Society / NGO / CSO / NPO' => 'سول سوسائٹی / این جی او',
+            'Other' => 'دیگر',
+            // Specific pathways
+            'Justice Hub Lawyer' => 'جسٹس ہب وکیل',
+            'Justice Hub Accredited Mediator' => 'جسٹس ہب تصدیق شدہ ثالث',
+            'SLACC' => 'ایس ایل اے سی سی',
+            'Provincial Ombudsman / Mohtasib' => 'صوبائی محتسب',
+            'NADRA' => 'نادرا',
+            'Police' => 'پولیس',
+            'Revenue Department' => 'محکمہ مال',
+            'Health Department' => 'محکمہ صحت',
+            'Education Department' => 'محکمہ تعلیم',
+            'Social Welfare' => 'سماجی بہبود',
+            // Referral sources
+            'Walk-in' => 'براہ راست آمد',
+            'Website / Social Media' => 'ویب سائٹ / سوشل میڈیا',
+            'Paralegal' => 'پیرالیگل',
+            'Government Department' => 'سرکاری محکمہ',
+            'NGO / CSO / NPO' => 'این جی او / سی ایس او',
+            'Community Leader' => 'سماجی رہنما',
+            'Bar Association' => 'بار ایسوسی ایشن',
+            'Court Referral' => 'عدالتی حوالہ',
+            'Police Referral' => 'پولیس حوالہ',
+            'Self-referral' => 'خود حوالہ',
+            'Other - please specify' => 'دیگر',
+            // Primary issues
+            'Family Law' => 'خاندانی قانون', 'Land Dispute' => 'زمینی تنازعہ',
+            'Criminal Law' => 'فوجداری قانون', 'Civil Litigation' => 'دیوانی مقدمہ',
+            'Labour Law' => 'محنت کا قانون', 'Consumer Rights' => 'صارفین کے حقوق',
+            'Public Grievances' => 'عوامی شکایات', 'Documentation' => 'دستاویزات',
+            'Domestic Violence' => 'گھریلو تشدد', 'Child Rights' => 'بچوں کے حقوق',
+            'Women Rights' => 'خواتین کے حقوق', 'Property Dispute' => 'جائیداد کا تنازعہ',
+            'Inheritance' => 'وراثت', 'Divorce / Khula' => 'طلاق / خلع',
+            'Maintenance' => 'نان و نفقہ', 'Custody' => 'حضانت',
+            'CNIC / Documentation' => 'شناختی کارڈ / دستاویزات',
+            'Bail Matter' => 'ضمانت کا معاملہ',
+            // Months
+            'Jan' => 'جنوری', 'Feb' => 'فروری', 'Mar' => 'مارچ', 'Apr' => 'اپریل',
+            'May' => 'مئی', 'Jun' => 'جون', 'Jul' => 'جولائی', 'Aug' => 'اگست',
+            'Sep' => 'ستمبر', 'Oct' => 'اکتوبر', 'Nov' => 'نومبر', 'Dec' => 'دسمبر',
+        ],
+        'sd' => [
+            // Gender
+            'Male' => 'مرد', 'Female' => 'عورت', 'Other' => 'ٻيو', 'Transgender' => 'خواجه سرا',
+            // Marital Status
+            'Single' => 'اڻ وياهيل', 'Married' => 'وياهيل', 'Divorced' => 'طلاق يافته', 'Widowed' => 'بيوه', 'Separated' => 'الڳ',
+            // Case Status
+            'Active' => 'فعال', 'Closed' => 'بند', 'Settlement' => 'تصفيو', 'Pending Approval' => 'منظوري جي انتظار ۾', 'Rejected' => 'رد ٿيل',
+            // Urgency
+            'Immediate' => 'فوري', 'High' => 'مٿي', 'Medium' => 'وچولي', 'Low' => 'گهٽ',
+            // Risk
+            'High risk' => 'وڌيڪ خطرو', 'Medium risk' => 'وچولو خطرو', 'Low risk' => 'گهٽ خطرو',
+            // Pathways
+            'Legal Advice / Consultation' => 'قانوني صلاح / مشاورت',
+            'Court Representation' => 'عدالتي نمائندگي',
+            'Representation in Court' => 'عدالت ۾ نمائندگي',
+            'Mediation' => 'ثالثي',
+            'ADR / Dispute Resolution Support' => 'متبادل تڪرار حل',
+            'Government Department / Public Institution' => 'سرڪاري محڪمو / عوامي ادارو',
+            'Civil Society / NGO / CSO / NPO' => 'سول سوسائٽي / اين جي او',
+            'Other' => 'ٻيو',
+            // Specific pathways
+            'Justice Hub Lawyer' => 'جسٽس هب وڪيل',
+            'Justice Hub Accredited Mediator' => 'جسٽس هب تصديق ٿيل ثالث',
+            'SLACC' => 'ايس ايل اي سي سي',
+            'Provincial Ombudsman / Mohtasib' => 'صوبائي محتسب',
+            'NADRA' => 'نادرا',
+            'Police' => 'پوليس',
+            'Revenue Department' => 'محڪمو مال',
+            'Health Department' => 'محڪمو صحت',
+            'Education Department' => 'محڪمو تعليم',
+            'Social Welfare' => 'سماجي ڀلائي',
+            // Referral sources
+            'Walk-in' => 'سڌي آمد',
+            'Website / Social Media' => 'ويب سائيٽ / سوشل ميڊيا',
+            'Paralegal' => 'پيرا ليگل',
+            'Government Department' => 'سرڪاري محڪمو',
+            'NGO / CSO / NPO' => 'اين جي او / سي ايس او',
+            'Community Leader' => 'سماجي اڳواڻ',
+            'Bar Association' => 'بار ايسوسي ايشن',
+            'Court Referral' => 'عدالتي حوالو',
+            'Police Referral' => 'پوليس حوالو',
+            'Self-referral' => 'پاڻ حوالو',
+            'Other - please specify' => 'ٻيو',
+            // Primary issues
+            'Family Law' => 'خاندان قانون', 'Land Dispute' => 'زمين جو تڪرار',
+            'Criminal Law' => 'فوجداري قانون', 'Civil Litigation' => 'ديواني مقدمو',
+            'Labour Law' => 'مزدورن جو قانون', 'Consumer Rights' => 'صارفين جا حق',
+            'Public Grievances' => 'عوامي شڪايتون', 'Documentation' => 'دستاويزات',
+            'Domestic Violence' => 'گهريلو تشدد', 'Child Rights' => 'ٻارن جا حق',
+            'Women Rights' => 'عورتن جا حق', 'Property Dispute' => 'جائداد جو تڪرار',
+            'Inheritance' => 'وراثت', 'Divorce / Khula' => 'طلاق / خلع',
+            'Maintenance' => 'نان و نفقو', 'Custody' => 'حضانت',
+            'CNIC / Documentation' => 'سڃاڻپ ڪارڊ / دستاويزات',
+            'Bail Matter' => 'ضمانت جو معاملو',
+            // Months
+            'Jan' => 'جنوري', 'Feb' => 'فيبروري', 'Mar' => 'مارچ', 'Apr' => 'اپريل',
+            'May' => 'مئي', 'Jun' => 'جون', 'Jul' => 'جولائي', 'Aug' => 'آگسٽ',
+            'Sep' => 'سيپٽمبر', 'Oct' => 'آڪٽوبر', 'Nov' => 'نومبر', 'Dec' => 'ڊسمبر',
+        ],
+    ];
+
+    // Helper to translate a data value
+    $tr = function($val) use ($lang, $dataTranslations) {
+        if ($lang === 'en' || !$val) return $val;
+        return $dataTranslations[$lang][$val] ?? $val;
+    };
+
+    // Translate date (replace English month abbreviation)
+    $intakeDateRaw = $case->intake_date ? \Carbon\Carbon::parse($case->intake_date) : null;
+    if ($intakeDateRaw && $lang !== 'en') {
+        $monthAbbr = $intakeDateRaw->format('M');
+        $translatedMonth = $dataTranslations[$lang][$monthAbbr] ?? $monthAbbr;
+        $intakeDate = $intakeDateRaw->format('d') . ' ' . $translatedMonth . ' ' . $intakeDateRaw->format('Y');
+    } else {
+        $intakeDate = $intakeDateRaw ? $intakeDateRaw->format('d M Y') : '—';
+    }
+
+    $address = $case->full_address ?? trim(implode(', ', array_filter([$case->union_council, $case->tehsil, $case->district])), ', ') ?: '—';
 @endphp
 <html lang="{{ $lang }}" dir="{{ $isRtl ? 'rtl' : 'ltr' }}">
 <head>
@@ -366,7 +503,7 @@
             </div>
             <div class="badge active">
                 <span class="dot"></span>
-                {{ ucfirst($case->status?->value ?? 'Active') }}
+                {{ $tr(ucfirst($case->status?->value ?? 'Active')) }}
             </div>
         </div>
     </div>
@@ -385,7 +522,7 @@
         </div>
         <div class="fc">
             <div class="lbl">{{ $l['gender'] }}</div>
-            <div class="val">{{ $case->gender ?? '—' }}</div>
+            <div class="val">{{ $tr($case->gender) ?? '—' }}</div>
         </div>
         <div class="fc">
             <div class="lbl">{{ $l['age'] }}</div>
@@ -414,15 +551,15 @@
     <div class="sl-row">
         <div class="fc">
             <div class="lbl">{{ $l['referredFrom'] }}</div>
-            <div class="val">{{ $case->referral_source ?? '—' }}</div>
+            <div class="val">{{ $tr($case->referral_source) ?? '—' }}</div>
         </div>
         <div class="fc">
             <div class="lbl">{{ $l['pathway'] }}</div>
-            <div class="val">{{ $case->assigned_pathway ?? '—' }}</div>
+            <div class="val">{{ $tr($case->assigned_pathway) ?? '—' }}</div>
         </div>
         <div class="fc">
             <div class="lbl">{{ $l['specific'] }}</div>
-            <div class="val">{{ $case->pathway_specific ?? '—' }}</div>
+            <div class="val">{{ $tr($case->pathway_specific) ?? '—' }}</div>
         </div>
     </div>
 

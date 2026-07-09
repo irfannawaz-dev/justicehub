@@ -229,7 +229,7 @@
                 <h3 class="serif" style="font-size: 22px; font-weight: 500; margin: 0 0 6px 0; color: var(--forest);">Problem Diagnostics</h3>
                 <div style="font-size: 12.5px; color: var(--ink-3); margin-bottom: 20px;">Outline the issue category, urgency, and brief description.</div>
 
-                <x-form-input name="issueDescription" label="29. Brief description of the issue" type="textarea" placeholder="Briefly describe the issue..." />
+                <x-form-input name="issueDescription" label="29. Brief description of the issue" type="textarea" placeholder="Briefly describe the issue..." required />
                 <div style="height: 14px;"></div>
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
                     <x-form-select name="category" label="30. Category" required lookup-group="case.primary_issue" />
