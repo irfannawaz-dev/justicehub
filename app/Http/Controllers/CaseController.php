@@ -1092,4 +1092,20 @@ class CaseController extends Controller
             ->with('activeTab', 'messages')
             ->with('success', 'Message sent.');
     }
+
+    public function exportExcel(Request $request)
+    {
+        abort_unless($request->user()->can('reports.export'), 403);
+
+        $hubId   = $request->input('hub', 'all');
+        $status  = $request->input('status', 'all');
+        $pathway = $request->input('pathway', 'all');
+
+        $filename = 'justice-hub-cases-' . now()->format('Y-m-d') . '.xlsx';
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\CasesExport($hubId, $status, $pathway),
+            $filename
+        );
+    }
 }

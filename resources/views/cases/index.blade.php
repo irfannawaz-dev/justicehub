@@ -152,6 +152,16 @@
             </a>
         @endif
 
+        {{-- Export Excel --}}
+        @can('reports.export')
+        <a href="{{ route('cases.export', ['hub' => $currentHub, 'status' => $currentStatus, 'pathway' => $currentPathway]) }}"
+           style="display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border:1px solid var(--moss); color:var(--moss); font-size:12px; font-weight:500; text-decoration:none; font-family:inherit; transition:all 120ms;"
+           onmouseenter="this.style.background='var(--moss)';this.style.color='#fff'"
+           onmouseleave="this.style.background='transparent';this.style.color='var(--moss)'">
+            <x-lucide-download style="width:12px;height:12px;" /> Export Excel
+        </a>
+        @endcan
+
         {{-- View mode toggle --}}
         <div style="display: flex; gap: 1px; padding: 1px; background: var(--rule); border: 1px solid var(--rule);">
             <button id="jh-btn-list" type="button" onclick="jhSetViewMode('list')" title="List view"

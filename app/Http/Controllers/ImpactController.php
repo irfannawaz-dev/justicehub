@@ -93,8 +93,8 @@ class ImpactController extends Controller
         abort_unless($request->user()->can('reports.export'), 403, 'You do not have permission to export impact reports.');
 
         $request->validate([
-            'period'   => ['required', Rule::in(['Q1', 'Q2', 'Q3', 'Q4', 'H1', 'H2', 'Annual', 'Custom'])],
-            'template' => ['required', Rule::in(['program-overview', 'annual-impact', 'donor-report', 'policy-brief', 'case-study-collection'])],
+            'period'   => ['required', 'string', 'max:20'],
+            'template' => ['required', Rule::in(['quarterly', 'annual', 'donor', 'me-update'])],
             'scope'    => ['nullable', Rule::in(['all', 'hub'])],
         ]);
 
