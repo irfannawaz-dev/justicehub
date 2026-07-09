@@ -196,12 +196,30 @@ class DashboardMetricsService
 
     public function dispositionBreakdown(): array
     {
-        return $this->caseQuery()
-            ->select('disposition', DB::raw('COUNT(*) as cnt'))
-            ->whereNotNull('disposition')
-            ->groupBy('disposition')
-            ->pluck('cnt', 'disposition')
-            ->toArray();
+        // Map assigned_pathway → disposition category
+        $pathwayMap = [
+            'Court Representation'                   => 'litigation',
+            'Mediation'                              => 'adr',
+            'ADR / Dispute Resolution Support'       => 'adr',
+            'Legal Advice / Consultation'            => 'advice-only',
+            'Government Department / Public Institution' => 'referred',
+            'Civil Society / NGO / CSO / NPO'        => 'referred',
+            'Other'                                  => 'referred',
+        ];
+
+        $rows = $this->caseQuery()
+            ->select('assigned_pathway', DB::raw('COUNT(*) as cnt'))
+            ->whereNotNull('assigned_pathway')
+            ->groupBy('assigned_pathway')
+            ->pluck('cnt', 'assigned_pathway');
+
+        $result = [];
+        foreach ($rows as $pathway => $count) {
+            $key = $pathwayMap[$pathway] ?? 'referred';
+            $result[$key] = ($result[$key] ?? 0) + $count;
+        }
+
+        return $result;
     }
 
     public function statusBreakdown(): array
