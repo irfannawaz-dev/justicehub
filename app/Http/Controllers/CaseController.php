@@ -233,7 +233,7 @@ class CaseController extends Controller
                         'interviewEligibleForZakat', 'complainantName', 'partyName',
                         'caseApprovalStatus', 'approvalDate',
                         'vakalatnamaSubmissionDate', 'caseFileDate',
-                        'lawyer1', 'lawyer2', 'reasonOfChange',
+                        'lawyer1', 'reasonOfChange',
                         'courtName', 'levelOfCourt', 'caseNumber',
                         'firNumber', 'policeStation', 'natureOfCase', 'typeOfCase',
                         'mainCaseCategory', 'caseFiledUnderAct', 'caseFiledOther',
@@ -251,7 +251,7 @@ class CaseController extends Controller
                     ->get([
                         'change_type', 'created_at', 'edited_by', 'username',
                         'currentCaseStatus', 'caseStage', 'nextHearing',
-                        'lawyer1', 'lawyer2', 'courtName', 'levelOfCourt',
+                        'lawyer1', 'courtName', 'levelOfCourt',
                         'caseNumber', 'firNumber', 'policeStation',
                         'natureOfCase', 'mainCaseCategory', 'typeOfCase',
                         'caseFiledUnderAct', 'caseDecision', 'caseDisposalDate',
@@ -439,7 +439,6 @@ class CaseController extends Controller
             if ($h->caseDecision)              $parts[] = "Decision: {$h->caseDecision}";
             if ($h->nextHearing)               $parts[] = "Next hearing: {$h->nextHearing}";
             if ($h->lawyer1)                   $parts[] = "Lawyer: {$h->lawyer1}";
-            if ($h->lawyer2)                   $parts[] = "2nd Lawyer: {$h->lawyer2}";
             if ($h->courtName)                 $parts[] = "Court: {$h->courtName}";
             if ($h->levelOfCourt)              $parts[] = "Level: {$h->levelOfCourt}";
             if ($h->caseNumber)                $parts[] = "Case no: {$h->caseNumber}";
