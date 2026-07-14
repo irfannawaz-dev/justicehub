@@ -3,24 +3,24 @@
 
     {{-- Header --}}
     <div style="margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid var(--rule);">
-        <div class="label-cap" style="font-size: 9.5px; margin-bottom: 6px;">Tool 1 - Client Intake & Registration</div>
+        <div class="label-cap" style="font-size: 9.5px; margin-bottom: 6px;">{{ __('intake.tool_label') }}</div>
         <h1 class="serif" style="font-size: 34px; font-weight: 400; letter-spacing: -0.018em; margin: 0; line-height: 1.05;">
-            Justice Hub Intake Form
+            {{ __('intake.title') }}
         </h1>
         <div style="font-size: 12.5px; color: var(--ink-3); margin-top: 8px; line-height: 1.5;">
-            This form is used to collect information about your visit to the Justice Hub. Your responses help us provide legal and support services tailored to your needs. All information is kept confidential.
+            {{ __('intake.description') }}
         </div>
-        <div style="font-size: 11px; color: var(--ink-4); margin-top: 8px;">* Indicates required question</div>
-        <div style="font-size: 12px; color: var(--ink-3); margin-top: 6px;">Step <span id="jh-step-counter">1</span> of 5</div>
+        <div style="font-size: 11px; color: var(--ink-4); margin-top: 8px;">{{ __('intake.required_hint') }}</div>
+        <div style="font-size: 12px; color: var(--ink-3); margin-top: 6px;">{!! __('intake.step_of', ['current' => '<span id="jh-step-counter">1</span>', 'total' => 5]) !!}</div>
     </div>
 
     {{-- Step Wizard --}}
     <x-step-wizard :steps="[
-        ['label' => 'Admin', 'icon' => 'clipboard-list'],
-        ['label' => 'Referral', 'icon' => 'share-2'],
-        ['label' => 'Beneficiary', 'icon' => 'users'],
-        ['label' => 'Diagnostics', 'icon' => 'file-text'],
-        ['label' => 'Pathway', 'icon' => 'arrow-right'],
+        ['label' => __('intake.step_admin'), 'icon' => 'clipboard-list'],
+        ['label' => __('intake.step_referral'), 'icon' => 'share-2'],
+        ['label' => __('intake.step_beneficiary'), 'icon' => 'users'],
+        ['label' => __('intake.step_diagnostics'), 'icon' => 'file-text'],
+        ['label' => __('intake.step_pathway'), 'icon' => 'arrow-right'],
     ]" :current="1" />
 
     {{-- Validation errors --}}
@@ -48,9 +48,9 @@
             <svg style="width:40px;height:40px;animation:jhSpin 0.9s linear infinite;color:var(--moss,#2d6a4f);margin:0 auto 16px;display:block;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
             </svg>
-            <div style="font-size:17px;font-weight:700;color:#1a2e1f;margin-bottom:8px;">Registering Case…</div>
+            <div style="font-size:17px;font-weight:700;color:#1a2e1f;margin-bottom:8px;">{{ __('intake.registering') }}</div>
             <div style="font-size:13px;color:#64748b;line-height:1.5;">
-                Saving case record and<br>sending notification emails.
+                {{ __('intake.registering_desc') }}
             </div>
         </div>
     </div>
@@ -64,18 +64,18 @@
 
             {{-- ═══ STEP 1: Admin ═══ --}}
             <div id="intake-step-1">
-                <div class="label-cap" style="font-size: 9.5px; margin-bottom: 4px;">Section 2</div>
-                <h3 class="serif" style="font-size: 22px; font-weight: 500; margin: 0 0 6px 0; color: var(--forest);">Admin & Client Reference</h3>
-                <div style="font-size: 12.5px; color: var(--ink-3); margin-bottom: 20px;">This section collects administrative and referral information.</div>
+                <div class="label-cap" style="font-size: 9.5px; margin-bottom: 4px;">{{ __('intake.s1_section') }}</div>
+                <h3 class="serif" style="font-size: 22px; font-weight: 500; margin: 0 0 6px 0; color: var(--forest);">{{ __('intake.s1_title') }}</h3>
+                <div style="font-size: 12.5px; color: var(--ink-3); margin-bottom: 20px;">{{ __('intake.s1_desc') }}</div>
 
                 <div style="display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 14px;">
-                    <x-form-select name="hubLocation" label="1. Justice Hub Location" required :options="$hubs" :selected="$hubs->count() === 1 ? $hubs->keys()->first() : null" />
+                    <x-form-select name="hubLocation" :label="__('intake.hub_location')" required :options="$hubs" :selected="$hubs->count() === 1 ? $hubs->keys()->first() : null" />
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 14px;">
                     {{-- Staff receiving: read-only for Lawyer/CourtClerk, dropdown for others --}}
                     <div>
                         <label style="display:block;margin-bottom:6px;font-size:10px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-3);">
-                            3. Staff receiving client <span style="color:var(--burgundy);">*</span>
+                            {{ __('intake.staff_receiving') }} <span style="color:var(--burgundy);">*</span>
                         </label>
                         @if(auth()->user()->isLawyer() || auth()->user()->isCourtClerk())
                             {{-- Lawyers and court clerks: locked to themselves --}}
@@ -101,7 +101,7 @@
                     {{-- Designation: always read-only --}}
                     <div>
                         <label style="display:block;margin-bottom:6px;font-size:10px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-3);">
-                            4. Staff ID-Designation
+                            {{ __('intake.staff_designation') }}
                         </label>
                         <input type="text" name="staffDesignation" id="staffDesignationInput" class="inp"
                                value="{{ $defaultStaffDesignation }}" readonly
@@ -118,154 +118,154 @@
                 </div>
                 <div style="margin-bottom: 14px;">
                     <label style="display: block; margin-bottom: 6px; font-size: 10px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3);">
-                        5. Consent Statement <span style="color: var(--burgundy);"> *</span>
+                        {{ __('intake.consent') }} <span style="color: var(--burgundy);"> *</span>
                     </label>
                     <select name="consent" class="inp" required>
-                        <option value="Yes, I consent">Yes, I consent</option>
-                        <option value="No, I don't">No, I don't</option>
+                        <option value="Yes, I consent">{{ __('intake.consent_yes') }}</option>
+                        <option value="No, I don't">{{ __('intake.consent_no') }}</option>
                     </select>
                 </div>
                 <div id="intake-no-consent-box" style="display:none; margin-top: 12px;">
                     <div style="padding: 12px 14px; background: var(--ochre-tint); border: 1px solid var(--ochre); border-left: 3px solid var(--ochre); font-size: 12px; color: var(--ink-2); margin-bottom: 12px;">
-                        Justice Hub will not deny any service based on no consent unless the service critically depends on required data.
+                        {{ __('intake.consent_warning') }}
                     </div>
-                    <x-form-input name="noConsentReason" label="6. Please explain limitations" type="textarea" placeholder="Record the reason and any service limitations..." />
+                    <x-form-input name="noConsentReason" :label="__('intake.explain_limits')" type="textarea" placeholder="Record the reason and any service limitations..." />
                 </div>
             </div>
 
             {{-- ═══ STEP 2: Referral Source ═══ --}}
             <div id="intake-step-2" style="display:none;">
-                <div class="label-cap" style="font-size: 9.5px; margin-bottom: 4px;">Section 3</div>
-                <h3 class="serif" style="font-size: 22px; font-weight: 500; margin: 0 0 6px 0; color: var(--forest);">Source of Referral</h3>
-                <div style="font-size: 12.5px; color: var(--ink-3); margin-bottom: 20px;">Please select the most relevant option.</div>
+                <div class="label-cap" style="font-size: 9.5px; margin-bottom: 4px;">{{ __('intake.s2_section') }}</div>
+                <h3 class="serif" style="font-size: 22px; font-weight: 500; margin: 0 0 6px 0; color: var(--forest);">{{ __('intake.s2_title') }}</h3>
+                <div style="font-size: 12.5px; color: var(--ink-3); margin-bottom: 20px;">{{ __('intake.s2_desc') }}</div>
 
-                <x-form-select name="heardAboutUs" label="7. How you heard about us?" required lookup-group="intake.referral_source" />
+                <x-form-select name="heardAboutUs" :label="__('intake.heard_about')" required lookup-group="intake.referral_source" />
 
                 <div id="intake-other-source-box" style="display:none; margin-top: 12px;">
-                    <x-form-input name="heardAboutUsOther" label="Please specify" placeholder="Enter referral source" />
+                    <x-form-input name="heardAboutUsOther" :label="__('intake.please_specify')" :placeholder="__('intake.enter_referral')" />
                 </div>
                 <div id="intake-paralegal-box" style="display:none; margin-top: 12px;">
-                    <x-form-input name="paralegalName" label="8. Name of Paralegal" placeholder="Paralegal name" />
+                    <x-form-input name="paralegalName" :label="__('intake.paralegal_name')" />
                 </div>
                 <div id="intake-ngo-box" style="display:none; margin-top: 12px;">
-                    <x-form-select name="ngoReferralOrg" label="9. Referred by NGO/CSO/NPO" lookup-group="intake.ngo_referral" />
+                    <x-form-select name="ngoReferralOrg" :label="__('intake.ngo_referral')" lookup-group="intake.ngo_referral" />
                 </div>
                 <div id="intake-govt-box" style="display:none; margin-top: 12px;">
-                    <x-form-select name="govtReferralDept" label="10. Referred by Govt Department" lookup-group="intake.govt_referral" />
+                    <x-form-select name="govtReferralDept" :label="__('intake.govt_referral')" lookup-group="intake.govt_referral" />
                 </div>
             </div>
 
             {{-- ═══ STEP 3: Beneficiary Profile ═══ --}}
             <div id="intake-step-3" style="display:none;">
-                <div class="label-cap" style="font-size: 9.5px; margin-bottom: 4px;">Section 4</div>
-                <h3 class="serif" style="font-size: 22px; font-weight: 500; margin: 0 0 6px 0; color: var(--forest);">Beneficiary Profile</h3>
-                <div style="font-size: 12.5px; color: var(--ink-3); margin-bottom: 20px;">Personal details help us understand context and tailor support.</div>
+                <div class="label-cap" style="font-size: 9.5px; margin-bottom: 4px;">{{ __('intake.s3_section') }}</div>
+                <h3 class="serif" style="font-size: 22px; font-weight: 500; margin: 0 0 6px 0; color: var(--forest);">{{ __('intake.s3_title') }}</h3>
+                <div style="font-size: 12.5px; color: var(--ink-3); margin-bottom: 20px;">{{ __('intake.s3_desc') }}</div>
 
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 14px;">
                     <div>
-                        <x-form-input name="cnic" label="15. CNIC Number" :mono="true" hint="Numbers only without dash, e.g. 1234567891234" maxlength="13" />
+                        <x-form-input name="cnic" :label="__('intake.cnic')" :mono="true" :hint="__('intake.cnic_hint')" maxlength="13" />
                         <button type="button" id="intake-cnic-search-btn" class="btn-ghost" style="margin-top: 8px; font-size: 11px; padding: 5px 14px; display: inline-flex; align-items: center; gap: 5px;">
-                            <x-lucide-search style="width:12px;height:12px;" /> Search Client
+                            <x-lucide-search style="width:12px;height:12px;" /> {{ __('intake.search_client') }}
                         </button>
                         <span id="intake-repeat-status" style="margin-left: 8px; font-size: 11px; font-weight: 500;"></span>
                         <input type="hidden" name="repeatClient" value="">
                     </div>
-                    <x-form-input name="primaryContact" label="22. Primary Contact Number" required :mono="true" placeholder="03XXXXXXXXX" maxlength="11" pattern="[0-9]{11}" inputmode="numeric" />
+                    <x-form-input name="primaryContact" :label="__('intake.primary_contact')" required :mono="true" placeholder="03XXXXXXXXX" maxlength="11" pattern="[0-9]{11}" inputmode="numeric" />
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 14px;">
-                    <x-form-input name="fullName" label="11. Full Name (as per CNIC)" required />
-                    <x-form-input name="fatherHusbandName" label="12. Father / Husband Name" required />
+                    <x-form-input name="fullName" :label="__('intake.full_name')" required />
+                    <x-form-input name="fatherHusbandName" :label="__('intake.father_husband')" required />
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 14px;">
-                    <x-form-select name="gender" label="13. Gender" required lookup-group="intake.gender" />
-                    <x-form-input name="age" label="14. Age (in years)" type="number" required min="0" max="120" />
+                    <x-form-select name="gender" :label="__('intake.gender')" required lookup-group="intake.gender" />
+                    <x-form-input name="age" :label="__('intake.age')" type="number" required min="0" max="120" />
                 </div>
                 <div id="intake-gender-other-box" style="display:none; margin-bottom: 14px;">
-                    <x-form-input name="genderOther" label="Gender - Other" />
+                    <x-form-input name="genderOther" :label="__('intake.gender_other')" />
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 14px;">
-                    <x-form-select name="maritalStatus" label="16. Marital Status" required lookup-group="intake.marital_status" />
-                    <x-form-select name="religion" label="17. Religion" required lookup-group="intake.religion" />
-                    <x-form-select name="educationLevel" label="18. Education Level" required lookup-group="intake.education_level" />
+                    <x-form-select name="maritalStatus" :label="__('intake.marital_status')" required lookup-group="intake.marital_status" />
+                    <x-form-select name="religion" :label="__('intake.religion')" required lookup-group="intake.religion" />
+                    <x-form-select name="educationLevel" :label="__('intake.education_level')" required lookup-group="intake.education_level" />
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 14px;">
-                    <x-form-input name="occupation" label="19. Occupation" />
-                    <x-form-select name="monthlyIncome" label="20. Monthly Income Bracket" required lookup-group="intake.income_bracket" />
-                    <x-form-select name="disabilityStatus" label="21. Disability Status" required lookup-group="intake.disability_status" />
+                    <x-form-input name="occupation" :label="__('intake.occupation')" />
+                    <x-form-select name="monthlyIncome" :label="__('intake.monthly_income')" required lookup-group="intake.income_bracket" />
+                    <x-form-select name="disabilityStatus" :label="__('intake.disability')" required lookup-group="intake.disability_status" />
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 14px;">
-                    <x-form-input name="alternativeContact" label="23. Alternative Contact" :mono="true" />
-                    <x-form-input name="fullAddress" label="24. Full Address" type="textarea" />
+                    <x-form-input name="alternativeContact" :label="__('intake.alt_contact')" :mono="true" />
+                    <x-form-input name="fullAddress" :label="__('intake.full_address')" type="textarea" />
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px;">
                     <div>
-                        <label style="display:block; margin-bottom:6px; font-size:10px; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">27. District <span style="color:var(--burgundy);">*</span></label>
+                        <label style="display:block; margin-bottom:6px; font-size:10px; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">{{ __('intake.district') }} <span style="color:var(--burgundy);">*</span></label>
                         <select name="district" id="intakeDistrict" required class="inp" onchange="intakeLocationCascade('district')">
-                            <option value="">Select district…</option>
+                            <option value="">{{ __('intake.select_district') }}</option>
                         </select>
                     </div>
                     <div>
-                        <label style="display:block; margin-bottom:6px; font-size:10px; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">26. Tehsil / Taluka / Town <span style="color:var(--burgundy);">*</span></label>
+                        <label style="display:block; margin-bottom:6px; font-size:10px; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">{{ __('intake.tehsil') }} <span style="color:var(--burgundy);">*</span></label>
                         <select name="tehsil" id="intakeTehsil" required class="inp" onchange="intakeLocationCascade('taluka')">
-                            <option value="">Select district first…</option>
+                            <option value="">{{ __('intake.select_district_first') }}</option>
                         </select>
                     </div>
                 </div>
                 <div style="margin-bottom: 14px;">
-                    <label style="display:block; margin-bottom:6px; font-size:10px; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">25. Union Council</label>
+                    <label style="display:block; margin-bottom:6px; font-size:10px; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">{{ __('intake.union_council') }}</label>
                     <select name="unionCouncil" id="intakeUC" class="inp">
-                        <option value="">Select taluka first…</option>
+                        <option value="">{{ __('intake.select_taluka_first') }}</option>
                     </select>
                 </div>
-                <x-form-select name="preferredLanguage" label="28. Preferred Language" required lookup-group="intake.preferred_language" />
+                <x-form-select name="preferredLanguage" :label="__('intake.preferred_lang')" required lookup-group="intake.preferred_language" />
                 <div id="intake-lang-other-box" style="display:none; margin-top: 12px;">
-                    <x-form-input name="preferredLanguageOther" label="Preferred Language - Other" />
+                    <x-form-input name="preferredLanguageOther" :label="__('intake.preferred_lang_other')" />
                 </div>
             </div>
 
             {{-- ═══ STEP 4: Problem Diagnostics ═══ --}}
             <div id="intake-step-4" style="display:none;">
-                <div class="label-cap" style="font-size: 9.5px; margin-bottom: 4px;">Section 5</div>
-                <h3 class="serif" style="font-size: 22px; font-weight: 500; margin: 0 0 6px 0; color: var(--forest);">Problem Diagnostics</h3>
-                <div style="font-size: 12.5px; color: var(--ink-3); margin-bottom: 20px;">Outline the issue category, urgency, and brief description.</div>
+                <div class="label-cap" style="font-size: 9.5px; margin-bottom: 4px;">{{ __('intake.s4_section') }}</div>
+                <h3 class="serif" style="font-size: 22px; font-weight: 500; margin: 0 0 6px 0; color: var(--forest);">{{ __('intake.s4_title') }}</h3>
+                <div style="font-size: 12.5px; color: var(--ink-3); margin-bottom: 20px;">{{ __('intake.s4_desc') }}</div>
 
-                <x-form-input name="issueDescription" label="29. Brief description of the issue" type="textarea" placeholder="Briefly describe the issue..." required />
+                <x-form-input name="issueDescription" :label="__('intake.issue_desc')" type="textarea" :placeholder="__('intake.issue_placeholder')" required />
                 <div style="height: 14px;"></div>
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
-                    <x-form-select name="category" label="30. Category" required lookup-group="case.primary_issue" />
-                    <x-form-select name="urgencyLevel" label="31. Urgency Level" required lookup-group="case.urgency" />
+                    <x-form-select name="category" :label="__('intake.category')" required lookup-group="case.primary_issue" />
+                    <x-form-select name="urgencyLevel" :label="__('intake.urgency')" required lookup-group="case.urgency" />
                 </div>
 
             </div>
 
             {{-- ═══ STEP 5: Pathway Assignment ═══ --}}
             <div id="intake-step-5" style="display:none;">
-                <div class="label-cap" style="font-size: 9.5px; margin-bottom: 4px;">Assignment</div>
-                <h3 class="serif" style="font-size: 22px; font-weight: 500; margin: 0 0 6px 0; color: var(--forest);">32. Referred To / Assigned Service Pathway</h3>
-                <div style="font-size: 12.5px; color: var(--ink-3); margin-bottom: 20px;">Select one primary pathway assigned after assessment.</div>
+                <div class="label-cap" style="font-size: 9.5px; margin-bottom: 4px;">{{ __('intake.s5_section') }}</div>
+                <h3 class="serif" style="font-size: 22px; font-weight: 500; margin: 0 0 6px 0; color: var(--forest);">{{ __('intake.s5_title') }}</h3>
+                <div style="font-size: 12.5px; color: var(--ink-3); margin-bottom: 20px;">{{ __('intake.s5_desc') }}</div>
 
-                <x-form-select name="assignedPathway" label="Primary pathway" required lookup-group="intake.assigned_pathway" />
+                <x-form-select name="assignedPathway" :label="__('intake.primary_pathway')" required lookup-group="intake.assigned_pathway" />
 
                 {{-- Cascading specifics — populated by jhInitIntakeWizard() --}}
                 <div id="intake-pathway-specific-box" style="display:none; margin-top: 12px;">
-                    <label style="display: block; margin-bottom: 6px; font-size: 10px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3);">Specific pathway <span style="color: var(--burgundy);"> *</span></label>
+                    <label style="display: block; margin-bottom: 6px; font-size: 10px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3);">{{ __('intake.specific_pathway') }} <span style="color: var(--burgundy);"> *</span></label>
                     <select name="pathwaySpecific" class="inp">
-                        <option value="">Select...</option>
+                        <option value="">{{ __('intake.select') }}</option>
                     </select>
                     <div id="intake-pw-specific-other-box" style="display:none; margin-top: 10px;">
-                        <x-form-input name="pathwaySpecificOther" label="Please specify" />
+                        <x-form-input name="pathwaySpecificOther" :label="__('intake.please_specify')" />
                     </div>
                 </div>
 
                 {{-- Department / Complaint Against (shown for Provincial Ombudsman) --}}
                 <div id="intake-pw-complaint-dept-box" style="display:none; margin-top: 12px;">
-                    <x-form-select name="complaintDepartment" label="Department / Complaint Against" required lookup-group="intake.complaint_department" />
+                    <x-form-select name="complaintDepartment" :label="__('intake.complaint_dept')" required lookup-group="intake.complaint_department" />
                 </div>
 
                 {{-- Lawyer assignment (Court Representation → Justice Hub Lawyer) --}}
                 <div id="intake-pw-lawyer-box" style="display:none; margin-top: 12px;">
                     <label style="display:block; margin-bottom:6px; font-size:10px; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">
-                        Assigned Lawyer <span style="color:var(--burgundy);">*</span>
+                        {{ __('intake.assigned_lawyer') }} <span style="color:var(--burgundy);">*</span>
                     </label>
                     <select name="assignedLawyer" id="lawyerSelect" class="inp">
                         <option value="">— Select lawyer —</option>
@@ -281,7 +281,7 @@
                 {{-- Hub Coordinator display (Mediation / Govt / NGO / Other) --}}
                 <div id="intake-pw-coordinator-box" style="display:none; margin-top: 12px;">
                     <label style="display:block; margin-bottom:6px; font-size:10px; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">
-                        Hub Coordinator
+                        {{ __('intake.hub_coordinator') }}
                     </label>
                     <input type="text" id="intake-pw-coordinator-name" class="inp" readonly
                            style="background:var(--parchment);cursor:default;"
@@ -305,13 +305,13 @@
 
                 {{-- Other --}}
                 <div id="intake-pw-other-box" style="display:none; margin-top: 12px;">
-                    <x-form-input name="pathwayOtherDetails" label="Please specify" type="textarea" />
+                    <x-form-input name="pathwayOtherDetails" :label="__('intake.please_specify')" type="textarea" />
                 </div>
 
                 <div style="margin-top: 18px; padding: 14px 16px; background: var(--paper); border: 1px solid var(--rule); border-left: 3px solid var(--moss);">
-                    <div style="font-weight: 600; font-size: 12.5px; color: var(--ink-2); margin-bottom: 6px;">Conclusion</div>
+                    <div style="font-weight: 600; font-size: 12.5px; color: var(--ink-2); margin-bottom: 6px;">{{ __('intake.conclusion_title') }}</div>
                     <div style="font-size: 12px; color: var(--ink-3); line-height: 1.55;">
-                        Thank you for completing the intake form. For any questions, feedback, or complaints: {{ config('justice_hub.contact.organization') }} - {{ config('justice_hub.contact.phone') }}.
+                        {{ __('intake.conclusion_text') }}
                     </div>
                 </div>
             </div>
@@ -319,23 +319,23 @@
             {{-- ═══ Navigation Buttons ═══ --}}
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--rule-2);">
                 <button type="button" id="intake-back-btn" class="btn-ghost"
-                    data-cancel-url="{{ route('cases.index') }}">Cancel</button>
+                    data-cancel-url="{{ route('cases.index') }}">{{ __('intake.cancel') }}</button>
 
                 <div id="intake-validation-hint" style="font-size: 11px; color: var(--ink-3); display:none;"></div>
 
                 <div style="display:flex; gap:10px;">
                     <button type="button" id="intake-next-btn" class="btn-primary">
-                        Continue <x-lucide-chevron-right style="width:12px;height:12px;" />
+                        {{ __('intake.continue') }} <x-lucide-chevron-right style="width:12px;height:12px;" />
                     </button>
                     <button type="submit" id="intake-submit-btn" class="btn-primary" style="background:var(--moss);display:none;" disabled>
                         <span id="intake-submit-idle" style="display:flex;align-items:center;gap:6px;">
-                            <x-lucide-check-circle-2 style="width:13px;height:13px;" /> Register Intake
+                            <x-lucide-check-circle-2 style="width:13px;height:13px;" /> {{ __('intake.register_intake') }}
                         </span>
                         <span id="intake-submit-loading" style="display:none;align-items:center;gap:8px;">
                             <svg style="width:14px;height:14px;animation:jhSpin 0.8s linear infinite;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                 <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
                             </svg>
-                            Registering…
+                            {{ __('intake.registering') }}
                         </span>
                     </button>
                 </div>

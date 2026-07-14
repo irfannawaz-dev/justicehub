@@ -122,6 +122,23 @@ class SettingsController extends Controller
         return back();
     }
 
+    public function setLocale(Request $request)
+    {
+        $validated = $request->validate([
+            'locale' => ['required', Rule::in(['en', 'sd', 'ur'])],
+        ]);
+
+        $user = $request->user();
+        $meta = $user->meta ?? [];
+        $meta['locale'] = $validated['locale'];
+        $user->update(['meta' => $meta]);
+
+        session(['locale' => $validated['locale']]);
+        app()->setLocale($validated['locale']);
+
+        return back();
+    }
+
     public function updateFinance(Request $request)
     {
         $request->validate([

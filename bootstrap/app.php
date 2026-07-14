@@ -20,6 +20,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // Global middleware — runs on every request
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
 
+        // Web group — runs after session/auth are available
+        $middleware->appendToGroup('web', \App\Http\Middleware\SetLocale::class);
+
         $middleware->alias([
             'hub.scope' => \App\Http\Middleware\EnsureHubScope::class,
             'can.write' => \App\Http\Middleware\EnsureCanWrite::class,

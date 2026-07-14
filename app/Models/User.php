@@ -109,6 +109,11 @@ class User extends Authenticatable
         return $this->role === UserRole::Viewer;
     }
 
+    public function preferredLocale(): string
+    {
+        return $this->meta['locale'] ?? 'en';
+    }
+
     public function canSeeAllHubs(): bool
     {
         $scope = $this->role->isGlobalScope();

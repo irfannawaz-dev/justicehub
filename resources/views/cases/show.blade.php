@@ -2140,15 +2140,23 @@
                         Feedback can be captured after every service encounter — and again at case closure. Use the Timeline tab to record encounter-specific feedback, or capture an overall response below.
                     </div>
                     @if($canWrite)
-                    <button class="btn-primary" onclick="jhOpenModal('capture-feedback')" style="display: inline-flex; align-items: center; gap: 6px;">
-                        <x-lucide-plus style="width: 13px; height: 13px;" /> Capture feedback
-                    </button>
+                    <div style="display:flex; gap:10px; justify-content:center;">
+                        <a href="{{ route('feedback.index') }}" onclick="event.preventDefault(); jhOpenModal('case-detailed-feedback');" class="btn-ghost" style="display:inline-flex; align-items:center; gap:6px;">
+                            <x-lucide-clipboard-list style="width:13px; height:13px;" /> Detailed Feedback
+                        </a>
+                        <button class="btn-primary" onclick="jhOpenModal('capture-feedback')" style="display: inline-flex; align-items: center; gap: 6px;">
+                            <x-lucide-plus style="width: 13px; height: 13px;" /> Capture feedback
+                        </button>
+                    </div>
                     @endif
                 </div>
                 @endforelse
 
                 @if($case->feedback->count() > 0 && $canWrite)
-                <div style="padding-top: 16px; border-top: 1px solid var(--rule-2); margin-top: 8px;">
+                <div style="padding-top: 16px; border-top: 1px solid var(--rule-2); margin-top: 8px; display:flex; gap:10px;">
+                    <a href="#" onclick="event.preventDefault(); jhOpenModal('case-detailed-feedback');" class="btn-ghost" style="display:inline-flex; align-items:center; gap:6px;">
+                        <x-lucide-clipboard-list style="width:13px; height:13px;" /> Detailed Feedback
+                    </a>
                     <button class="btn-primary" onclick="jhOpenModal('capture-feedback')" style="display: inline-flex; align-items: center; gap: 6px;">
                         <x-lucide-plus style="width: 13px; height: 13px;" /> Capture feedback
                     </button>
@@ -3171,6 +3179,249 @@ document.addEventListener('DOMContentLoaded', function() {
         defSev.closest('label').style.color = 'var(--cream)';
     }
 });
+</script>
+@endif
+
+{{-- ═══ Detailed Feedback Survey Modal (Case Context) ═══ --}}
+@if($canWrite)
+@php
+    $svcMap = [
+        'Legal Advice / Consultation' => 'Legal advice',
+        'Court Representation' => 'Legal advice',
+        'Mediation' => 'Mediation / ADR',
+        'ADR / Dispute Resolution Support' => 'Mediation / ADR',
+        'Government Department / Public Institution' => 'Referral to another service',
+        'Civil Society / NGO / CSO / NPO' => 'Referral to another service',
+    ];
+    $autoService = $svcMap[$case->assigned_pathway] ?? '';
+    $autoFirstVisit = $case->returning_client ? 'no' : 'yes';
+@endphp
+<div class="modal fade" id="modal-case-detailed-feedback" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog" style="max-width:680px; margin:1.75rem auto;">
+        <div class="modal-content" style="border:1px solid var(--rule); border-radius:4px; background:var(--parchment); box-shadow:0 16px 48px rgba(0,0,0,.18); display:flex; flex-direction:column; max-height:88vh;">
+
+            <div style="padding:18px 24px 14px; border-bottom:1px solid var(--rule); flex-shrink:0;">
+                <div style="display:flex; align-items:flex-start; justify-content:space-between;">
+                    <div>
+                        <div class="label-cap" style="font-size:9px; color:var(--ink-4); margin-bottom:4px;">Beneficiary Feedback · {{ $case->case_uid }}</div>
+                        <h2 class="serif" style="font-size:22px; font-weight:400; margin:0;">
+                            Section <span id="cds-section-num">A</span> · <span id="cds-section-title">Basic Information</span>
+                        </h2>
+                    </div>
+                    <button type="button" data-bs-dismiss="modal" style="background:none; border:1px solid var(--rule); cursor:pointer; padding:5px 7px; color:var(--ink-3); border-radius:3px;">
+                        <x-lucide-x style="width:14px;height:14px;" />
+                    </button>
+                </div>
+                <div style="display:flex; gap:3px; margin-top:12px;">
+                    @foreach(['A','B','C','D','E','F','G'] as $sec)
+                    <div id="cds-prog-{{ $sec }}" style="flex:1; height:3px; background:var(--rule-2); border-radius:2px; transition:background 200ms;"></div>
+                    @endforeach
+                </div>
+            </div>
+
+            <form method="POST" action="{{ route('feedback.survey.store') }}" id="cdsFeedbackForm">
+                @csrf
+                <input type="hidden" name="case_id" value="{{ $case->id }}">
+                <div style="padding:20px 24px; overflow-y:auto; flex:1;">
+
+                    {{-- SECTION A --}}
+                    <div class="cds-section" data-section="A">
+                        <div style="padding:10px 14px; background:var(--surface); border:1px solid var(--rule); margin-bottom:16px;">
+                            <div style="font-size:12px; color:var(--ink-2);"><strong>{{ $case->case_uid }}</strong> — {{ $case->name }} · {{ $case->hub_id }}</div>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+                            <div>
+                                <label class="jh-field-label">4. Date of Visit</label>
+                                <input type="date" name="visit_date" class="inp" value="{{ $case->intake_date?->format('Y-m-d') ?? now()->format('Y-m-d') }}">
+                            </div>
+                            <div>
+                                <label class="jh-field-label">5. Date Service Received</label>
+                                <input type="date" name="service_date" class="inp" value="{{ now()->format('Y-m-d') }}">
+                            </div>
+                        </div>
+                        <div style="margin-bottom:14px;">
+                            <label class="jh-field-label">6. Type of Service Received *</label>
+                            <select name="service_type" class="inp" required>
+                                <option value="">— Select —</option>
+                                @foreach(['Legal advice','Mediation / ADR','Documentation support','Referral to another service','Multiple services'] as $svc)
+                                <option value="{{ $svc }}" @selected($svc === $autoService)>{{ $svc }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div style="margin-bottom:14px;">
+                            <label class="jh-field-label">7. First visit?</label>
+                            <div style="display:flex; gap:8px;">
+                                <label class="cds-toggle-btn {{ $autoFirstVisit === 'yes' ? 'cds-active' : '' }}" onclick="cdsToggle('first_visit','yes',this)">Yes</label>
+                                <label class="cds-toggle-btn {{ $autoFirstVisit === 'no' ? 'cds-active' : '' }}" onclick="cdsToggle('first_visit','no',this)">No</label>
+                            </div>
+                            <input type="hidden" name="first_visit" id="cds-first_visit" value="{{ $autoFirstVisit }}">
+                        </div>
+                        <div style="margin-bottom:14px;">
+                            <label class="jh-field-label">Consent *</label>
+                            <div style="display:flex; gap:8px;">
+                                <label class="cds-toggle-btn cds-active" onclick="cdsToggle('consent','yes',this)">Yes</label>
+                                <label class="cds-toggle-btn" onclick="cdsToggle('consent','no',this)">No</label>
+                            </div>
+                            <input type="hidden" name="consent" id="cds-consent" value="yes">
+                        </div>
+                    </div>
+
+                    {{-- SECTION B --}}
+                    <div class="cds-section" data-section="B" style="display:none;">
+                        <div style="font-size:11px; color:var(--ink-4); margin-bottom:16px;">Scale: 1 = Very Poor, 2 = Poor, 3 = Fair, 4 = Good, 5 = Very Good</div>
+                        @foreach([['q11_access','11. How easy was it to access the Justice Hub?'],['q12_reception','12. How respectfully were you received?'],['q13_explanation','13. Did staff explain their role clearly?'],['q14_waiting','14. Satisfied with waiting time?']] as [$f,$l])
+                        <div style="margin-bottom:16px;">
+                            <label class="jh-field-label">{{ $l }}</label>
+                            <div style="display:flex; gap:6px;">@for($r=1;$r<=5;$r++)<label class="cds-scale-btn" onclick="cdsScale('{{ $f }}',{{ $r }},this)">{{ $r }}</label>@endfor</div>
+                            <input type="hidden" name="{{ $f }}" id="cds-{{ $f }}" value="">
+                        </div>
+                        @endforeach
+                        <div style="margin-bottom:14px;">
+                            <label class="jh-field-label">15. Any difficulty accessing services?</label>
+                            <select name="q15_difficulty" class="inp"><option value="">— Select —</option><option>No</option><option>Distance / transport</option><option>Timing</option><option>Disability / accessibility</option><option>Language barrier</option><option>Other</option></select>
+                        </div>
+                    </div>
+
+                    {{-- SECTION C --}}
+                    <div class="cds-section" data-section="C" style="display:none;">
+                        @foreach([['q16_listened','16. Was your problem properly listened to?',['Yes, completely','To some extent','No']],['q17_comfortable','17. Comfortable sharing your issue?',['Yes, completely','Somewhat','No']]] as [$f,$l,$opts])
+                        <div style="margin-bottom:16px;">
+                            <label class="jh-field-label">{{ $l }}</label>
+                            <div style="display:flex; gap:6px; flex-wrap:wrap;">@foreach($opts as $o)<label class="cds-toggle-btn" onclick="cdsToggle('{{ $f }}','{{ $o }}',this)">{{ $o }}</label>@endforeach</div>
+                            <input type="hidden" name="{{ $f }}" id="cds-{{ $f }}" value="">
+                        </div>
+                        @endforeach
+                        <div style="margin-bottom:16px;">
+                            <label class="jh-field-label">18. How well did staff understand your problem? (1-5)</label>
+                            <div style="display:flex; gap:6px;">@for($r=1;$r<=5;$r++)<label class="cds-scale-btn" onclick="cdsScale('q18_understood',{{ $r }},this)">{{ $r }}</label>@endfor</div>
+                            <input type="hidden" name="q18_understood" id="cds-q18_understood" value="">
+                        </div>
+                        <div style="margin-bottom:14px;">
+                            <label class="jh-field-label">19. Treated fairly regardless of background?</label>
+                            <div style="display:flex; gap:6px;">@foreach(['Yes','Somewhat','No'] as $o)<label class="cds-toggle-btn" onclick="cdsToggle('q19_fair_treatment','{{ $o }}',this)">{{ $o }}</label>@endforeach</div>
+                            <input type="hidden" name="q19_fair_treatment" id="cds-q19_fair_treatment" value="">
+                        </div>
+                    </div>
+
+                    {{-- SECTION D --}}
+                    <div class="cds-section" data-section="D" style="display:none;">
+                        @foreach([['q20_info_safety','20. Comfortable that info won\'t be shared?',['Yes','Somewhat','No']],['q21_data_explained','21. Did staff explain data usage?',['Yes, clearly','Somewhat','No']]] as [$f,$l,$opts])
+                        <div style="margin-bottom:16px;">
+                            <label class="jh-field-label">{{ $l }}</label>
+                            <div style="display:flex; gap:6px; flex-wrap:wrap;">@foreach($opts as $o)<label class="cds-toggle-btn" onclick="cdsToggle('{{ $f }}','{{ $o }}',this)">{{ $o }}</label>@endforeach</div>
+                            <input type="hidden" name="{{ $f }}" id="cds-{{ $f }}" value="">
+                        </div>
+                        @endforeach
+                        <div style="margin-bottom:16px;">
+                            <label class="jh-field-label">22. Confidence info is handled safely? (1-5)</label>
+                            <div style="display:flex; gap:6px;">@for($r=1;$r<=5;$r++)<label class="cds-scale-btn" onclick="cdsScale('q22_confidence',{{ $r }},this)">{{ $r }}</label>@endfor</div>
+                            <input type="hidden" name="q22_confidence" id="cds-q22_confidence" value="">
+                        </div>
+                        <div style="margin-bottom:14px;">
+                            <label class="jh-field-label">23. Informed about how to raise a complaint?</label>
+                            <div style="display:flex; gap:6px;">@foreach(["Yes","No","Don't remember"] as $o)<label class="cds-toggle-btn" onclick="cdsToggle('q23_complaint_info','{{ $o }}',this)">{{ $o }}</label>@endforeach</div>
+                            <input type="hidden" name="q23_complaint_info" id="cds-q23_complaint_info" value="">
+                        </div>
+                    </div>
+
+                    {{-- SECTION E --}}
+                    <div class="cds-section" data-section="E" style="display:none;">
+                        @foreach([['q24_advice_useful','24. Was the advice useful?',['Yes, very useful','Somewhat useful','Not useful']],['q25_referral_clarity','25. Was the referral clear?',['Clear and explained properly','Somewhat clear','Not clear']],['q26_next_steps','26. Did staff explain next steps?',['Yes, clearly','Somewhat','No']],['q27_clarity','27. How clear about what to do next?',['Very clear','Clear','Neutral','Unclear','Very unclear']]] as [$f,$l,$opts])
+                        <div style="margin-bottom:16px;">
+                            <label class="jh-field-label">{{ $l }}</label>
+                            <div style="display:flex; gap:6px; flex-wrap:wrap;">@foreach($opts as $o)<label class="cds-toggle-btn" onclick="cdsToggle('{{ $f }}','{{ $o }}',this)">{{ $o }}</label>@endforeach</div>
+                            <input type="hidden" name="{{ $f }}" id="cds-{{ $f }}" value="">
+                        </div>
+                        @endforeach
+                    </div>
+
+                    {{-- SECTION F --}}
+                    <div class="cds-section" data-section="F" style="display:none;">
+                        <div style="margin-bottom:16px;">
+                            <label class="jh-field-label">28. Overall satisfaction? (1-5)</label>
+                            <div style="display:flex; gap:6px;">@for($r=1;$r<=5;$r++)<label class="cds-scale-btn" onclick="cdsScale('q28_satisfaction',{{ $r }},this)">{{ $r }}</label>@endfor</div>
+                            <input type="hidden" name="q28_satisfaction" id="cds-q28_satisfaction" value="">
+                        </div>
+                        @foreach([['q29_resolution_help','29. Did visiting help resolve your problem?',['Yes','Somewhat','No']],['q30_recommend','30. Would you recommend the Justice Hub?',['Yes','Maybe','No']]] as [$f,$l,$opts])
+                        <div style="margin-bottom:16px;">
+                            <label class="jh-field-label">{{ $l }}</label>
+                            <div style="display:flex; gap:6px;">@foreach($opts as $o)<label class="cds-toggle-btn" onclick="cdsToggle('{{ $f }}','{{ $o }}',this)">{{ $o }}</label>@endforeach</div>
+                            <input type="hidden" name="{{ $f }}" id="cds-{{ $f }}" value="">
+                        </div>
+                        @endforeach
+                        <div style="margin-bottom:14px;">
+                            <label class="jh-field-label">31. How much do you trust the Justice Hub? (1-5)</label>
+                            <div style="display:flex; gap:6px;">@for($r=1;$r<=5;$r++)<label class="cds-scale-btn" onclick="cdsScale('q31_trust',{{ $r }},this)">{{ $r }}</label>@endfor</div>
+                            <input type="hidden" name="q31_trust" id="cds-q31_trust" value="">
+                        </div>
+                    </div>
+
+                    {{-- SECTION G --}}
+                    <div class="cds-section" data-section="G" style="display:none;">
+                        <div style="font-size:11px; color:var(--ink-4); margin-bottom:16px;">Optional — capture the beneficiary's own words.</div>
+                        @foreach([['q32_helpful_part','32. Most helpful part of your visit?'],['q33_improvement','33. What can be improved?'],['q34_additional','34. Additional comments?']] as [$f,$l])
+                        <div style="margin-bottom:16px;">
+                            <label class="jh-field-label">{{ $l }}</label>
+                            <textarea name="{{ $f }}" rows="3" class="inp" style="width:100%; resize:vertical; box-sizing:border-box;"></textarea>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div style="padding:12px 24px; border-top:1px solid var(--rule); display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+                    <button type="button" id="cds-back-btn" class="btn-ghost" onclick="cdsNav(-1)" style="display:none;">← Back</button>
+                    <div id="cds-section-hint" style="font-size:11px; color:var(--ink-4);">Section 1 of 7</div>
+                    <div style="display:flex; gap:8px;">
+                        <button type="button" data-bs-dismiss="modal" class="btn-ghost">Cancel</button>
+                        <button type="button" id="cds-next-btn" class="btn-primary" onclick="cdsNav(1)" style="display:inline-flex; align-items:center; gap:6px;">
+                            Continue <x-lucide-chevron-right style="width:12px;height:12px;" />
+                        </button>
+                        <button type="submit" id="cds-submit-btn" class="btn-primary" style="background:var(--moss); display:none;">
+                            <x-lucide-check-circle-2 style="width:13px;height:13px;" /> Submit Survey
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .cds-toggle-btn { display:inline-flex; align-items:center; padding:8px 14px; border:2px solid var(--rule); cursor:pointer; font-size:12px; font-weight:500; color:var(--ink-2); transition:all 120ms; user-select:none; }
+    .cds-toggle-btn:hover { border-color:var(--ink-3); }
+    .cds-toggle-btn.cds-active { border-color:var(--forest); color:var(--forest); background:rgba(22,48,41,0.04); font-weight:600; }
+    .cds-scale-btn { display:inline-flex; align-items:center; justify-content:center; width:44px; height:40px; border:2px solid var(--rule); cursor:pointer; font-size:14px; font-weight:600; color:var(--ink-3); transition:all 120ms; user-select:none; }
+    .cds-scale-btn:hover { border-color:var(--ink-3); }
+    .cds-scale-btn.cds-active { border-color:var(--forest); color:#fff; background:var(--forest); }
+</style>
+<script>
+(function() {
+    var secs = ['A','B','C','D','E','F','G'];
+    var titles = ['Basic Information','Access & Welcome','Listening & Dignity','Confidentiality','Service Quality','Satisfaction & Trust','Open Feedback'];
+    var step = 0;
+    window.cdsNav = function(d) {
+        step = Math.max(0, Math.min(6, step + d));
+        document.querySelectorAll('.cds-section').forEach(function(el) { el.style.display = el.dataset.section === secs[step] ? '' : 'none'; });
+        document.getElementById('cds-section-num').textContent = secs[step];
+        document.getElementById('cds-section-title').textContent = titles[step];
+        document.getElementById('cds-section-hint').textContent = 'Section ' + (step+1) + ' of 7';
+        document.getElementById('cds-back-btn').style.display = step === 0 ? 'none' : '';
+        document.getElementById('cds-next-btn').style.display = step === 6 ? 'none' : '';
+        document.getElementById('cds-submit-btn').style.display = step === 6 ? '' : 'none';
+        secs.forEach(function(s,i) { document.getElementById('cds-prog-'+s).style.background = i<=step ? 'var(--forest)' : 'var(--rule-2)'; });
+    };
+    cdsNav(0);
+    window.cdsToggle = function(f,v,btn) {
+        btn.parentElement.querySelectorAll('.cds-toggle-btn').forEach(function(b){b.classList.remove('cds-active');});
+        btn.classList.add('cds-active');
+        document.getElementById('cds-'+f).value = v;
+    };
+    window.cdsScale = function(f,r,btn) {
+        btn.parentElement.querySelectorAll('.cds-scale-btn').forEach(function(b){b.classList.remove('cds-active');});
+        btn.classList.add('cds-active');
+        document.getElementById('cds-'+f).value = r;
+    };
+})();
 </script>
 @endif
 </x-layouts.app>

@@ -4,6 +4,7 @@
     $hubs = \App\Models\Hub::where('is_active', true)->get();
     $activeHubId = session('active_hub', 'all');
     $currentTheme = session('theme', 'light');
+    $currentLocale = session('locale', $user->preferredLocale());
 
     // Data counts for lineage section
     $counts = [
@@ -70,12 +71,54 @@
     </div>
 
     {{-- ═══════════════════════════════════════════════════════════════
+        Section 1.5 — Language / زبان
+        ═══════════════════════════════════════════════════════════════ --}}
+    <div style="margin-bottom: 28px;">
+        <div style="margin-bottom: 12px;">
+            <div class="label-cap" style="font-size: 9.5px; margin-bottom: 4px;">2 · Language / زبان</div>
+            <h3 class="serif" style="font-size: 19px; font-weight: 500; margin: 0; color: var(--ink);">Interface Language</h3>
+            <p style="font-size: 12.5px; color: var(--ink-3); margin: 6px 0 0 0; line-height: 1.55; max-width: 640px;">
+                Switch the interface language. Form labels, navigation, and buttons will display in your selected language. Data you enter is saved as-is in any language.
+            </p>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; max-width: 640px;">
+            @foreach([
+                ['id' => 'en', 'label' => 'English',  'native' => 'English',   'desc' => 'Default interface language', 'sample' => 'Register Intake'],
+                ['id' => 'sd', 'label' => 'Sindhi',   'native' => 'سنڌي',      'desc' => 'سنڌي ۾ انٽرفيس',            'sample' => 'نئون داخلو'],
+                ['id' => 'ur', 'label' => 'Urdu',     'native' => 'اردو',      'desc' => 'اردو میں انٹرفیس',           'sample' => 'نیا اندراج'],
+            ] as $lang)
+            <form method="POST" action="{{ route('settings.locale') }}">
+                @csrf
+                <button type="submit" name="locale" value="{{ $lang['id'] }}"
+                    style="width: 100%; background: var(--paper); border: 2px solid {{ $currentLocale === $lang['id'] ? 'var(--forest)' : 'var(--rule)' }}; padding: 18px 20px; text-align: left; cursor: pointer; font-family: inherit; transition: all 140ms; display: flex; flex-direction: column; gap: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <span class="serif" style="font-size: 16px; font-weight: 500; color: var(--ink);">{{ $lang['label'] }}</span>
+                            @if($lang['id'] !== 'en')
+                            <span style="font-size: 14px; color: var(--ink-2); margin-left: 6px; font-family: 'Noto Nastaliq Urdu', Tahoma, sans-serif;">{{ $lang['native'] }}</span>
+                            @endif
+                        </div>
+                        @if($currentLocale === $lang['id'])
+                        <span style="font-size: 9px; font-weight: 600; letter-spacing: 0.04em; padding: 2px 7px; background: rgba(74,122,92,0.14); color: var(--moss); text-transform: uppercase;">Active</span>
+                        @endif
+                    </div>
+                    <div style="font-size: 11.5px; color: var(--ink-3);">{{ $lang['desc'] }}</div>
+                    <div style="padding: 6px 10px; background: var(--surface); border: 1px solid var(--rule-2); font-size: 12px; color: var(--ink-2);{{ in_array($lang['id'], ['sd', 'ur']) ? ' direction:rtl; text-align:right; font-family:\"Noto Nastaliq Urdu\", Tahoma, sans-serif;' : '' }}">
+                        {{ $lang['sample'] }}
+                    </div>
+                </button>
+            </form>
+            @endforeach
+        </div>
+    </div>
+
+    {{-- ═══════════════════════════════════════════════════════════════
         Section 2 — Hub Scope (only for global roles)
         ═══════════════════════════════════════════════════════════════ --}}
     @if($user->canSeeAllHubs())
     <div style="margin-bottom: 28px;">
         <div style="margin-bottom: 12px;">
-            <div class="label-cap" style="font-size: 9.5px; margin-bottom: 4px;">2 · Hub Scope</div>
+            <div class="label-cap" style="font-size: 9.5px; margin-bottom: 4px;">3 · Hub Scope</div>
             <h3 class="serif" style="font-size: 19px; font-weight: 500; margin: 0; color: var(--ink);">Active hub</h3>
             <p style="font-size: 12.5px; color: var(--ink-3); margin: 6px 0 0 0; line-height: 1.55; max-width: 640px;">
                 Filters cases, indicators, complaints, and feedback to the selected hub. Reports and dashboards aggregate to programme level when &ldquo;All Hubs&rdquo; is selected.
@@ -128,7 +171,7 @@
         ═══════════════════════════════════════════════════════════════ --}}
     <div style="margin-bottom: 28px;">
         <div style="margin-bottom: 12px;">
-            <div class="label-cap" style="font-size: 9.5px; margin-bottom: 4px;">{{ $user->can('lookups.manage') ? '3' : ($user->canSeeAllHubs() ? '3' : '2') }} · Keyboard shortcuts</div>
+            <div class="label-cap" style="font-size: 9.5px; margin-bottom: 4px;">{{ $user->canSeeAllHubs() ? '4' : '3' }} · Keyboard shortcuts</div>
             <h3 class="serif" style="font-size: 19px; font-weight: 500; margin: 0; color: var(--ink);">Available shortcuts</h3>
         </div>
         <div class="card" style="padding: 0; max-width: 640px;">

@@ -113,6 +113,7 @@ Route::middleware(['auth', 'hub.scope', 'can.write'])->group(function () {
     // ── Feedback ─────────────────────────────────────────────────────
     Route::get('/feedback', [FeedbackController::class, 'index'])->name('feedback.index');
     Route::post('/feedback', [FeedbackController::class, 'store'])->name('feedback.store');
+    Route::post('/feedback/survey', [FeedbackController::class, 'storeSurvey'])->name('feedback.survey.store');
 
     // ── Staff & Training ─────────────────────────────────────────────
     Route::get('/staff', [StaffController::class, 'index'])->name('staff.index');
@@ -137,6 +138,7 @@ Route::middleware(['auth', 'hub.scope', 'can.write'])->group(function () {
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::post('/settings/hub', [SettingsController::class, 'setHub'])->name('settings.hub');
     Route::post('/settings/theme', [SettingsController::class, 'setTheme'])->name('settings.theme');
+    Route::post('/settings/locale', [SettingsController::class, 'setLocale'])->name('settings.locale');
     Route::post('/settings/finance', [SettingsController::class, 'updateFinance'])->name('settings.finance');
 
     // ── User Management (Head / users.manage only) ───────────────
