@@ -1,6 +1,7 @@
 <?php
 
 return [
+    // Existing keys
     'strategic_overview' => 'اسٹریٹجک جائزہ',
     'total_cases' => 'کُل کیسز',
     'active_cases' => 'فعال کیسز',
@@ -11,4 +12,173 @@ return [
     'cases_by_pathway' => 'راستے کے مطابق کیسز',
     'recent_activity' => 'حالیہ سرگرمیاں',
     'pending_actions' => 'زیرِ التوا اقدامات',
+
+    // ── کمانڈ سینٹر ──
+    'command_centre' => 'جسٹس ہب · کمانڈ سینٹر',
+    'real_time_overview' => 'پورے پاکستان میں جسٹس ہبز کا حقیقی وقت کا جائزہ',
+    'legal_aid_society' => 'لیگل ایڈ سوسائٹی',
+    'justice_hub_cms' => 'جسٹس ہب سی ایم ایس',
+    'date_range' => 'تاریخ کی حد',
+    'custom_date_range' => 'حسب ضرورت تاریخ کی حد',
+    'from' => 'سے',
+    'to' => 'تک',
+    'apply' => 'لاگو کریں',
+    'reset_filters' => 'فلٹر ری سیٹ کریں',
+    'download_report' => 'رپورٹ ڈاؤنلوڈ کریں',
+    'showing' => 'دکھایا جا رہا ہے',
+    'last_updated' => 'آخری تازہ کاری',
+    'live' => 'لائیو',
+    'new_this_week' => ':count اس ہفتے نئے',
+    'this_week' => ':count اس ہفتے',
+    'cases_resolved' => 'حل شدہ کیسز',
+    'high_risk' => 'اعلیٰ خطرہ',
+    'needs_attention' => 'توجہ کی ضرورت ہے',
+    'clear_status' => 'صاف',
+    'flagged_for_escalation' => 'بڑھانے کے لیے نشان زد',
+    'on_target' => 'ہدف پر',
+    'breaches' => ':count خلاف ورزیاں',
+    'pending' => 'زیر التوا',
+    'pending_review' => ':count جائزے کے لیے زیر التوا',
+
+    // نقشہ سیکشن
+    'programme_coverage' => 'پروگرام کوریج',
+    'click_pin_for_details' => 'پورے پاکستان میں جسٹس ہب مقامات · تفصیلات کے لیے پن پر کلک کریں',
+    'active_hub' => 'فعال ہب',
+    'hubs_count_cases' => ':hubs ہبز · :cases کُل کیسز',
+    'of_total_caseload' => 'کُل کیس لوڈ کا :pct%',
+
+    // چارٹس
+    'case_intake_resolution_trend' => 'کیس انٹیک اور حل کا رجحان',
+    'last_30_days_daily_activity' => 'آخری 30 دنوں کی روزانہ سرگرمی',
+    'daily_intakes' => 'روزانہ انٹیک',
+    'case_distribution_by_type' => 'قسم کے مطابق کیس تقسیم',
+    'primary_issue_breakdown' => 'بنیادی مسئلے کی تقسیم',
+    'cases_by_status' => 'اسٹیٹس کے مطابق کیسز',
+    'current_status_distribution' => 'موجودہ اسٹیٹس تقسیم',
+
+    // ہب کارکردگی
+    'hub_performance' => 'ہب کارکردگی',
+    'hubs_count' => ':count ہبز',
+    'hub' => 'ہب',
+    'total' => 'کُل',
+    'active' => 'فعال',
+    'closed' => 'بند',
+    'sla_pct' => 'ایس ایل اے %',
+
+    // ریفرل ذرائع
+    'referral_sources' => 'ریفرل ذرائع',
+    'no_referral_data' => 'ریفرل ڈیٹا دستیاب نہیں',
+
+    // الرٹ اور بڑھانا
+    'alerts_escalations' => 'الرٹ اور بڑھانا',
+    'high_risk_cases' => 'اعلیٰ خطرے والے کیسز',
+    'sla_breaches' => 'ایس ایل اے خلاف ورزیاں',
+    'pending_approval' => 'منظوری کے لیے زیر التوا',
+    'complaints_open' => 'کھلی شکایات',
+
+    // کمزوری اور حفاظت
+    'vulnerability_safeguarding' => 'کمزوری اور حفاظت',
+    'gbv' => 'صنفی تشدد',
+    'child' => 'بچہ',
+    'minority' => 'اقلیت',
+    'disability' => 'معذوری',
+    'underserved' => 'پسماندہ',
+
+    // صنف اور فوری اعداد و شمار
+    'gender_split' => 'صنف کی تقسیم',
+    'quick_stats' => 'فوری اعداد و شمار',
+    'satisfaction' => 'اطمینان',
+    'outreach_sessions' => 'آؤٹ ریچ سیشن',
+    'participants' => 'شرکاء',
+    'cost_per_case_pkr' => 'فی کیس لاگت (پی کے آر)',
+
+    // جغرافیائی اور خدمات اور عمر
+    'geographic_distribution' => 'جغرافیائی تقسیم',
+    'service_mix' => 'خدمات کا ملاپ',
+    'age_distribution' => 'عمر کی تقسیم',
+
+    // تعیناتی اور ایس ایل اے خطرہ
+    'case_disposition' => 'کیس تعیناتی',
+    'sla_risk_segmentation' => 'ایس ایل اے خطرے کی تقسیم',
+    'on_track' => 'ٹریک پر',
+    'at_risk' => 'خطرے میں',
+    'breached' => 'ٹوٹا ہوا',
+    'status_breakdown' => 'اسٹیٹس تقسیم',
+
+    // فلٹر لیبل
+    'select_all_none' => 'سب منتخب کریں / کوئی نہیں',
+    'all_hubs' => 'تمام ہبز',
+    'all_provinces' => 'تمام صوبے',
+    'all_districts' => 'تمام اضلاع',
+    'all_services' => 'تمام خدمات',
+
+    // ── ایل سی ڈی ڈیش بورڈ ──
+    'live_dashboard' => 'جسٹس ہب — لائیو ڈیش بورڈ',
+    'case_management_system' => 'لیگل ایڈ سوسائٹی · کیس مینجمنٹ سسٹم',
+    'auto_refresh_every_2_min' => 'ہر 2 منٹ میں خودکار ریفریش',
+    'filter_by_hub' => 'ہب کے ذریعے فلٹر کریں:',
+    'todays_intakes' => 'آج کے انٹیک',
+    'resolved_closed' => 'حل شدہ / بند',
+    'high_immediate' => 'اعلیٰ / فوری',
+    'heard_from_referral' => 'سنا / ریفرل ذریعہ',
+    'category_wise' => 'قسم وار',
+    'monthly_intake_trend' => 'ماہانہ انٹیک رجحان',
+    'staff_active_caseload' => 'اسٹاف — فعال کیس لوڈ',
+    'show_all' => 'سب دکھائیں',
+    'show_less' => 'کم دکھائیں',
+    'hub_wise_breakdown' => 'ہب وار تقسیم',
+    'pathway_distribution' => 'راستے کی تقسیم',
+    'no_data' => 'ڈیٹا نہیں',
+    'no_active_assignments' => 'کوئی فعال تفویض نہیں',
+    'safeguarding_active' => 'حفاظت فعال (صنفی تشدد/بچہ)',
+    'cases_registered' => 'رجسٹرڈ کیسز',
+    'last_refreshed' => 'آخری ریفریش',
+    'justice_hub_cms_version' => 'لیگل ایڈ سوسائٹی · جسٹس ہب سی ایم ایس v1.0',
+
+    // ── لٹیگیشن اور اے ڈی آر ڈیش بورڈ ──
+    'mediation_dispute_resolution' => 'ثالثی اور تنازعات کا حل',
+    'mediation_scorecard' => 'ثالثی',
+    'scorecard' => 'اسکور کارڈ',
+    'mediation_pathway_performance' => 'ثالثی راستے کی کارکردگی · اشارے O2.1 + O2.2 · اس سہ ماہی',
+    'mediation_resolution_rate' => 'O2.1 ثالثی حل کی شرح',
+    'of_completed_via_mediation' => 'ثالثی کے ذریعے حل شدہ مکمل کیسز میں سے',
+    'target_pct' => 'ہدف: :pct%',
+    'active_mediations' => 'فعال ثالثیاں',
+    'across_all_hubs' => 'تمام ہبز میں',
+    'avg_days_to_resolution' => 'حل تک اوسط دن',
+    'days_under_target' => ':count دن ہدف سے کم',
+    'days_over_target' => ':count دن ہدف سے زیادہ',
+    'no_resolved_cases' => 'کوئی حل شدہ کیسز نہیں',
+    'total_mediation_cases' => 'کُل ثالثی کیسز',
+    'settled' => 'طے شدہ',
+    'other' => 'دیگر',
+    'mediation_case_outcome_split' => 'ثالثی کیس نتیجے کی تقسیم',
+    'mediation_performance_vs_target' => 'ثالثی کارکردگی بمقابلہ ہدف',
+
+    'court_representation' => 'عدالتی نمائندگی',
+    'litigation_scorecard' => 'قانونی کارروائی',
+    'court_pathway_performance' => 'عدالتی راستے کی کارکردگی · اشارہ O2.4 · اس سہ ماہی',
+    'favourable_outcome_rate' => 'O2.4 سازگار نتیجے کی شرح',
+    'cases_with_favourable_judgment' => 'سازگار فیصلے / تصفیے والے کیسز',
+    'active_litigation' => 'فعال قانونی کارروائی',
+    'criminal' => 'فوجداری',
+    'civil' => 'دیوانی',
+    'avg_days_to_disposal' => 'نمٹانے تک اوسط دن',
+    'total_litigation_cases' => 'کُل قانونی کارروائی کیسز',
+    'favourable' => 'سازگار',
+    'criminal_vs_civil_split' => 'فوجداری بمقابلہ دیوانی تقسیم',
+    'litigation_outcome_split' => 'قانونی کارروائی نتیجے کی تقسیم',
+
+    'team_capacity' => 'ٹیم صلاحیت',
+    'staff_workload' => 'اسٹاف کام کا بوجھ',
+    'active_case_assignments' => 'فی اسٹاف رکن فعال کیس تفویض · صلاحیت استعمال',
+    'staff' => 'اسٹاف',
+    'role' => 'کردار',
+    'capacity' => 'صلاحیت',
+    'utilisation' => 'استعمال',
+    'no_staff_records' => 'کوئی اسٹاف ریکارڈ نہیں ملا۔ فیز 5 میں اسٹاف ڈیٹا شامل کریں۔',
+
+    // نقشے کے پاپ اپ لیبل (جاوا اسکرپٹ میں استعمال)
+    'justice_hub' => 'جسٹس ہب',
+    'share' => 'حصہ',
 ];

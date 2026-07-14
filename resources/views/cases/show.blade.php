@@ -85,7 +85,7 @@
 
     {{-- Back --}}
     <a href="{{ route('cases.index') }}" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-3); margin-bottom: 18px; text-decoration: none;">
-        <x-lucide-chevron-left style="width: 13px; height: 13px;" /> Back to cases
+        <x-lucide-chevron-left style="width: 13px; height: 13px;" /> {{ __('cases.back_to_cases') }}
     </a>
 
     {{-- ═══════════════════════════════════════════════════════════
@@ -99,12 +99,12 @@
             <div style="flex: 1;">
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap;">
                     <span class="mono" style="font-size: 11px; color: var(--ink-3);">{{ $case->case_uid }} · {{ $case->case_ref }}</span>
-                    @if($case->is_gbv)<x-pill color="var(--burgundy)" bg="rgba(138,46,29,0.08)" border-color="var(--burgundy)"><x-lucide-shield style="width:10px;height:10px;" /> GBV safeguarding</x-pill>@endif
-                    @if($case->is_child)<x-pill color="var(--ochre)" bg="rgba(184,115,25,0.08)" border-color="var(--ochre)"><x-lucide-shield style="width:10px;height:10px;" /> Child protection</x-pill>@endif
-                    @if($case->is_minority)<x-pill><x-lucide-flag style="width:10px;height:10px;" /> Minority</x-pill>@endif
-                    @if($case->is_disability)<x-pill><x-lucide-heart-handshake style="width:10px;height:10px;" /> PwD</x-pill>@endif
-                    @if($case->is_underserved)<x-pill color="var(--forest-3)" border-color="var(--forest-3)">Underserved population</x-pill>@endif
-                    @if($case->returning_client)<x-pill bg="var(--parchment-2)">Returning client</x-pill>@endif
+                    @if($case->is_gbv)<x-pill color="var(--burgundy)" bg="rgba(138,46,29,0.08)" border-color="var(--burgundy)"><x-lucide-shield style="width:10px;height:10px;" /> {{ __('cases.gbv_safeguarding') }}</x-pill>@endif
+                    @if($case->is_child)<x-pill color="var(--ochre)" bg="rgba(184,115,25,0.08)" border-color="var(--ochre)"><x-lucide-shield style="width:10px;height:10px;" /> {{ __('cases.child_protection') }}</x-pill>@endif
+                    @if($case->is_minority)<x-pill><x-lucide-flag style="width:10px;height:10px;" /> {{ __('cases.minority_label') }}</x-pill>@endif
+                    @if($case->is_disability)<x-pill><x-lucide-heart-handshake style="width:10px;height:10px;" /> {{ __('cases.pwd_label') }}</x-pill>@endif
+                    @if($case->is_underserved)<x-pill color="var(--forest-3)" border-color="var(--forest-3)">{{ __('cases.underserved_population') }}</x-pill>@endif
+                    @if($case->returning_client)<x-pill bg="var(--parchment-2)">{{ __('cases.returning_client') }}</x-pill>@endif
                 </div>
                 <h1 class="serif" style="font-size: 32px; font-weight: 400; letter-spacing: -0.015em; margin: 0 0 8px 0;">
                     {{ $case->name }}
@@ -115,30 +115,30 @@
                     <span><x-lucide-users style="width:11px;height:11px;display:inline;vertical-align:-1px;margin-right:5px;" />{{ $case->gender }} · age {{ $case->age }}</span>
                     <span><x-lucide-map-pin style="width:11px;height:11px;display:inline;vertical-align:-1px;margin-right:5px;" />{{ $case->tehsil }}, {{ $case->district }}</span>
                     <span><x-lucide-building-2 style="width:11px;height:11px;display:inline;vertical-align:-1px;margin-right:5px;" />{{ $case->hub?->name ?? $case->hub_id }} Hub</span>
-                    <span><x-lucide-calendar style="width:11px;height:11px;display:inline;vertical-align:-1px;margin-right:5px;" />Intake {{ $case->intake_date->format('M d, Y') }}</span>
-                    <span><x-lucide-briefcase style="width:11px;height:11px;display:inline;vertical-align:-1px;margin-right:5px;" />Assigned: {{ $case->assigned_to }}</span>
+                    <span><x-lucide-calendar style="width:11px;height:11px;display:inline;vertical-align:-1px;margin-right:5px;" />{{ __('cases.intake') }} {{ $case->intake_date->format('M d, Y') }}</span>
+                    <span><x-lucide-briefcase style="width:11px;height:11px;display:inline;vertical-align:-1px;margin-right:5px;" />{{ __('cases.assigned_label') }}: {{ $case->assigned_to }}</span>
                 </div>
             </div>
             <div style="display: flex; flex-direction: column; gap: 10px; align-items: flex-end;">
                 @if($canWrite && !$isResolved)
                 <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
                     <a href="{{ route('cases.slip', $case) }}" target="_blank" class="btn-ghost" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;">
-                        <x-lucide-printer style="width:12px;height:12px;" /> Print Slip
+                        <x-lucide-printer style="width:12px;height:12px;" /> {{ __('cases.print_slip') }}
                     </a>
                     @if($canEdit && !$pendingTransfer)
                     <button class="btn-ghost" onclick="jhOpenModal('reassign-case')">
-                        <x-lucide-arrow-right-left style="width:12px;height:12px;" /> Reassign
+                        <x-lucide-arrow-right-left style="width:12px;height:12px;" /> {{ __('cases.reassign') }}
                     </button>
                     @endif
                     @if($canResolve && !$isResolved && !$isPending)
                     <button class="btn-primary" style="background: var(--moss); border-color: var(--moss);" onclick="jhOpenModal('resolve-case')">
-                        <x-lucide-check-circle-2 style="width:12px;height:12px;" /> Mark as Resolved
+                        <x-lucide-check-circle-2 style="width:12px;height:12px;" /> {{ __('cases.mark_resolved') }}
                     </button>
                     @endif
                 </div>
                 @endif
                 <div style="text-align: right;">
-                    <div class="label-cap" style="font-size: 9px; margin-bottom: 2px;">Case Status</div>
+                    <div class="label-cap" style="font-size: 9px; margin-bottom: 2px;">{{ __('cases.case_status') }}</div>
                     <div class="serif" style="font-size: 20px; color: {{ $case->status->color() }};">{{ $case->status->value }}</div>
                     @if($case->disposition)
                     <div style="margin-top: 4px; display: inline-block; padding: 3px 9px; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; background: {{ $case->disposition->color() }}15; color: {{ $case->disposition->color() }};">
@@ -155,7 +155,7 @@
     <div style="margin-bottom:16px; padding:12px 18px; background:var(--ochre-tint,#fdf8ee); border:1px solid var(--ochre); border-left:4px solid var(--ochre); display:flex; align-items:center; gap:14px;">
         <x-lucide-arrow-right-left style="width:16px;height:16px;color:var(--ochre);flex-shrink:0;" />
         <div style="flex:1;">
-            <div style="font-size:12.5px; font-weight:600; color:var(--ink);">Transfer pending approval</div>
+            <div style="font-size:12.5px; font-weight:600; color:var(--ink);">{{ __('cases.transfer_pending_approval') }}</div>
             <div style="font-size:12px; color:var(--ink-3); margin-top:2px;">
                 @if($pendingTransfer->transfer_type === 'pathway')
                     Pathway: <strong>{{ $pendingTransfer->from_pathway }}</strong> → <strong>{{ $pendingTransfer->to_pathway }}</strong>
@@ -172,11 +172,11 @@
             <form method="POST" action="{{ route('cases.transfer.approve', [$case, $pendingTransfer]) }}" style="display:inline;">
                 @csrf
                 <button type="submit" class="btn-primary" style="background:var(--moss);border-color:var(--moss);font-size:11px;padding:5px 12px;">
-                    <x-lucide-check style="width:11px;height:11px;" /> Approve
+                    <x-lucide-check style="width:11px;height:11px;" /> {{ __('common.approve') }}
                 </button>
             </form>
             <button class="btn-ghost" style="font-size:11px;padding:5px 12px;" onclick="jhOpenModal('reject-transfer')">
-                <x-lucide-x style="width:11px;height:11px;" /> Reject
+                <x-lucide-x style="width:11px;height:11px;" /> {{ __('common.reject') }}
             </button>
         </div>
         @endif
@@ -201,7 +201,7 @@
             };
         @endphp
         <div class="card-accent jh-anim-card" style="padding: 16px 18px; border-left-color: {{ $slaColor }};">
-            <div class="label-cap" style="font-size: 9px;">{{ $slaHours }}-hour SLA · {{ $case->urgency->value }}</div>
+            <div class="label-cap" style="font-size: 9px;">{{ __('cases.sla_hour_label', ['hours' => $slaHours]) }} · {{ $case->urgency->value }}</div>
             <div style="display: flex; align-items: baseline; gap: 8px; margin-top: 6px;">
                 @if($sla['status'] === 'met')
                     <x-lucide-check-circle-2 style="width:18px;height:18px;color:var(--moss);" />
@@ -214,23 +214,23 @@
             </div>
             <div style="font-size: 11px; color: var(--ink-3); margin-top: 4px;">{{ $slaDetail }}</div>
             <div style="font-size: 10px; color: var(--ink-4); margin-top: 2px;">
-                Deadline: {{ $sla['deadline']->format('M d, Y H:i') }}
+                {{ __('cases.deadline') }}: {{ $sla['deadline']->format('M d, Y H:i') }}
             </div>
         </div>
         <div class="card jh-anim-card" style="padding: 16px 18px;">
-            <div class="label-cap" style="font-size: 9px;">Service Encounters</div>
+            <div class="label-cap" style="font-size: 9px;">{{ __('cases.service_encounters') }}</div>
             <div class="serif jh-anim-num" style="font-size: 22px; margin-top: 6px;">{{ $encounterCount }}</div>
-            <div style="font-size: 11px; color: var(--ink-3);">Logged on this case</div>
+            <div style="font-size: 11px; color: var(--ink-3);">{{ __('cases.logged_on_case') }}</div>
         </div>
         <div class="card jh-anim-card" style="padding: 16px 18px;">
-            <div class="label-cap" style="font-size: 9px;">Pathways</div>
+            <div class="label-cap" style="font-size: 9px;">{{ __('cases.pathways_label') }}</div>
             <div class="serif jh-anim-num" style="font-size: 22px; margin-top: 6px;">{{ $pathways->count() }}</div>
             <div style="font-size: 11px; color: var(--ink-3);">{{ $pathways->join(' · ') }}</div>
         </div>
         <div class="card jh-anim-card" style="padding: 16px 18px;">
-            <div class="label-cap" style="font-size: 9px;">Risk & Urgency</div>
+            <div class="label-cap" style="font-size: 9px;">{{ __('cases.risk_urgency') }}</div>
             <div class="serif jh-anim-num" style="font-size: 22px; margin-top: 6px; color: {{ $case->urgency->color() }};">{{ $case->urgency->value }}</div>
-            <div style="font-size: 11px; color: var(--ink-3);">{{ $case->risk->value }} risk</div>
+            <div style="font-size: 11px; color: var(--ink-3);">{{ __('cases.risk_suffix', ['level' => $case->risk->value]) }}</div>
         </div>
     </div>
 
@@ -240,18 +240,18 @@
     <div class="card jh-anim-section" style="padding: 22px 26px; margin-bottom: 20px; animation-delay: 0.2s;">
         <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px;">
             <div>
-                <div class="label-cap" style="font-size: 9.5px; margin-bottom: 4px;">End-to-End User Journey</div>
+                <div class="label-cap" style="font-size: 9.5px; margin-bottom: 4px;">{{ __('cases.end_to_end_journey') }}</div>
                 <div class="serif" style="font-size: 18px; font-weight: 400;">
                     @if($currentStep)
-                        Step {{ $currentStep['num'] }} of 9 <span style="color: var(--ink-3); font-weight: 300;">&middot; {{ $currentStep['name'] }}</span>
+                        {{ __('cases.step_x_of_y', ['num' => $currentStep['num'], 'total' => 9]) }} <span style="color: var(--ink-3); font-weight: 300;">&middot; {{ $currentStep['name'] }}</span>
                     @else
-                        Journey Complete
+                        {{ __('cases.journey_complete') }}
                     @endif
                 </div>
             </div>
             <div style="text-align: right;">
                 <div class="mono" style="font-size: 20px; font-weight: 600; color: var(--forest);">{{ $pctComplete }}%</div>
-                <div style="font-size: 11px; color: var(--ink-3);">complete &middot; of {{ $applicableSteps }} applicable steps</div>
+                <div style="font-size: 11px; color: var(--ink-3);">{{ __('cases.complete_pct') }} &middot; {{ __('cases.of_applicable_steps', ['count' => $applicableSteps]) }}</div>
             </div>
         </div>
 
@@ -311,7 +311,7 @@
                         {{ $step['name'] }}
                     </div>
                     @if($step['status'] === 'skipped')
-                        <div class="mono" style="font-size: 8px; color: var(--ink-4); text-transform: uppercase; letter-spacing: 0.06em;">SKIPPED</div>
+                        <div class="mono" style="font-size: 8px; color: var(--ink-4); text-transform: uppercase; letter-spacing: 0.06em;">{{ __('cases.skipped_label') }}</div>
                     @endif
                 </div>
             @endforeach
@@ -320,16 +320,16 @@
         {{-- Legend --}}
         <div style="display: flex; gap: 20px; margin-top: 14px; font-size: 11px; color: var(--ink-3);">
             <span style="display: inline-flex; align-items: center; gap: 5px;">
-                <span style="width: 10px; height: 10px; background: var(--forest); display: inline-block;"></span> Current
+                <span style="width: 10px; height: 10px; background: var(--forest); display: inline-block;"></span> {{ __('cases.current_legend') }}
             </span>
             <span style="display: inline-flex; align-items: center; gap: 5px;">
-                <span style="width: 10px; height: 10px; background: var(--ochre-tint); border: 1px solid var(--ochre); display: inline-block;"></span> Completed
+                <span style="width: 10px; height: 10px; background: var(--ochre-tint); border: 1px solid var(--ochre); display: inline-block;"></span> {{ __('cases.completed_legend') }}
             </span>
             <span style="display: inline-flex; align-items: center; gap: 5px;">
-                <span style="width: 10px; height: 10px; background: var(--paper); border: 1px solid var(--rule); display: inline-block;"></span> Pending
+                <span style="width: 10px; height: 10px; background: var(--paper); border: 1px solid var(--rule); display: inline-block;"></span> {{ __('cases.pending_legend') }}
             </span>
             <span style="display: inline-flex; align-items: center; gap: 5px;">
-                <span style="width: 10px; height: 10px; background: var(--rule-2); border: 1px solid var(--rule); display: inline-block;"></span> Not applicable
+                <span style="width: 10px; height: 10px; background: var(--rule-2); border: 1px solid var(--rule); display: inline-block;"></span> {{ __('cases.not_applicable') }}
             </span>
         </div>
     </div>
@@ -341,9 +341,9 @@
             <div style="flex: 1;">
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
                     <x-lucide-clock style="width:14px;height:14px;color:var(--ochre);" />
-                    <div class="label-cap" style="font-size: 10px; color: var(--ochre);">Approval pending</div>
+                    <div class="label-cap" style="font-size: 10px; color: var(--ochre);">{{ __('cases.approval_pending') }}</div>
                 </div>
-                <div class="serif" style="font-size: 18px; font-weight: 500; margin-bottom: 6px;">Awaiting sign-off from {{ $case->pathway_manager ?? 'Manager' }}</div>
+                <div class="serif" style="font-size: 18px; font-weight: 500; margin-bottom: 6px;">{{ __('cases.awaiting_sign_off', ['manager' => $case->pathway_manager ?? 'Manager']) }}</div>
                 <div style="font-size: 12.5px; color: var(--ink-2); line-height: 1.55;">
                     This case is on the <strong>{{ $pathways->first() }}</strong> pathway and cannot proceed until reviewed.
                     @if($case->requested_at) Submitted {{ $case->requested_at->format('M d, H:i') }}.@endif
@@ -353,11 +353,11 @@
                 <form method="POST" action="{{ route('cases.approve', $case) }}">
                     @csrf
                     <button type="submit" style="background:var(--moss);color:var(--cream);border:1px solid var(--moss);padding:10px 18px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:7px;">
-                        <x-lucide-check-circle-2 style="width:13px;height:13px;" /> Approve & start service
+                        <x-lucide-check-circle-2 style="width:13px;height:13px;" /> {{ __('cases.approve_start_service') }}
                     </button>
                 </form>
                 <button onclick="jhOpenModal('reject-pathway')" style="background:transparent;color:var(--burgundy);border:1px solid var(--burgundy);padding:10px 18px;font-size:12.5px;font-weight:500;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:7px;">
-                    <x-lucide-x-circle style="width:13px;height:13px;" /> Reject with reason
+                    <x-lucide-x-circle style="width:13px;height:13px;" /> {{ __('cases.reject_with_reason') }}
                 </button>
             </div>
         </div>
@@ -368,9 +368,9 @@
     <div class="jh-anim-section" style="margin-bottom: 22px; padding: 20px 24px; background: var(--burgundy-tint); border: 1px solid var(--burgundy); border-left: 4px solid var(--burgundy); animation-delay: 0.25s;">
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
             <x-lucide-x-circle style="width:14px;height:14px;color:var(--burgundy);" />
-            <div class="label-cap" style="font-size: 10px; color: var(--burgundy);">Pathway rejected</div>
+            <div class="label-cap" style="font-size: 10px; color: var(--burgundy);">{{ __('cases.pathway_rejected') }}</div>
         </div>
-        <div class="serif" style="font-size: 18px; font-weight: 500; margin-bottom: 6px;">Rejected by {{ $case->rejected_by }}</div>
+        <div class="serif" style="font-size: 18px; font-weight: 500; margin-bottom: 6px;">{{ __('cases.rejected_by_name', ['name' => $case->rejected_by]) }}</div>
         <div style="font-size: 12.5px; color: var(--ink-2); line-height: 1.55;">{{ $case->rejection_reason }}</div>
     </div>
     @endif
@@ -381,13 +381,13 @@
     @php $activeTab = session('activeTab', 'overview'); @endphp
     <ul class="nav" role="tablist" style="display: flex; gap: 0; border-bottom: 1px solid var(--rule); margin-bottom: 22px; padding: 0; list-style: none;">
         @foreach([
-            ['id' => 'overview',   'label' => 'Overview',    'icon' => 'layout-dashboard'],
-            ['id' => 'referrals',  'label' => 'Pathway',     'icon' => 'git-branch',       'count' => $pathways->count()],
-            ['id' => 'documents',  'label' => 'Documents',   'icon' => 'file-text',        'count' => $case->documents->count()],
-            ['id' => 'feedback',   'label' => 'Feedback',    'icon' => 'heart-handshake',  'count' => $case->feedback->count()],
-            ['id' => 'complaints', 'label' => 'Complaints',  'icon' => 'alert-triangle',   'count' => $case->complaints->count()],
-            ['id' => 'messages',   'label' => 'Case Notes',  'icon' => 'message-square',   'count' => $case->messages->count()],
-            ['id' => 'outcome',    'label' => 'Outcome',     'icon' => 'check-circle-2'],
+            ['id' => 'overview',   'label' => __('cases.overview'),    'icon' => 'layout-dashboard'],
+            ['id' => 'referrals',  'label' => __('cases.tab_pathway'), 'icon' => 'git-branch',       'count' => $pathways->count()],
+            ['id' => 'documents',  'label' => __('cases.documents'),   'icon' => 'file-text',        'count' => $case->documents->count()],
+            ['id' => 'feedback',   'label' => __('cases.feedback'),    'icon' => 'heart-handshake',  'count' => $case->feedback->count()],
+            ['id' => 'complaints', 'label' => __('cases.complaints'),  'icon' => 'alert-triangle',   'count' => $case->complaints->count()],
+            ['id' => 'messages',   'label' => __('cases.case_notes'),  'icon' => 'message-square',   'count' => $case->messages->count()],
+            ['id' => 'outcome',    'label' => __('cases.outcome'),     'icon' => 'check-circle-2'],
         ] as $t)
         @php $isActive = $activeTab === $t['id']; @endphp
         <li class="nav-item" role="presentation">
@@ -490,49 +490,49 @@
                     <div class="card jh-anim-section" style="padding: 22px 26px; animation-delay: 0.1s;">
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
                             <x-lucide-clipboard-list style="width: 15px; height: 15px; color: var(--forest);" />
-                            <div class="label-cap" style="font-size: 10px;">Intake & Assessment</div>
+                            <div class="label-cap" style="font-size: 10px;">{{ __('cases.intake_assessment') }}</div>
                             @if($canEdit)
                             <button onclick="jhOpenModal('edit-intake')" style="margin-left:auto; padding:4px 12px; font-size:11px; font-weight:600; background:none; border:1px solid var(--rule); color:var(--ink-3); cursor:pointer; font-family:inherit; display:inline-flex; align-items:center; gap:5px;">
-                                <x-lucide-pencil style="width:11px;height:11px;" /> Edit
+                                <x-lucide-pencil style="width:11px;height:11px;" /> {{ __('common.edit') }}
                             </button>
                             @endif
                         </div>
                         <div>
                             <div class="jh-intake-row">
-                                <div class="jh-intake-label">Date & Time of Intake</div>
+                                <div class="jh-intake-label">{{ __('cases.date_time_intake') }}</div>
                                 <div class="jh-intake-value">{{ $case->intake_date->format('M d, Y') }} {{ $case->intake_time ?? '' }}</div>
                             </div>
                             <div class="jh-intake-row">
-                                <div class="jh-intake-label">Intake Mode</div>
+                                <div class="jh-intake-label">{{ __('cases.intake_mode') }}</div>
                                 <div class="jh-intake-value">{{ $case->mode ?? '---' }}</div>
                             </div>
                             <div class="jh-intake-row">
-                                <div class="jh-intake-label">Referral Source</div>
+                                <div class="jh-intake-label">{{ __('cases.referral_source') }}</div>
                                 <div class="jh-intake-value">{{ $case->referral_source ?? '---' }}</div>
                             </div>
                             <div class="jh-intake-row">
-                                <div class="jh-intake-label">Preferred Language</div>
+                                <div class="jh-intake-label">{{ __('cases.preferred_language') }}</div>
                                 <div class="jh-intake-value">{{ $case->language ?? '---' }}</div>
                             </div>
                             <div class="jh-intake-row">
-                                <div class="jh-intake-label">Primary Legal Issue</div>
+                                <div class="jh-intake-label">{{ __('cases.primary_legal_issue') }}</div>
                                 <div class="jh-intake-value">{{ $case->primary_issue ?? '---' }}</div>
                             </div>
                             <div class="jh-intake-row">
-                                <div class="jh-intake-label">Secondary Issue</div>
+                                <div class="jh-intake-label">{{ __('cases.secondary_issue') }}</div>
                                 <div class="jh-intake-value">{{ $case->secondary_issue ?? '---' }}</div>
                             </div>
                             <div class="jh-intake-row">
-                                <div class="jh-intake-label">Urgency</div>
+                                <div class="jh-intake-label">{{ __('cases.urgency') }}</div>
                                 <div class="jh-intake-value" style="color: {{ $case->urgency->color() }};">{{ $case->urgency->value }}</div>
                             </div>
                             <div class="jh-intake-row">
-                                <div class="jh-intake-label">Consent Obtained</div>
+                                <div class="jh-intake-label">{{ __('cases.consent_obtained') }}</div>
                                 <div class="jh-intake-value">
                                     @if($case->consent)
                                         <span style="color: var(--moss);">
                                             <x-lucide-check-circle-2 style="width:12px;height:12px;display:inline;vertical-align:-1px;margin-right:4px;" />
-                                            Yes &middot; informed consent recorded
+                                            {!! __('cases.yes_consent_recorded') !!}
                                         </span>
                                     @else
                                         <span style="color: var(--burgundy);">
@@ -543,12 +543,12 @@
                                 </div>
                             </div>
                             <div class="jh-intake-row">
-                                <div class="jh-intake-label">Recurring Client</div>
+                                <div class="jh-intake-label">{{ __('cases.recurring_client') }}</div>
                                 <div class="jh-intake-value">
                                     @if($case->returning_client)
                                         <span style="color: var(--ochre);">
                                             <x-lucide-refresh-cw style="width:12px;height:12px;display:inline;vertical-align:-1px;margin-right:4px;" />
-                                            Yes &middot; returning client
+                                            {!! __('cases.yes_returning') !!}
                                         </span>
                                     @else
                                         <span style="color: var(--ink-4);">No</span>
@@ -560,7 +560,7 @@
                         {{-- Issue Description --}}
                         @if($case->issue_description)
                         <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--rule-2);">
-                            <div class="label-cap" style="font-size: 9.5px; margin-bottom: 8px;">Issue Description</div>
+                            <div class="label-cap" style="font-size: 9.5px; margin-bottom: 8px;">{{ __('cases.issue_description') }}</div>
                             <div style="font-size: 13px; color: var(--ink-2); line-height: 1.65; white-space: pre-wrap;">{{ $case->issue_description }}</div>
                         </div>
                         @endif
@@ -570,7 +570,7 @@
                     <div class="card jh-anim-section" style="padding: 22px 26px; animation-delay: 0.18s;">
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
                             <x-lucide-shield-check style="width: 15px; height: 15px; color: var(--burgundy);" />
-                            <div class="label-cap" style="font-size: 10px;">Safeguarding & Vulnerability</div>
+                            <div class="label-cap" style="font-size: 10px;">{{ __('cases.safeguarding_vulnerability') }}</div>
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
                             @php
@@ -594,7 +594,7 @@
                             <div style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--parchment); border: 1px solid var(--rule-2);">
                                 <x-lucide-alert-triangle style="width: 14px; height: 14px; color: {{ $case->risk->color() }};" />
                                 <div>
-                                    <div style="font-size: 12px; color: var(--ink-3);">Immediate Risk Level</div>
+                                    <div style="font-size: 12px; color: var(--ink-3);">{{ __('cases.immediate_risk_level') }}</div>
                                     <div style="font-size: 13px; font-weight: 600; color: {{ $case->risk->color() }};">{{ $case->risk->value }}</div>
                                 </div>
                             </div>
@@ -708,7 +708,7 @@
 
                         <div style="margin-top: 10px; font-size: 10.5px; color: var(--ink-4); display: flex; align-items: center; gap: 5px;">
                             <x-lucide-refresh-cw style="width: 10px; height: 10px;" />
-                            Synced from LAS CMS
+                            {{ __('cases.synced_from_cms') }}
                             @if($case->external_synced_at) · {{ \Carbon\Carbon::parse($case->external_synced_at)->format('d M Y, H:i') }} @endif
                         </div>
                     </div>
@@ -719,9 +719,9 @@
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;">
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <x-lucide-activity style="width: 15px; height: 15px; color: var(--forest);" />
-                                <div class="label-cap" style="font-size: 10px;">Activity Timeline</div>
+                                <div class="label-cap" style="font-size: 10px;">{{ __('cases.activity_timeline') }}</div>
                             </div>
-                            <span class="mono" style="font-size: 10px; color: var(--ink-4);">{{ $timeline->count() }} events</span>
+                            <span class="mono" style="font-size: 10px; color: var(--ink-4);">{{ __('cases.events_count', ['count' => $timeline->count()]) }}</span>
                         </div>
 
                         @forelse($timeline as $event)
@@ -783,7 +783,7 @@
                             </div>
                         </div>
                         @empty
-                        <div style="font-size: 13px; color: var(--ink-4); font-style: italic;">No activity recorded yet.</div>
+                        <div style="font-size: 13px; color: var(--ink-4); font-style: italic;">{{ __('cases.no_activity_yet') }}</div>
                         @endforelse
                     </div>
 
@@ -792,23 +792,23 @@
                     <div class="card jh-anim-section" style="padding: 22px 26px; animation-delay: 0.34s;">
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
                             <x-lucide-check-circle-2 style="width: 15px; height: 15px; color: var(--ochre);" />
-                            <div class="label-cap" style="font-size: 10px;">Approval History</div>
+                            <div class="label-cap" style="font-size: 10px;">{{ __('cases.approval_history') }}</div>
                         </div>
                         <div style="display: grid; grid-template-columns: 160px 1fr; gap: 8px; font-size: 13px;">
-                            <div style="color: var(--ink-3);">Pathway Manager</div>
+                            <div style="color: var(--ink-3);">{{ __('cases.pathway_manager') }}</div>
                             <div style="color: var(--ink-2); font-weight: 500;">{{ $case->pathway_manager ?? '---' }}</div>
-                            <div style="color: var(--ink-3);">Decision</div>
+                            <div style="color: var(--ink-3);">{{ __('cases.decision') }}</div>
                             <div style="color: var(--ink-2); font-weight: 500;">{{ ucfirst($case->approval_decision ?? 'N/A') }}</div>
                             @if($case->requested_at)
-                            <div style="color: var(--ink-3);">Requested</div>
+                            <div style="color: var(--ink-3);">{{ __('cases.requested') }}</div>
                             <div style="color: var(--ink-2);">{{ $case->requested_at->format('M d, Y H:i') }}</div>
                             @endif
                             @if($case->rejected_at)
-                            <div style="color: var(--ink-3);">Rejected</div>
+                            <div style="color: var(--ink-3);">{{ __('cases.rejected_label') }}</div>
                             <div style="color: var(--ink-2);">{{ $case->rejected_at->format('M d, Y H:i') }} by {{ $case->rejected_by }}</div>
                             @endif
                             @if($case->rejection_reason)
-                            <div style="color: var(--ink-3);">Reason</div>
+                            <div style="color: var(--ink-3);">{{ __('cases.reason') }}</div>
                             <div style="color: var(--ink-2);">{{ $case->rejection_reason }}</div>
                             @endif
                         </div>
@@ -824,7 +824,7 @@
                     <div class="card jh-anim-section" style="padding: 22px 26px; animation-delay: 0.12s;">
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
                             <x-lucide-user-check style="width: 15px; height: 15px; color: var(--forest);" />
-                            <div class="label-cap" style="font-size: 10px;">Assigned Team</div>
+                            <div class="label-cap" style="font-size: 10px;">{{ __('cases.assigned_team') }}</div>
                         </div>
                         @if($case->assigned_to)
                         <div style="display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: var(--parchment); border: 1px solid var(--rule);">
@@ -838,12 +838,12 @@
                             </div>
                             <div style="flex: 1;">
                                 <div style="font-size: 14px; font-weight: 600; color: var(--ink);">{{ $case->assigned_to }}</div>
-                                <div style="font-size: 11px; color: var(--ink-3);">Primary &mdash; {{ $assignedTitle }}</div>
+                                <div style="font-size: 11px; color: var(--ink-3);">{{ __('cases.primary_staff') }} &mdash; {{ $assignedTitle }}</div>
                             </div>
                             <x-lucide-mail style="width: 15px; height: 15px; color: var(--ink-4); cursor: pointer;" />
                         </div>
                         @else
-                        <div style="font-size: 13px; color: var(--ink-4); font-style: italic;">Not yet assigned.</div>
+                        <div style="font-size: 13px; color: var(--ink-4); font-style: italic;">{{ __('cases.not_yet_assigned') }}</div>
                         @endif
                     </div>
 
@@ -852,7 +852,7 @@
                     <div class="card jh-anim-section" style="padding: 22px 26px; animation-delay: 0.18s;">
                         <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
                             <x-lucide-arrow-right-left style="width:15px;height:15px;color:var(--forest);" />
-                            <div class="label-cap" style="font-size:10px;">Transfer History</div>
+                            <div class="label-cap" style="font-size:10px;">{{ __('cases.transfer_history') }}</div>
                         </div>
                         @foreach($case->transfers as $tr)
                         @php
@@ -885,9 +885,9 @@
                     <div class="card jh-anim-section" style="padding: 22px 26px; animation-delay: 0.2s;">
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
                             <x-lucide-layers style="width: 15px; height: 15px; color: var(--forest);" />
-                            <div class="label-cap" style="font-size: 10px;">LAS Core Services</div>
+                            <div class="label-cap" style="font-size: 10px;">{{ __('cases.las_core_services') }}</div>
                         </div>
-                        <div style="font-size: 11px; color: var(--ink-4); margin-bottom: 14px;">Which of the four pillars this client has accessed</div>
+                        <div style="font-size: 11px; color: var(--ink-4); margin-bottom: 14px;">{{ __('cases.pillars_description') }}</div>
                         @php
                             $pillars = [
                                 ['name' => 'Free Legal Advice',       'icon' => 'scale',          'active' => $pillarLegal],
@@ -902,7 +902,7 @@
                                 <x-dynamic-component :component="'lucide-' . $pillar['icon']" style="width: 15px; height: 15px; color: {{ $pillar['active'] ? 'var(--forest)' : 'var(--ink-4)' }};" />
                                 <div style="flex: 1; font-size: 12.5px; color: {{ $pillar['active'] ? 'var(--ink)' : 'var(--ink-4)' }}; font-weight: {{ $pillar['active'] ? '500' : '400' }};">{{ $pillar['name'] }}</div>
                                 @if($pillar['active'])
-                                    <span style="font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--moss); background: rgba(56,102,65,0.08); padding: 2px 8px;">DELIVERED</span>
+                                    <span style="font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--moss); background: rgba(56,102,65,0.08); padding: 2px 8px;">{{ __('cases.delivered') }}</span>
                                 @else
                                     <span style="font-size: 12px; color: var(--ink-4);">&mdash;</span>
                                 @endif
@@ -915,7 +915,7 @@
                     <div class="card jh-anim-section" style="padding: 22px 26px; animation-delay: 0.28s;">
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
                             <x-lucide-bar-chart-3 style="width: 15px; height: 15px; color: var(--forest);" />
-                            <div class="label-cap" style="font-size: 10px;">Related Indicators</div>
+                            <div class="label-cap" style="font-size: 10px;">{{ __('cases.related_indicators') }}</div>
                         </div>
                         @php
                             $indicators = [
@@ -940,20 +940,20 @@
                     <div class="card jh-anim-section" style="padding: 22px 26px; animation-delay: 0.36s;">
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
                             <x-lucide-lock style="width: 15px; height: 15px; color: var(--forest);" />
-                            <div class="label-cap" style="font-size: 10px;">Consent & Privacy</div>
+                            <div class="label-cap" style="font-size: 10px;">{{ __('cases.consent_privacy') }}</div>
                         </div>
                         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
                             @if($case->consent)
                                 <x-lucide-check-circle-2 style="width: 16px; height: 16px; color: var(--moss);" />
-                                <span style="font-size: 13px; font-weight: 500; color: var(--moss);">Consent recorded</span>
+                                <span style="font-size: 13px; font-weight: 500; color: var(--moss);">{{ __('cases.consent_recorded') }}</span>
                                 <span class="mono" style="font-size: 10px; color: var(--ink-4);">{{ $case->intake_date->format('M d, Y') }}</span>
                             @else
                                 <x-lucide-x-circle style="width: 16px; height: 16px; color: var(--burgundy);" />
-                                <span style="font-size: 13px; font-weight: 500; color: var(--burgundy);">Consent not obtained</span>
+                                <span style="font-size: 13px; font-weight: 500; color: var(--burgundy);">{{ __('cases.consent_not_obtained') }}</span>
                             @endif
                         </div>
                         <div style="font-size: 11.5px; color: var(--ink-3); line-height: 1.55; padding: 10px 14px; background: var(--parchment); border: 1px solid var(--rule-2);">
-                            Client consented to anonymised data use for learning and aggregate reporting. Name masked in UI per data protection protocol.
+                            {{ __('cases.consent_description') }}
                         </div>
                     </div>
 
@@ -2260,14 +2260,14 @@
             {{-- Header --}}
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
                 <div>
-                    <div style="font-size:15px; font-weight:700; color:var(--ink);">Case Notes</div>
+                    <div style="font-size:15px; font-weight:700; color:var(--ink);">{{ __('cases.case_notes') }}</div>
                     <div style="font-size:11px; color:var(--ink-3); margin-top:2px;">
-                        Confidential thread between Hub Coordinator and {{ $case->assigned_to ?? 'assigned staff' }}.
-                        Not visible to other roles.
+                        {{ __('cases.confidential_thread', ['staff' => $case->assigned_to ?? 'assigned staff']) }}
+                        {{ __('cases.not_visible_other_roles') }}
                     </div>
                 </div>
                 <span style="margin-left:auto; font-size:10px; padding:3px 10px; background:var(--burgundy-soft,#fdf2f2); color:var(--burgundy); border:1px solid var(--burgundy); font-weight:600; letter-spacing:0.05em; text-transform:uppercase;">
-                    Confidential
+                    {{ __('cases.confidential') }}
                 </span>
             </div>
 
@@ -2302,8 +2302,8 @@
                 @empty
                 <div style="text-align:center; padding:48px 0; color:var(--ink-4);">
                     <x-lucide-message-square style="width:32px; height:32px; margin:0 auto 10px; display:block; opacity:0.3;" />
-                    <div style="font-size:13px;">No messages yet.</div>
-                    <div style="font-size:11px; margin-top:4px;">Start the conversation below.</div>
+                    <div style="font-size:13px;">{{ __('cases.no_messages') }}</div>
+                    <div style="font-size:11px; margin-top:4px;">{{ __('cases.start_conversation') }}</div>
                 </div>
                 @endforelse
             </div>
@@ -2314,21 +2314,21 @@
                     @csrf
                     <div style="margin-bottom:10px;">
                         <label style="font-size:10px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3); display:block; margin-bottom:6px;">
-                            {{ $user->isHubCoordinator() ? 'Message to ' . ($case->assigned_to ?? 'Assigned Staff') : 'Reply to Coordinator' }}
+                            {{ $user->isHubCoordinator() ? __('cases.message_to', ['name' => $case->assigned_to ?? 'Assigned Staff']) : __('cases.reply_to_coordinator') }}
                         </label>
                         <textarea
                             name="body"
                             rows="3"
                             required
-                            placeholder="Write your message…"
+                            placeholder="{{ __('cases.write_message') }}"
                             style="width:100%; padding:10px 12px; border:1px solid var(--rule); font-family:inherit; font-size:13px; color:var(--ink); background:var(--surface); resize:vertical; outline:none;"
                             onkeydown="if(event.ctrlKey && event.key==='Enter') this.closest('form').submit();"
                         >{{ old('body') }}</textarea>
-                        <div style="font-size:10px; color:var(--ink-4); margin-top:4px;">Ctrl + Enter to send</div>
+                        <div style="font-size:10px; color:var(--ink-4); margin-top:4px;">{{ __('cases.ctrl_enter_send') }}</div>
                     </div>
                     <button type="submit" class="jh-btn jh-btn-primary" style="display:inline-flex; align-items:center; gap:6px;">
                         <x-lucide-send style="width:13px; height:13px;" />
-                        Send Message
+                        {{ __('cases.send_message') }}
                     </button>
                 </form>
             </div>
@@ -2369,7 +2369,7 @@
 
             {{-- Outcome hero card --}}
             <div style="background:{{ $oc['bg'] }}; border:2px solid {{ $oc['border'] }}; border-radius:4px; padding:28px 28px 24px; margin-bottom:24px; text-align:center;">
-                <div class="label-cap" style="font-size:9.5px; color:var(--ink-3); margin-bottom:10px;">CASE OUTCOME</div>
+                <div class="label-cap" style="font-size:9.5px; color:var(--ink-3); margin-bottom:10px;">{{ __('cases.case_outcome_label') }}</div>
                 <div class="serif" style="font-size:40px; font-weight:400; color:{{ $oc['text'] }}; line-height:1; margin-bottom:12px;">
                     {{ $caseOutcome }}
                 </div>
@@ -2389,29 +2389,29 @@
             {{-- Resolution Notes --}}
             @if($resNote)
             <div style="background:var(--surface); border:1px solid var(--rule); border-radius:3px; padding:20px 22px; margin-bottom:20px;">
-                <div class="label-cap" style="font-size:9.5px; color:var(--ink-3); margin-bottom:10px;">RESOLUTION NOTES</div>
+                <div class="label-cap" style="font-size:9.5px; color:var(--ink-3); margin-bottom:10px;">{{ __('cases.resolution_notes_label') }}</div>
                 <div style="font-size:14px; color:var(--ink); line-height:1.65; white-space:pre-wrap;">{{ $resNote }}</div>
             </div>
             @else
             <div style="background:var(--surface); border:1px solid var(--rule); border-radius:3px; padding:16px 22px; margin-bottom:20px; font-size:12px; color:var(--ink-4); font-style:italic;">
-                No resolution notes recorded.
+                {{ __('cases.no_resolution_notes') }}
             </div>
             @endif
 
             {{-- Meta row --}}
             <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
                 <div style="background:var(--surface); border:1px solid var(--rule); border-radius:3px; padding:16px 18px;">
-                    <div class="label-cap" style="font-size:9px; color:var(--ink-4); margin-bottom:6px;">DISPOSED OFF DATE</div>
+                    <div class="label-cap" style="font-size:9px; color:var(--ink-4); margin-bottom:6px;">{{ __('cases.disposed_off_date') }}</div>
                     <div style="font-size:13px; font-weight:600; color:var(--ink);">
                         {{ $disposedDate ? \Carbon\Carbon::parse($disposedDate)->format('d M Y') : '—' }}
                     </div>
                 </div>
                 <div style="background:var(--surface); border:1px solid var(--rule); border-radius:3px; padding:16px 18px;">
-                    <div class="label-cap" style="font-size:9px; color:var(--ink-4); margin-bottom:6px;">RESOLVED BY</div>
+                    <div class="label-cap" style="font-size:9px; color:var(--ink-4); margin-bottom:6px;">{{ __('cases.resolved_by_label') }}</div>
                     <div style="font-size:13px; font-weight:600; color:var(--ink);">{{ $resolvedBy ?? '—' }}</div>
                 </div>
                 <div style="background:var(--surface); border:1px solid var(--rule); border-radius:3px; padding:16px 18px;">
-                    <div class="label-cap" style="font-size:9px; color:var(--ink-4); margin-bottom:6px;">RESOLVED AT</div>
+                    <div class="label-cap" style="font-size:9px; color:var(--ink-4); margin-bottom:6px;">{{ __('cases.resolved_at_label') }}</div>
                     <div style="font-size:13px; font-weight:600; color:var(--ink);">
                         {{ $resolvedAt ? \Carbon\Carbon::parse($resolvedAt)->format('d M Y, H:i') : '—' }}
                     </div>
@@ -2422,9 +2422,9 @@
             {{-- Not yet resolved --}}
             <div style="text-align:center; padding:72px 0; color:var(--ink-4);">
                 <x-lucide-circle-dashed style="width:40px; height:40px; margin:0 auto 14px; display:block; opacity:0.25;" />
-                <div style="font-size:14px; font-weight:600; color:var(--ink-3); margin-bottom:6px;">No outcome recorded yet</div>
+                <div style="font-size:14px; font-weight:600; color:var(--ink-3); margin-bottom:6px;">{{ __('cases.no_outcome_yet') }}</div>
                 <div style="font-size:12px; color:var(--ink-4);">
-                    Once the case is resolved, the outcome and notes will appear here.
+                    {{ __('cases.outcome_pending') }}
                 </div>
             </div>
             @endif
@@ -2476,7 +2476,7 @@
         </div>
 
         {{-- Intake --}}
-        <div style="font-size:9.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin:16px 0 12px; padding-bottom:6px; border-bottom:1px solid var(--rule);">Intake & Assessment</div>
+        <div style="font-size:9.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin:16px 0 12px; padding-bottom:6px; border-bottom:1px solid var(--rule);">{{ __('cases.intake_assessment') }}</div>
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
             <x-form-select name="language" label="Preferred Language" lookup-group="intake.preferred_language" :selected="$case->language" />
@@ -2754,8 +2754,8 @@ function jhFilterStaff(pw) {
             <div style="padding: 22px 24px 18px; border-bottom: 1px solid var(--rule);">
                 <div style="display: flex; align-items: flex-start; justify-content: space-between;">
                     <div>
-                        <div class="label-cap" style="font-size: 9.5px; color: var(--ink-3); margin-bottom: 6px;">Case Resolution</div>
-                        <h2 class="serif" style="font-size: 26px; font-weight: 400; margin: 0;">Resolve {{ $case->case_uid }}</h2>
+                        <div class="label-cap" style="font-size: 9.5px; color: var(--ink-3); margin-bottom: 6px;">{{ __('cases.case_resolution') }}</div>
+                        <h2 class="serif" style="font-size: 26px; font-weight: 400; margin: 0;">{{ __('cases.resolve_uid', ['uid' => $case->case_uid]) }}</h2>
                     </div>
                     <button type="button" data-bs-dismiss="modal" style="background:none; border:1px solid var(--rule); cursor:pointer; padding:6px 8px; color:var(--ink-3); border-radius:3px;">
                         <x-lucide-x style="width:15px;height:15px;" />
@@ -2768,7 +2768,7 @@ function jhFilterStaff(pw) {
                 <div style="padding: 22px 24px;">
 
                     <label style="display:block; font-size:9.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin-bottom:8px;">
-                        Case Outcome <span style="color:var(--burgundy);">*</span>
+                        {{ __('cases.case_outcome') }} <span style="color:var(--burgundy);">*</span>
                     </label>
 
                     @if($case->assigned_pathway === 'ADR / Dispute Resolution Support')
@@ -2796,41 +2796,41 @@ function jhFilterStaff(pw) {
                     </div>
 
                     <label style="display:block; font-size:9.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin-bottom:8px;">
-                        Resolution Type <span style="color:var(--burgundy);">*</span>
+                        {{ __('cases.resolution_type') }} <span style="color:var(--burgundy);">*</span>
                     </label>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px;">
                         <label style="display:flex; align-items:center; gap:10px; padding:12px 14px; border:1px solid var(--rule); cursor:pointer; transition:border-color 120ms;"
                                onmouseenter="this.style.borderColor='var(--ink-2)'" onmouseleave="if(!this.querySelector('input').checked)this.style.borderColor='var(--rule)'">
                             <input type="radio" name="resolution_type" value="Closed" required style="accent-color:var(--forest); width:15px; height:15px;">
                             <div>
-                                <div style="font-size:13px; font-weight:600; color:var(--ink);">Closed</div>
-                                <div style="font-size:11px; color:var(--ink-3);">Case fully concluded</div>
+                                <div style="font-size:13px; font-weight:600; color:var(--ink);">{{ __('common.closed') }}</div>
+                                <div style="font-size:11px; color:var(--ink-3);">{{ __('cases.case_fully_concluded') }}</div>
                             </div>
                         </label>
                         <label style="display:flex; align-items:center; gap:10px; padding:12px 14px; border:1px solid var(--rule); cursor:pointer; transition:border-color 120ms;"
                                onmouseenter="this.style.borderColor='var(--ink-2)'" onmouseleave="if(!this.querySelector('input').checked)this.style.borderColor='var(--rule)'">
                             <input type="radio" name="resolution_type" value="Settlement" style="accent-color:var(--forest); width:15px; height:15px;">
                             <div>
-                                <div style="font-size:13px; font-weight:600; color:var(--ink);">Settlement</div>
-                                <div style="font-size:11px; color:var(--ink-3);">Resolved via agreement</div>
+                                <div style="font-size:13px; font-weight:600; color:var(--ink);">{{ __('common.settlement') }}</div>
+                                <div style="font-size:11px; color:var(--ink-3);">{{ __('cases.resolved_via_agreement') }}</div>
                             </div>
                         </label>
                     </div>
                     @endif
 
-                    <label style="display:block; font-size:9.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin-bottom:6px;">Disposed Off Date <span style="color:var(--burgundy);">*</span></label>
+                    <label style="display:block; font-size:9.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin-bottom:6px;">{{ __('cases.disposed_off_date_field') }} <span style="color:var(--burgundy);">*</span></label>
                     <input type="date" name="disposed_date" required value="{{ now()->format('Y-m-d') }}"
                            style="width:100%; padding:9px 12px; border:1px solid var(--rule); background:var(--parchment); color:var(--ink); font-size:13px; font-family:inherit; box-sizing:border-box; border-radius:2px; margin-bottom:16px;" />
 
-                    <label style="display:block; font-size:9.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin-bottom:6px;">Resolution Notes</label>
+                    <label style="display:block; font-size:9.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin-bottom:6px;">{{ __('cases.resolution_notes') }}</label>
                     <textarea name="resolution_note" rows="3" placeholder="Court order details, settlement terms, reason for withdrawal…"
                               style="width:100%; padding:10px 12px; border:1px solid var(--rule); background:var(--parchment); color:var(--ink); font-size:13px; font-family:inherit; resize:vertical; box-sizing:border-box; border-radius:2px; line-height:1.5;"></textarea>
                 </div>
 
                 <div style="padding:14px 24px; border-top:1px solid var(--rule); display:flex; justify-content:flex-end; gap:10px;">
-                    <button type="button" data-bs-dismiss="modal" class="btn-ghost">Cancel</button>
+                    <button type="button" data-bs-dismiss="modal" class="btn-ghost">{{ __('common.cancel') }}</button>
                     <button type="submit" class="btn-primary" style="background:var(--moss); border-color:var(--moss); display:inline-flex; align-items:center; gap:7px;">
-                        <x-lucide-check-circle-2 style="width:13px;height:13px;" /> Resolve Case
+                        <x-lucide-check-circle-2 style="width:13px;height:13px;" /> {{ __('cases.resolve_case') }}
                     </button>
                 </div>
             </form>

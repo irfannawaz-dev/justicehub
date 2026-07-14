@@ -6,7 +6,7 @@
     'lookupGroup' => null,
     'lookupParent' => null,
     'selected' => null,
-    'placeholder' => 'Select...',
+    'placeholder' => null,
     'hint' => null,
 ])
 
@@ -32,7 +32,7 @@
         {{ $required ? 'required' : '' }}
         {{ $attributes }}
     >
-        <option value="">{{ $placeholder }}</option>
+        <option value="">{{ $placeholder ?? __('common.select') }}</option>
         @foreach($options as $value => $optLabel)
             <option value="{{ $value }}" {{ $selectedValue == $value ? 'selected' : '' }}>
                 {{ $optLabel }}

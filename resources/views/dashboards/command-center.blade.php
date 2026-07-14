@@ -68,9 +68,9 @@
     <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:22px; padding-bottom:16px; border-bottom:1px solid var(--rule-2);">
 
         <div style="display:flex; align-items:center; gap:6px;">
-            <span class="mono" style="font-size:9.5px; color:var(--ink-4); letter-spacing:0.08em; text-transform:uppercase;">Legal Aid Society</span>
+            <span class="mono" style="font-size:9.5px; color:var(--ink-4); letter-spacing:0.08em; text-transform:uppercase;">{{ __('dashboard.legal_aid_society') }}</span>
             <x-lucide-chevron-right style="width:10px; height:10px; color:var(--ink-4);" />
-            <span class="mono" style="font-size:9.5px; color:var(--ink-3); letter-spacing:0.08em; text-transform:uppercase; font-weight:500;">Justice Hub CMS</span>
+            <span class="mono" style="font-size:9.5px; color:var(--ink-3); letter-spacing:0.08em; text-transform:uppercase; font-weight:500;">{{ __('dashboard.justice_hub_cms') }}</span>
         </div>
 
         <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
@@ -97,19 +97,19 @@
             <div class="dropdown" id="dd-daterange-wrap">
                 <button class="filter-btn{{ ($dateFrom || $dateTo) ? ' show' : '' }}" id="dd-daterange" data-bs-toggle="dropdown" aria-expanded="false">
                     <x-lucide-calendar-range style="width:12px; height:12px; color:var(--ink-4); flex-shrink:0;" />
-                    <span id="cc-label-daterange">{{ ($dateFrom || $dateTo) ? (($dateFrom ?? '…') . ' → ' . ($dateTo ?? '…')) : 'Date Range' }}</span>
+                    <span id="cc-label-daterange">{{ ($dateFrom || $dateTo) ? (($dateFrom ?? '…') . ' → ' . ($dateTo ?? '…')) : __('dashboard.date_range') }}</span>
                     <x-lucide-chevron-down class="filter-chevron" />
                 </button>
                 <div class="dropdown-menu filter-menu" style="min-width:260px; padding:14px 16px;" aria-labelledby="dd-daterange" onclick="event.stopPropagation()">
-                    <div style="font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.07em; color:var(--ink-4); margin-bottom:10px;">Custom Date Range</div>
+                    <div style="font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.07em; color:var(--ink-4); margin-bottom:10px;">{{ __('dashboard.custom_date_range') }}</div>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
                         <div>
-                            <label style="font-size:10px; color:var(--ink-4); display:block; margin-bottom:4px;">From</label>
+                            <label style="font-size:10px; color:var(--ink-4); display:block; margin-bottom:4px;">{{ __('dashboard.from') }}</label>
                             <input type="date" id="cc-date-from" class="inp" style="font-size:12px; padding:5px 8px; width:100%;"
                                 value="{{ $dateFrom }}" max="{{ date('Y-m-d') }}">
                         </div>
                         <div>
-                            <label style="font-size:10px; color:var(--ink-4); display:block; margin-bottom:4px;">To</label>
+                            <label style="font-size:10px; color:var(--ink-4); display:block; margin-bottom:4px;">{{ __('dashboard.to') }}</label>
                             <input type="date" id="cc-date-to" class="inp" style="font-size:12px; padding:5px 8px; width:100%;"
                                 value="{{ $dateTo }}" max="{{ date('Y-m-d') }}">
                         </div>
@@ -117,11 +117,11 @@
                     <div style="display:flex; gap:8px;">
                         <button onclick="ccApplyDateRange()"
                             style="flex:1; padding:6px 0; background:var(--forest); color:var(--cream); border:none; font-size:11.5px; font-weight:600; cursor:pointer; font-family:inherit; border-radius:3px;">
-                            Apply
+                            {{ __('dashboard.apply') }}
                         </button>
                         <button onclick="ccClearDateRange()"
                             style="padding:6px 10px; background:none; color:var(--ink-3); border:1px solid var(--rule); font-size:11.5px; cursor:pointer; font-family:inherit; border-radius:3px;">
-                            Clear
+                            {{ __('common.clear') }}
                         </button>
                     </div>
                 </div>
@@ -131,7 +131,7 @@
             <div class="dropdown">
                 <button class="filter-btn" id="dd-province" data-bs-toggle="dropdown" aria-expanded="false">
                     <x-lucide-map-pin style="width:12px; height:12px; color:var(--ink-4); flex-shrink:0;" />
-                    <span id="cc-label-province">All Provinces</span>
+                    <span id="cc-label-province">{{ __('dashboard.all_provinces') }}</span>
                     <x-lucide-chevron-down class="filter-chevron" />
                 </button>
                 <ul class="dropdown-menu filter-menu" style="min-width:155px;" aria-labelledby="dd-province">
@@ -156,7 +156,7 @@
                 <ul class="dropdown-menu filter-menu" style="min-width:220px; padding:6px 0;" aria-labelledby="dd-hub" onclick="event.stopPropagation()">
                     <li style="padding:2px 12px 6px; border-bottom:1px solid var(--rule-2); margin-bottom:4px;">
                         <button class="filter-opt" style="font-size:11px; font-weight:600; width:100%;"
-                                onclick="ccMultiToggleAll('hub')">Select All / None</button>
+                                onclick="ccMultiToggleAll('hub')">{{ __('dashboard.select_all_none') }}</button>
                     </li>
                     @foreach($hubDist->pluck('name') as $hubName)
                     <li style="padding:0 12px;">
@@ -170,7 +170,7 @@
                     </li>
                     @endforeach
                     <li style="padding:6px 12px 4px; border-top:1px solid var(--rule-2); margin-top:4px;">
-                        <button onclick="ccApplyMulti('hub')" style="width:100%; padding:6px 0; background:var(--forest); color:var(--cream); border:none; font-size:11.5px; font-weight:600; cursor:pointer; font-family:inherit;">Apply</button>
+                        <button onclick="ccApplyMulti('hub')" style="width:100%; padding:6px 0; background:var(--forest); color:var(--cream); border:none; font-size:11.5px; font-weight:600; cursor:pointer; font-family:inherit;">{{ __('dashboard.apply') }}</button>
                     </li>
                 </ul>
             </div>
@@ -188,7 +188,7 @@
                 <ul class="dropdown-menu filter-menu" style="min-width:200px; padding:6px 0; max-height:280px; overflow-y:auto;" aria-labelledby="dd-district" onclick="event.stopPropagation()">
                     <li style="padding:2px 12px 6px; border-bottom:1px solid var(--rule-2); margin-bottom:4px; position:sticky; top:0; background:var(--paper); z-index:1;">
                         <button class="filter-opt" style="font-size:11px; font-weight:600; width:100%;"
-                                onclick="ccMultiToggleAll('district')">Select All / None</button>
+                                onclick="ccMultiToggleAll('district')">{{ __('dashboard.select_all_none') }}</button>
                     </li>
                     @foreach($availableDistricts as $dist)
                     <li style="padding:0 12px;">
@@ -202,7 +202,7 @@
                     </li>
                     @endforeach
                     <li style="padding:6px 12px 4px; border-top:1px solid var(--rule-2); margin-top:4px; position:sticky; bottom:0; background:var(--paper);">
-                        <button onclick="ccApplyMulti('district')" style="width:100%; padding:6px 0; background:var(--forest); color:var(--cream); border:none; font-size:11.5px; font-weight:600; cursor:pointer; font-family:inherit;">Apply</button>
+                        <button onclick="ccApplyMulti('district')" style="width:100%; padding:6px 0; background:var(--forest); color:var(--cream); border:none; font-size:11.5px; font-weight:600; cursor:pointer; font-family:inherit;">{{ __('dashboard.apply') }}</button>
                     </li>
                 </ul>
             </div>
@@ -219,7 +219,7 @@
                 <ul class="dropdown-menu filter-menu" style="min-width:260px; padding:6px 0;" aria-labelledby="dd-service" onclick="event.stopPropagation()">
                     <li style="padding:2px 12px 6px; border-bottom:1px solid var(--rule-2); margin-bottom:4px;">
                         <button class="filter-opt" style="font-size:11px; font-weight:600; width:100%;"
-                                onclick="ccMultiToggleAll('service')">Select All / None</button>
+                                onclick="ccMultiToggleAll('service')">{{ __('dashboard.select_all_none') }}</button>
                     </li>
                     @foreach(array_slice($filterServices, 1) as $svc)
                     <li style="padding:0 12px;">
@@ -233,7 +233,7 @@
                     </li>
                     @endforeach
                     <li style="padding:6px 12px 4px; border-top:1px solid var(--rule-2); margin-top:4px;">
-                        <button onclick="ccApplyMulti('service')" style="width:100%; padding:6px 0; background:var(--forest); color:var(--cream); border:none; font-size:11.5px; font-weight:600; cursor:pointer; font-family:inherit;">Apply</button>
+                        <button onclick="ccApplyMulti('service')" style="width:100%; padding:6px 0; background:var(--forest); color:var(--cream); border:none; font-size:11.5px; font-weight:600; cursor:pointer; font-family:inherit;">{{ __('dashboard.apply') }}</button>
                     </li>
                 </ul>
             </div>
@@ -243,46 +243,46 @@
                 style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--ink-4); background:none; border:none; cursor:pointer; font-family:inherit; padding:5px 2px;"
                 onmouseenter="this.style.color='var(--ink-2)'" onmouseleave="this.style.color='var(--ink-4)'">
                 <x-lucide-rotate-ccw style="width:11px; height:11px;" />
-                Reset filters
+                {{ __('dashboard.reset_filters') }}
             </button>
 
             {{-- Download --}}
             <a href="{{ route('impact.index') }}"
                 style="display:flex; align-items:center; gap:6px; font-size:11.5px; padding:5px 12px; background:var(--forest); color:var(--cream); text-decoration:none; font-weight:500; letter-spacing:0.01em;">
                 <x-lucide-download style="width:12px; height:12px;" />
-                Download Report
+                {{ __('dashboard.download_report') }}
             </a>
         </div>
     </div>
 
     {{-- ═══ Hero Greeting ═══ --}}
     <div style="margin-bottom:6px;">
-        <div class="label-cap" style="font-size:9.5px; margin-bottom:8px; color:var(--ink-4);">Justice Hub · Command Centre</div>
+        <div class="label-cap" style="font-size:9.5px; margin-bottom:8px; color:var(--ink-4);">{{ __('dashboard.command_centre') }}</div>
         <h1 class="serif" style="font-size:38px; font-weight:400; letter-spacing:-0.02em; margin:0 0 6px 0; line-height:1.1;">
             {{ $greeting }}, {{ auth()->user()->name }}
         </h1>
         <p style="margin:0 0 6px; font-size:14px; color:var(--ink-3); line-height:1.5;">
-            Real-time overview of Justice Hubs across Pakistan
+            {{ __('dashboard.real_time_overview') }}
         </p>
     </div>
 
     {{-- Filter status bar --}}
     <div style="display:flex; align-items:center; gap:8px; margin-bottom:24px; font-size:11.5px; color:var(--ink-4);">
-        <span>Showing:
-            <span id="cc-status-province">All Provinces</span> &middot;
-            <span id="cc-status-hub">{{ is_array($af['hub']) && count($af['hub']) ? implode(', ', $af['hub']) : 'All Hubs' }}</span> &middot;
-            <span id="cc-status-district">{{ is_array($af['district']) && count($af['district']) ? implode(', ', $af['district']) : 'All Districts' }}</span> &middot;
-            <span id="cc-status-service">{{ is_array($af['service']) && count($af['service']) ? implode(', ', $af['service']) : 'All Services' }}</span> &middot;
+        <span>{{ __('dashboard.showing') }}:
+            <span id="cc-status-province">{{ __('dashboard.all_provinces') }}</span> &middot;
+            <span id="cc-status-hub">{{ is_array($af['hub']) && count($af['hub']) ? implode(', ', $af['hub']) : __('dashboard.all_hubs') }}</span> &middot;
+            <span id="cc-status-district">{{ is_array($af['district']) && count($af['district']) ? implode(', ', $af['district']) : __('dashboard.all_districts') }}</span> &middot;
+            <span id="cc-status-service">{{ is_array($af['service']) && count($af['service']) ? implode(', ', $af['service']) : __('dashboard.all_services') }}</span> &middot;
             <span id="cc-status-period">{{ $af['period'] }}</span>
             @if($dateFrom || $dateTo)
                 &middot; <span style="color:var(--moss); font-weight:500;">{{ $dateFrom ?? '…' }} → {{ $dateTo ?? '…' }}</span>
             @endif
         </span>
         <span style="color:var(--rule);">|</span>
-        <span>Last updated: {{ now()->format('d M Y, H:i') }}</span>
+        <span>{{ __('dashboard.last_updated') }}: {{ now()->format('d M Y, H:i') }}</span>
         <span style="display:inline-flex; align-items:center; gap:4px; color:var(--moss);">
             <span style="width:6px; height:6px; border-radius:50%; background:var(--moss); display:inline-block; animation:pulse-ring 2s infinite;"></span>
-            Live
+            {{ __('dashboard.live') }}
         </span>
     </div>
 
@@ -301,7 +301,7 @@
         {{-- Total Cases --}}
         <div class="card" style="padding:16px 18px;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-                <div class="label-cap" style="font-size:9px;">Total Cases</div>
+                <div class="label-cap" style="font-size:9px;">{{ __('dashboard.total_cases') }}</div>
                 <div style="width:28px; height:28px; background:rgba(22,48,41,0.06); display:flex; align-items:center; justify-content:center; border-radius:6px;">
                     <x-lucide-folder style="width:14px; height:14px; color:var(--forest);" />
                 </div>
@@ -313,13 +313,13 @@
                     +{{ $totalTrendPct }}%
                 </span>
             </div>
-            <div style="font-size:11px; color:var(--ink-4); margin-top:5px;">{{ $casesLast7 }} new this week</div>
+            <div style="font-size:11px; color:var(--ink-4); margin-top:5px;">{{ __('dashboard.new_this_week', ['count' => $casesLast7]) }}</div>
         </div>
 
         {{-- Cases Resolved --}}
         <div class="card" style="padding:16px 18px;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-                <div class="label-cap" style="font-size:9px;">Cases Resolved</div>
+                <div class="label-cap" style="font-size:9px;">{{ __('dashboard.cases_resolved') }}</div>
                 <div style="width:28px; height:28px; background:rgba(74,122,92,0.08); display:flex; align-items:center; justify-content:center; border-radius:6px;">
                     <x-lucide-check-circle-2 style="width:14px; height:14px; color:var(--moss);" />
                 </div>
@@ -331,13 +331,13 @@
                     +{{ $resTrendPct }}%
                 </span>
             </div>
-            <div style="font-size:11px; color:var(--ink-4); margin-top:5px;">{{ $resolvedLast7 }} this week</div>
+            <div style="font-size:11px; color:var(--ink-4); margin-top:5px;">{{ __('dashboard.this_week', ['count' => $resolvedLast7]) }}</div>
         </div>
 
         {{-- Active Cases --}}
         <div class="card" style="padding:16px 18px;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-                <div class="label-cap" style="font-size:9px;">Active Cases</div>
+                <div class="label-cap" style="font-size:9px;">{{ __('dashboard.active_cases') }}</div>
                 <div style="width:28px; height:28px; background:rgba(184,115,25,0.08); display:flex; align-items:center; justify-content:center; border-radius:6px;">
                     <x-lucide-activity style="width:14px; height:14px; color:var(--ochre);" />
                 </div>
@@ -346,16 +346,16 @@
                 <span class="serif" style="font-size:30px; font-weight:400; letter-spacing:-0.02em; color:var(--ink); line-height:1;">{{ number_format($m['active_cases']) }}</span>
                 <span class="cc-trend-badge cc-trend-neutral">
                     <x-lucide-minus style="width:10px; height:10px;" />
-                    {{ $m['pending_approval'] }} pending
+                    {{ $m['pending_approval'] }} {{ __('dashboard.pending') }}
                 </span>
             </div>
-            <div style="font-size:11px; color:var(--ink-4); margin-top:5px;">{{ $m['pending_approval'] }} pending review</div>
+            <div style="font-size:11px; color:var(--ink-4); margin-top:5px;">{{ __('dashboard.pending_review', ['count' => $m['pending_approval']]) }}</div>
         </div>
 
         {{-- High Risk --}}
         <div class="card" style="padding:16px 18px;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-                <div class="label-cap" style="font-size:9px;">High Risk</div>
+                <div class="label-cap" style="font-size:9px;">{{ __('dashboard.high_risk') }}</div>
                 <div style="width:28px; height:28px; background:rgba(138,46,29,0.08); display:flex; align-items:center; justify-content:center; border-radius:6px;">
                     <x-lucide-alert-triangle style="width:14px; height:14px; color:var(--burgundy);" />
                 </div>
@@ -365,19 +365,19 @@
                 @if($highRisk > 0)
                 <span class="cc-trend-badge cc-trend-down">
                     <x-lucide-alert-circle style="width:10px; height:10px;" />
-                    needs attention
+                    {{ __('dashboard.needs_attention') }}
                 </span>
                 @else
-                <span class="cc-trend-badge cc-trend-up">clear</span>
+                <span class="cc-trend-badge cc-trend-up">{{ __('dashboard.clear_status') }}</span>
                 @endif
             </div>
-            <div style="font-size:11px; color:var(--ink-4); margin-top:5px;">Flagged for escalation</div>
+            <div style="font-size:11px; color:var(--ink-4); margin-top:5px;">{{ __('dashboard.flagged_for_escalation') }}</div>
         </div>
 
         {{-- SLA Compliance --}}
         <div class="card" style="padding:16px 18px;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-                <div class="label-cap" style="font-size:9px;">SLA Compliance</div>
+                <div class="label-cap" style="font-size:9px;">{{ __('dashboard.sla_compliance') }}</div>
                 <div style="width:28px; height:28px; background:{{ $m['sla_compliance'] >= 90 ? 'rgba(74,122,92,0.08)' : 'rgba(184,115,25,0.08)' }}; display:flex; align-items:center; justify-content:center; border-radius:6px;">
                     <x-lucide-clock style="width:14px; height:14px; color:{{ $m['sla_compliance'] >= 90 ? 'var(--moss)' : 'var(--ochre)' }};" />
                 </div>
@@ -387,12 +387,12 @@
                 @if($m['sla_breach'] > 0)
                 <span class="cc-trend-badge cc-trend-down">
                     <x-lucide-trending-down style="width:10px; height:10px;" />
-                    {{ $m['sla_breach'] }} breaches
+                    {{ __('dashboard.breaches', ['count' => $m['sla_breach']]) }}
                 </span>
                 @else
                 <span class="cc-trend-badge cc-trend-up">
                     <x-lucide-check style="width:10px; height:10px;" />
-                    on target
+                    {{ __('dashboard.on_target') }}
                 </span>
                 @endif
             </div>
@@ -432,14 +432,14 @@
     <div class="card" style="padding:0; overflow:hidden; margin-bottom:20px;">
         <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--rule);">
             <div>
-                <div class="label-cap" style="font-size:9px;">Programme Coverage</div>
-                <div style="font-size:11px; color:var(--ink-4); margin-top:2px;">Justice Hub locations across Pakistan · click a pin for details</div>
+                <div class="label-cap" style="font-size:9px;">{{ __('dashboard.programme_coverage') }}</div>
+                <div style="font-size:11px; color:var(--ink-4); margin-top:2px;">{{ __('dashboard.click_pin_for_details') }}</div>
             </div>
             <div style="display:flex; align-items:center; gap:14px;">
                 <div style="display:flex; align-items:center; gap:5px; font-size:11px; color:var(--ink-3);">
-                    <span style="width:10px; height:10px; border-radius:50%; background:var(--forest); display:inline-block;"></span> Active hub
+                    <span style="width:10px; height:10px; border-radius:50%; background:var(--forest); display:inline-block;"></span> {{ __('dashboard.active_hub') }}
                 </div>
-                <span class="mono" style="font-size:10px; color:var(--ink-4);">{{ $mapHubs->count() }} hubs · {{ number_format($m['total_cases']) }} total cases</span>
+                <span class="mono" style="font-size:10px; color:var(--ink-4);">{{ __('dashboard.hubs_count_cases', ['hubs' => $mapHubs->count(), 'cases' => number_format($m['total_cases'])]) }}</span>
             </div>
         </div>
 
@@ -469,7 +469,7 @@
                     <div style="height:3px; background:var(--rule-2); border-radius:2px; overflow:hidden;">
                         <div style="height:100%; width:{{ $barW }}%; background:{{ $h['color'] }}; border-radius:2px;"></div>
                     </div>
-                    <div style="font-size:10px; color:var(--ink-4); margin-top:4px;">{{ $h['pct'] }}% of total caseload</div>
+                    <div style="font-size:10px; color:var(--ink-4); margin-top:4px;">{{ __('dashboard.of_total_caseload', ['pct' => $h['pct']]) }}</div>
                 </div>
                 @endforeach
             </div>
@@ -525,13 +525,13 @@
 
             circle.bindPopup(
                 '<div style="font-family:inherit; min-width:170px;">' +
-                '<div style="font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#6b6a65; margin-bottom:4px;">Justice Hub</div>' +
+                '<div style="font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#6b6a65; margin-bottom:4px;">{{ __("dashboard.justice_hub") }}</div>' +
                 '<div style="font-size:16px; font-weight:600; color:#163029; margin-bottom:8px;">' + hub.name + '</div>' +
                 '<div style="display:flex; justify-content:space-between; font-size:12px; color:#444; margin-bottom:3px;">' +
-                  '<span>Total cases</span><strong>' + hub.count + '</strong>' +
+                  '<span>{{ __("dashboard.total_cases") }}</span><strong>' + hub.count + '</strong>' +
                 '</div>' +
                 '<div style="display:flex; justify-content:space-between; font-size:12px; color:#444;">' +
-                  '<span>Share</span><strong>' + pct + '%</strong>' +
+                  '<span>{{ __("dashboard.share") }}</span><strong>' + pct + '%</strong>' +
                 '</div>' +
                 '<div style="height:4px; background:#e8e6e0; border-radius:2px; overflow:hidden; margin-top:8px;">' +
                   '<div style="height:100%; width:' + pct + '%; background:' + color + '; border-radius:2px;"></div>' +
@@ -589,8 +589,8 @@
         <div class="card" style="padding:18px 20px;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
                 <div>
-                    <div class="label-cap" style="font-size:9px;">Case Intake & Resolution Trend</div>
-                    <div style="font-size:11px; color:var(--ink-4); margin-top:2px;">Last 30 days daily activity</div>
+                    <div class="label-cap" style="font-size:9px;">{{ __('dashboard.case_intake_resolution_trend') }}</div>
+                    <div style="font-size:11px; color:var(--ink-4); margin-top:2px;">{{ __('dashboard.last_30_days_daily_activity') }}</div>
                 </div>
                 <x-lucide-trending-up style="width:14px; height:14px; color:var(--ink-4);" />
             </div>
@@ -602,7 +602,7 @@
             <div style="display:flex; gap:16px; justify-content:center; margin-top:10px;">
                 <div style="display:flex; align-items:center; gap:5px; font-size:11px; color:var(--ink-3);">
                     <span style="width:10px; height:3px; background:#163029; border-radius:2px; display:inline-block;"></span>
-                    Daily Intakes
+                    {{ __('dashboard.daily_intakes') }}
                 </div>
             </div>
         </div>
@@ -611,8 +611,8 @@
         <div class="card" style="padding:18px 20px;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
                 <div>
-                    <div class="label-cap" style="font-size:9px;">Case Distribution by Type</div>
-                    <div style="font-size:11px; color:var(--ink-4); margin-top:2px;">Primary issue breakdown</div>
+                    <div class="label-cap" style="font-size:9px;">{{ __('dashboard.case_distribution_by_type') }}</div>
+                    <div style="font-size:11px; color:var(--ink-4); margin-top:2px;">{{ __('dashboard.primary_issue_breakdown') }}</div>
                 </div>
                 <x-lucide-pie-chart style="width:14px; height:14px; color:var(--ink-4);" />
             </div>
@@ -627,8 +627,8 @@
         <div class="card" style="padding:18px 20px;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
                 <div>
-                    <div class="label-cap" style="font-size:9px;">Cases by Status</div>
-                    <div style="font-size:11px; color:var(--ink-4); margin-top:2px;">Current status distribution</div>
+                    <div class="label-cap" style="font-size:9px;">{{ __('dashboard.cases_by_status') }}</div>
+                    <div style="font-size:11px; color:var(--ink-4); margin-top:2px;">{{ __('dashboard.current_status_distribution') }}</div>
                 </div>
                 <x-lucide-bar-chart-3 style="width:14px; height:14px; color:var(--ink-4);" />
             </div>
@@ -649,18 +649,18 @@
         {{-- Hub Performance Table --}}
         <div class="card" style="padding:18px 20px; overflow:hidden;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-                <div class="label-cap" style="font-size:9px;">Hub Performance</div>
-                <span class="mono" style="font-size:10px; color:var(--ink-4);">{{ count($m['hub_performance']) }} hubs</span>
+                <div class="label-cap" style="font-size:9px;">{{ __('dashboard.hub_performance') }}</div>
+                <span class="mono" style="font-size:10px; color:var(--ink-4);">{{ __('dashboard.hubs_count', ['count' => count($m['hub_performance'])]) }}</span>
             </div>
             <div style="overflow-x:auto;">
                 <table style="width:100%; border-collapse:collapse; font-size:12px;">
                     <thead>
                         <tr style="border-bottom:1px solid var(--rule);">
-                            <th style="text-align:left; padding:7px 8px; font-size:9px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-3);">Hub</th>
-                            <th style="text-align:right; padding:7px 6px; font-size:9px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-3);">Total</th>
-                            <th style="text-align:right; padding:7px 6px; font-size:9px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-3);">Active</th>
-                            <th style="text-align:right; padding:7px 6px; font-size:9px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-3);">Closed</th>
-                            <th style="text-align:right; padding:7px 8px; font-size:9px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-3);">SLA %</th>
+                            <th style="text-align:left; padding:7px 8px; font-size:9px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-3);">{{ __('dashboard.hub') }}</th>
+                            <th style="text-align:right; padding:7px 6px; font-size:9px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-3);">{{ __('dashboard.total') }}</th>
+                            <th style="text-align:right; padding:7px 6px; font-size:9px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-3);">{{ __('dashboard.active') }}</th>
+                            <th style="text-align:right; padding:7px 6px; font-size:9px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-3);">{{ __('dashboard.closed') }}</th>
+                            <th style="text-align:right; padding:7px 8px; font-size:9px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-3);">{{ __('dashboard.sla_pct') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -693,7 +693,7 @@
         {{-- Referral Sources --}}
         <div class="card" style="padding:18px 20px;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
-                <div class="label-cap" style="font-size:9px;">Referral Sources</div>
+                <div class="label-cap" style="font-size:9px;">{{ __('dashboard.referral_sources') }}</div>
                 <x-lucide-share-2 style="width:13px; height:13px; color:var(--ink-4);" />
             </div>
             @php $refMax = count($referralSources) > 0 ? max(array_values($referralSources)) : 1; @endphp
@@ -711,7 +711,7 @@
                 </div>
                 @endforeach
                 @if(count($referralSources) === 0)
-                <div style="text-align:center; padding:20px 0; color:var(--ink-4); font-size:12px;">No referral data available</div>
+                <div style="text-align:center; padding:20px 0; color:var(--ink-4); font-size:12px;">{{ __('dashboard.no_referral_data') }}</div>
                 @endif
             </div>
         </div>
@@ -719,7 +719,7 @@
         {{-- Alerts & Escalations --}}
         <div class="card" style="padding:18px 20px;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
-                <div class="label-cap" style="font-size:9px;">Alerts & Escalations</div>
+                <div class="label-cap" style="font-size:9px;">{{ __('dashboard.alerts_escalations') }}</div>
                 <x-lucide-bell style="width:13px; height:13px; color:var(--ink-4);" />
             </div>
             <div style="display:flex; flex-direction:column; gap:10px;">
@@ -729,7 +729,7 @@
                     <div style="display:flex; align-items:center; justify-content:space-between;">
                         <div style="display:flex; align-items:center; gap:8px;">
                             <x-lucide-alert-triangle style="width:14px; height:14px; color:var(--burgundy);" />
-                            <span style="font-size:12px; font-weight:500; color:var(--ink);">High Risk Cases</span>
+                            <span style="font-size:12px; font-weight:500; color:var(--ink);">{{ __('dashboard.high_risk_cases') }}</span>
                         </div>
                         <span class="serif" style="font-size:20px; font-weight:500; color:var(--burgundy);">{{ $highRisk }}</span>
                     </div>
@@ -740,7 +740,7 @@
                     <div style="display:flex; align-items:center; justify-content:space-between;">
                         <div style="display:flex; align-items:center; gap:8px;">
                             <x-lucide-clock style="width:14px; height:14px; color:var(--ochre);" />
-                            <span style="font-size:12px; font-weight:500; color:var(--ink);">SLA Breaches</span>
+                            <span style="font-size:12px; font-weight:500; color:var(--ink);">{{ __('dashboard.sla_breaches') }}</span>
                         </div>
                         <span class="serif" style="font-size:20px; font-weight:500; color:var(--ochre);">{{ $m['sla_breach'] }}</span>
                     </div>
@@ -751,7 +751,7 @@
                     <div style="display:flex; align-items:center; justify-content:space-between;">
                         <div style="display:flex; align-items:center; gap:8px;">
                             <x-lucide-hourglass style="width:14px; height:14px; color:var(--forest);" />
-                            <span style="font-size:12px; font-weight:500; color:var(--ink);">Pending Approval</span>
+                            <span style="font-size:12px; font-weight:500; color:var(--ink);">{{ __('dashboard.pending_approval') }}</span>
                         </div>
                         <span class="serif" style="font-size:20px; font-weight:500; color:var(--forest);">{{ $m['pending_approval'] }}</span>
                     </div>
@@ -762,7 +762,7 @@
                     <div style="display:flex; align-items:center; justify-content:space-between;">
                         <div style="display:flex; align-items:center; gap:8px;">
                             <x-lucide-message-circle style="width:14px; height:14px; color:#7e57c2;" />
-                            <span style="font-size:12px; font-weight:500; color:var(--ink);">Complaints Open</span>
+                            <span style="font-size:12px; font-weight:500; color:var(--ink);">{{ __('dashboard.complaints_open') }}</span>
                         </div>
                         <span class="serif" style="font-size:20px; font-weight:500; color:#7e57c2;">{{ $m['complaints_open'] }}</span>
                     </div>
@@ -792,7 +792,7 @@
         {{-- Vulnerability & Safeguarding --}}
         <div class="card" style="padding:18px 20px;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
-                <div class="label-cap" style="font-size:9px;">Vulnerability & Safeguarding</div>
+                <div class="label-cap" style="font-size:9px;">{{ __('dashboard.vulnerability_safeguarding') }}</div>
                 <x-lucide-shield style="width:13px; height:13px; color:var(--ink-4);" />
             </div>
             <div style="display:flex; flex-direction:column; gap:10px;">
@@ -819,7 +819,7 @@
         {{-- Gender Split --}}
         <div class="card" style="padding:18px 20px;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
-                <div class="label-cap" style="font-size:9px;">Gender Split</div>
+                <div class="label-cap" style="font-size:9px;">{{ __('dashboard.gender_split') }}</div>
                 <x-lucide-users style="width:13px; height:13px; color:var(--ink-4);" />
             </div>
             <div data-chart="serviceMixPie"
@@ -840,7 +840,7 @@
         {{-- Quick Stats --}}
         <div class="card" style="padding:18px 20px;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
-                <div class="label-cap" style="font-size:9px;">Quick Stats</div>
+                <div class="label-cap" style="font-size:9px;">{{ __('dashboard.quick_stats') }}</div>
                 <x-lucide-zap style="width:13px; height:13px; color:var(--ink-4);" />
             </div>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
@@ -851,28 +851,28 @@
                     <div class="serif" style="font-size:24px; font-weight:500; color:var(--moss);">
                         {{ $m['satisfaction_avg'] > 0 ? $m['satisfaction_avg'] . '/5' : '—' }}
                     </div>
-                    <div style="font-size:10px; color:var(--ink-3); margin-top:3px;">Satisfaction</div>
+                    <div style="font-size:10px; color:var(--ink-3); margin-top:3px;">{{ __('dashboard.satisfaction') }}</div>
                 </div>
 
                 {{-- Outreach Sessions --}}
                 <div style="padding:14px 12px; background:rgba(22,48,41,0.04); border:1px solid rgba(22,48,41,0.10); border-radius:6px; text-align:center;">
                     <x-lucide-megaphone style="width:16px; height:16px; color:var(--forest); margin:0 auto 6px;" />
                     <div class="serif" style="font-size:24px; font-weight:500; color:var(--forest);">{{ $m['outreach']['sessions'] }}</div>
-                    <div style="font-size:10px; color:var(--ink-3); margin-top:3px;">Outreach Sessions</div>
+                    <div style="font-size:10px; color:var(--ink-3); margin-top:3px;">{{ __('dashboard.outreach_sessions') }}</div>
                 </div>
 
                 {{-- Participants --}}
                 <div style="padding:14px 12px; background:rgba(184,115,25,0.05); border:1px solid rgba(184,115,25,0.12); border-radius:6px; text-align:center;">
                     <x-lucide-user-check style="width:16px; height:16px; color:var(--ochre); margin:0 auto 6px;" />
                     <div class="serif" style="font-size:24px; font-weight:500; color:var(--ochre);">{{ number_format($m['outreach']['participants']) }}</div>
-                    <div style="font-size:10px; color:var(--ink-3); margin-top:3px;">Participants</div>
+                    <div style="font-size:10px; color:var(--ink-3); margin-top:3px;">{{ __('dashboard.participants') }}</div>
                 </div>
 
                 {{-- Cost per Case --}}
                 <div style="padding:14px 12px; background:rgba(138,46,29,0.04); border:1px solid rgba(138,46,29,0.10); border-radius:6px; text-align:center;">
                     <x-lucide-banknote style="width:16px; height:16px; color:var(--burgundy); margin:0 auto 6px;" />
                     <div class="serif" style="font-size:24px; font-weight:500; color:var(--burgundy);">{{ number_format($m['cost_per_case']) }}</div>
-                    <div style="font-size:10px; color:var(--ink-3); margin-top:3px;">Cost / Case (PKR)</div>
+                    <div style="font-size:10px; color:var(--ink-3); margin-top:3px;">{{ __('dashboard.cost_per_case_pkr') }}</div>
                 </div>
 
             </div>
@@ -914,8 +914,8 @@
         {{-- Geographic Distribution (compact) --}}
         <div class="card" style="padding:18px 20px;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-                <div class="label-cap" style="font-size:9px;">Geographic Distribution</div>
-                <span class="mono" style="font-size:10px; color:var(--ink-4);">{{ $hubDist->count() }} hubs</span>
+                <div class="label-cap" style="font-size:9px;">{{ __('dashboard.geographic_distribution') }}</div>
+                <span class="mono" style="font-size:10px; color:var(--ink-4);">{{ __('dashboard.hubs_count', ['count' => $hubDist->count()]) }}</span>
             </div>
             <div style="display:flex; flex-direction:column; gap:8px;">
                 @foreach($hubDist as $hub)
@@ -941,7 +941,7 @@
         {{-- Service Mix --}}
         <div class="card" style="padding:18px 20px;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
-                <div class="label-cap" style="font-size:9px;">Service Mix</div>
+                <div class="label-cap" style="font-size:9px;">{{ __('dashboard.service_mix') }}</div>
                 <x-lucide-layers style="width:13px; height:13px; color:var(--ink-4);" />
             </div>
             <div data-chart="serviceMixPie"
@@ -954,7 +954,7 @@
         {{-- Age Distribution --}}
         <div class="card" style="padding:18px 20px;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
-                <div class="label-cap" style="font-size:9px;">Age Distribution</div>
+                <div class="label-cap" style="font-size:9px;">{{ __('dashboard.age_distribution') }}</div>
                 <x-lucide-bar-chart style="width:13px; height:13px; color:var(--ink-4);" />
             </div>
             <div data-chart="resolutionBar"
@@ -986,7 +986,7 @@
         {{-- Case Disposition --}}
         <div class="card" style="padding:18px 20px;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
-                <div class="label-cap" style="font-size:9px;">Case Disposition</div>
+                <div class="label-cap" style="font-size:9px;">{{ __('dashboard.case_disposition') }}</div>
                 <x-lucide-git-branch style="width:13px; height:13px; color:var(--ink-4);" />
             </div>
             <div data-chart="serviceMixPie"
@@ -999,23 +999,23 @@
         {{-- SLA Risk Segmentation --}}
         <div class="card" style="padding:18px 20px;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
-                <div class="label-cap" style="font-size:9px;">SLA Risk Segmentation</div>
+                <div class="label-cap" style="font-size:9px;">{{ __('dashboard.sla_risk_segmentation') }}</div>
                 <x-lucide-gauge style="width:13px; height:13px; color:var(--ink-4);" />
             </div>
             <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;">
                 <div style="text-align:center; padding:18px 10px; background:rgba(74,122,92,0.06); border:1px solid rgba(74,122,92,0.15); border-radius:8px;">
                     <div class="serif" style="font-size:28px; font-weight:500; color:var(--moss);">{{ $slaGreen }}</div>
-                    <div style="font-size:10px; color:var(--ink-3); margin-top:4px;">On Track</div>
+                    <div style="font-size:10px; color:var(--ink-3); margin-top:4px;">{{ __('dashboard.on_track') }}</div>
                     <div style="width:24px; height:3px; background:var(--moss); border-radius:2px; margin:6px auto 0;"></div>
                 </div>
                 <div style="text-align:center; padding:18px 10px; background:rgba(184,115,25,0.06); border:1px solid rgba(184,115,25,0.15); border-radius:8px;">
                     <div class="serif" style="font-size:28px; font-weight:500; color:var(--ochre);">{{ $slaAmber }}</div>
-                    <div style="font-size:10px; color:var(--ink-3); margin-top:4px;">At Risk</div>
+                    <div style="font-size:10px; color:var(--ink-3); margin-top:4px;">{{ __('dashboard.at_risk') }}</div>
                     <div style="width:24px; height:3px; background:var(--ochre); border-radius:2px; margin:6px auto 0;"></div>
                 </div>
                 <div style="text-align:center; padding:18px 10px; background:rgba(138,46,29,0.06); border:1px solid rgba(138,46,29,0.15); border-radius:8px;">
                     <div class="serif" style="font-size:28px; font-weight:500; color:var(--burgundy);">{{ $slaRed }}</div>
-                    <div style="font-size:10px; color:var(--ink-3); margin-top:4px;">Breached</div>
+                    <div style="font-size:10px; color:var(--ink-3); margin-top:4px;">{{ __('dashboard.breached') }}</div>
                     <div style="width:24px; height:3px; background:var(--burgundy); border-radius:2px; margin:6px auto 0;"></div>
                 </div>
             </div>
@@ -1034,7 +1034,7 @@
         {{-- Status Bar Chart --}}
         <div class="card" style="padding:18px 20px;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
-                <div class="label-cap" style="font-size:9px;">Status Breakdown</div>
+                <div class="label-cap" style="font-size:9px;">{{ __('dashboard.status_breakdown') }}</div>
                 <x-lucide-bar-chart-2 style="width:13px; height:13px; color:var(--ink-4);" />
             </div>
             <div data-chart="resolutionBar"

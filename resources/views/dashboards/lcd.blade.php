@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Justice Hub — Live Dashboard</title>
+    <title>{{ __('dashboard.live_dashboard') }}</title>
     <meta http-equiv="refresh" content="120">
     @vite(['resources/css/app.css', 'resources/css/justice-hub.css', 'resources/js/app.js'])
     <style>
@@ -112,30 +112,30 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#163029" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/><path d="m17 3 4 4"/><path d="M2 12 12 3l10 9"/><line x1="3" y1="21" x2="21" y2="21"/><path d="M12 7v5"/><path d="M8 11h8"/><path d="M7 21V11"/><path d="M17 21V11"/></svg>
         </div>
         <div>
-            <div class="lcd-title">Justice Hub — Live Dashboard</div>
-            <div class="lcd-sub">Legal Aid Society · Case Management System</div>
+            <div class="lcd-title">{{ __('dashboard.live_dashboard') }}</div>
+            <div class="lcd-sub">{{ __('dashboard.case_management_system') }}</div>
         </div>
     </div>
     <div class="lcd-date">
         <div class="lcd-date-main">{{ now()->format('l, d M Y') }}</div>
         <div class="lcd-date-sub">
-            <span class="lcd-live"><span class="lcd-live-dot"></span> LIVE</span>
-            &nbsp;·&nbsp; Auto-refresh every 2 min &nbsp;·&nbsp; {{ now()->format('h:i A') }}
+            <span class="lcd-live"><span class="lcd-live-dot"></span> {{ __('dashboard.live') }}</span>
+            &nbsp;·&nbsp; {{ __('dashboard.auto_refresh_every_2_min') }} &nbsp;·&nbsp; {{ now()->format('h:i A') }}
         </div>
     </div>
 </div>
 
 {{-- ═══ HUB FILTER ═══ --}}
 <div class="lcd-hub-filter">
-    <label>Filter by Hub:</label>
+    <label>{{ __('dashboard.filter_by_hub') }}</label>
     <select onchange="window.location.href='/lcd?hub='+this.value">
-        <option value="all" {{ $hubId === 'all' ? 'selected' : '' }}>All Hubs</option>
+        <option value="all" {{ $hubId === 'all' ? 'selected' : '' }}>{{ __('dashboard.all_hubs') }}</option>
         @foreach($hubs as $id => $name)
             <option value="{{ $id }}" {{ $hubId === $id ? 'selected' : '' }}>{{ $name }}</option>
         @endforeach
     </select>
     <span style="margin-left: auto; font-size: 11px; opacity: 0.4;">
-        Showing: {{ $hubId === 'all' ? 'All Hubs' : ($hubs[$hubId] ?? $hubId) }}
+        {{ __('dashboard.showing') }}: {{ $hubId === 'all' ? __('dashboard.all_hubs') : ($hubs[$hubId] ?? $hubId) }}
     </span>
 </div>
 
@@ -144,27 +144,27 @@
     {{-- ═══ BIG NUMBER TILES ═══ --}}
     <div class="lcd-tiles">
         <div class="lcd-tile tile-forest">
-            <div class="lcd-tile-label">Total Cases</div>
+            <div class="lcd-tile-label">{{ __('dashboard.total_cases') }}</div>
             <div class="lcd-tile-value">{{ number_format($lcd['total']) }}</div>
         </div>
         <div class="lcd-tile tile-blue">
-            <div class="lcd-tile-label">Active Cases</div>
+            <div class="lcd-tile-label">{{ __('dashboard.active_cases') }}</div>
             <div class="lcd-tile-value">{{ number_format($lcd['active']) }}</div>
         </div>
         <div class="lcd-tile tile-cyan">
-            <div class="lcd-tile-label">Today's Intakes</div>
+            <div class="lcd-tile-label">{{ __('dashboard.todays_intakes') }}</div>
             <div class="lcd-tile-value">{{ number_format($todayCases) }}</div>
         </div>
         <div class="lcd-tile tile-ochre">
-            <div class="lcd-tile-label">Pending Approval</div>
+            <div class="lcd-tile-label">{{ __('dashboard.pending_approval') }}</div>
             <div class="lcd-tile-value">{{ number_format($lcd['pending']) }}</div>
         </div>
         <div class="lcd-tile tile-moss">
-            <div class="lcd-tile-label">Resolved / Closed</div>
+            <div class="lcd-tile-label">{{ __('dashboard.resolved_closed') }}</div>
             <div class="lcd-tile-value">{{ number_format($lcd['closed']) }}</div>
         </div>
         <div class="lcd-tile tile-red">
-            <div class="lcd-tile-label">High / Immediate</div>
+            <div class="lcd-tile-label">{{ __('dashboard.high_immediate') }}</div>
             <div class="lcd-tile-value">{{ number_format($lcd['high_urgency']) }}</div>
         </div>
     </div>
@@ -174,7 +174,7 @@
 
         {{-- Heard From / Referral Sources --}}
         <div class="lcd-panel lcd-draggable" draggable="true">
-            <div class="lcd-drag-handle"><x-lucide-grip-vertical style="width:14px;height:14px;opacity:0.3;" /> <span class="lcd-panel-title" style="margin:0;">Heard From / Referral Source</span></div>
+            <div class="lcd-drag-handle"><x-lucide-grip-vertical style="width:14px;height:14px;opacity:0.3;" /> <span class="lcd-panel-title" style="margin:0;">{{ __('dashboard.heard_from_referral') }}</span></div>
             @if(count($sources) > 0)
                 @php $maxSrc = max($sources); @endphp
                 @foreach($sources as $src => $count)
@@ -188,37 +188,37 @@
                 </div>
                 @endforeach
             @else
-                <div style="opacity: 0.3; text-align: center; padding: 20px;">No data</div>
+                <div style="opacity: 0.3; text-align: center; padding: 20px;">{{ __('dashboard.no_data') }}</div>
             @endif
         </div>
 
         {{-- Category Wise — Doughnut Chart --}}
         <div class="lcd-panel lcd-draggable" draggable="true">
-            <div class="lcd-drag-handle"><x-lucide-grip-vertical style="width:14px;height:14px;opacity:0.3;" /> <span class="lcd-panel-title" style="margin:0;">Category Wise</span></div>
+            <div class="lcd-drag-handle"><x-lucide-grip-vertical style="width:14px;height:14px;opacity:0.3;" /> <span class="lcd-panel-title" style="margin:0;">{{ __('dashboard.category_wise') }}</span></div>
             @if(count($categories) > 0)
                 <div style="position: relative; height: 380px;">
                     <canvas id="lcd-pie-chart"></canvas>
                 </div>
             @else
-                <div style="opacity: 0.3; text-align: center; padding: 20px;">No data</div>
+                <div style="opacity: 0.3; text-align: center; padding: 20px;">{{ __('dashboard.no_data') }}</div>
             @endif
         </div>
 
         {{-- Monthly Intake Trend — Line Chart --}}
         <div class="lcd-panel lcd-draggable" draggable="true">
-            <div class="lcd-drag-handle"><x-lucide-grip-vertical style="width:14px;height:14px;opacity:0.3;" /> <span class="lcd-panel-title" style="margin:0;">Monthly Intake Trend</span></div>
+            <div class="lcd-drag-handle"><x-lucide-grip-vertical style="width:14px;height:14px;opacity:0.3;" /> <span class="lcd-panel-title" style="margin:0;">{{ __('dashboard.monthly_intake_trend') }}</span></div>
             @if(count($monthlyTrend) > 0)
                 <div style="position: relative; height: 340px;">
                     <canvas id="lcd-line-chart"></canvas>
                 </div>
             @else
-                <div style="opacity: 0.3; text-align: center; padding: 20px;">No data</div>
+                <div style="opacity: 0.3; text-align: center; padding: 20px;">{{ __('dashboard.no_data') }}</div>
             @endif
         </div>
 
         {{-- Staff Performance --}}
         <div class="lcd-panel lcd-draggable lcd-wide" draggable="true">
-            <div class="lcd-drag-handle"><x-lucide-grip-vertical style="width:14px;height:14px;opacity:0.3;" /> <span class="lcd-panel-title" style="margin:0;">Staff — Active Caseload</span></div>
+            <div class="lcd-drag-handle"><x-lucide-grip-vertical style="width:14px;height:14px;opacity:0.3;" /> <span class="lcd-panel-title" style="margin:0;">{{ __('dashboard.staff_active_caseload') }}</span></div>
             @if(count($advisors) > 0)
                 @php
                     $staffColors = ['staff-yellow','staff-pink','staff-blue','staff-green','staff-orange','staff-cyan'];
@@ -235,7 +235,7 @@
 
                     @if(count($hiddenStaff) > 0)
                     <div id="lcd-show-all-btn" class="lcd-staff-card" style="background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.15); cursor: pointer;" onclick="document.querySelectorAll('.lcd-hidden-staff').forEach(el => el.style.display=''); document.getElementById('lcd-show-less-btn').style.display=''; this.style.display='none';">
-                        <div class="lcd-staff-name" style="color: #6ab4f7;">Show All</div>
+                        <div class="lcd-staff-name" style="color: #6ab4f7;">{{ __('dashboard.show_all') }}</div>
                         <div class="lcd-staff-count" style="color: #6ab4f7; font-size: 22px;">+{{ count($hiddenStaff) }}</div>
                     </div>
                     @endif
@@ -249,20 +249,20 @@
 
                     @if(count($hiddenStaff) > 0)
                     <div id="lcd-show-less-btn" class="lcd-staff-card" style="display: none; background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.15); cursor: pointer;" onclick="document.querySelectorAll('.lcd-hidden-staff').forEach(el => el.style.display='none'); document.getElementById('lcd-show-all-btn').style.display=''; this.style.display='none';">
-                        <div class="lcd-staff-name" style="color: #f06050;">Show Less</div>
+                        <div class="lcd-staff-name" style="color: #f06050;">{{ __('dashboard.show_less') }}</div>
                         <div class="lcd-staff-count" style="color: #f06050; font-size: 22px;">&minus;</div>
                     </div>
                     @endif
 
                 </div>
             @else
-                <div style="opacity: 0.3; text-align: center; padding: 20px;">No active assignments</div>
+                <div style="opacity: 0.3; text-align: center; padding: 20px;">{{ __('dashboard.no_active_assignments') }}</div>
             @endif
         </div>
 
         {{-- Hub Wise + Pathways --}}
         <div class="lcd-panel lcd-draggable" draggable="true">
-            <div class="lcd-drag-handle"><x-lucide-grip-vertical style="width:14px;height:14px;opacity:0.3;" /> <span class="lcd-panel-title" style="margin:0;">Hub Wise Breakdown</span></div>
+            <div class="lcd-drag-handle"><x-lucide-grip-vertical style="width:14px;height:14px;opacity:0.3;" /> <span class="lcd-panel-title" style="margin:0;">{{ __('dashboard.hub_wise_breakdown') }}</span></div>
             @if(count($hubBreakdown) > 0)
                 @php $maxHub = max($hubBreakdown); @endphp
                 @foreach($hubBreakdown as $hid => $count)
@@ -276,10 +276,10 @@
                 </div>
                 @endforeach
             @else
-                <div style="opacity: 0.3; text-align: center; padding: 20px;">No data</div>
+                <div style="opacity: 0.3; text-align: center; padding: 20px;">{{ __('dashboard.no_data') }}</div>
             @endif
 
-            <div class="lcd-panel-title" style="margin-top: 18px;">Pathway Distribution</div>
+            <div class="lcd-panel-title" style="margin-top: 18px;">{{ __('dashboard.pathway_distribution') }}</div>
             @if(count($pathways) > 0)
                 @php $maxPw = max($pathways); @endphp
                 @foreach($pathways as $pw => $count)
@@ -293,7 +293,7 @@
                 </div>
                 @endforeach
             @else
-                <div style="opacity: 0.3; text-align: center; padding: 20px;">No data</div>
+                <div style="opacity: 0.3; text-align: center; padding: 20px;">{{ __('dashboard.no_data') }}</div>
             @endif
         </div>
     </div>
@@ -301,15 +301,15 @@
     {{-- ═══ RISK STRIP ═══ --}}
     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
         <div class="lcd-tile tile-red" style="padding: 12px 16px;">
-            <div class="lcd-tile-label">Safeguarding Active (GBV/Child)</div>
+            <div class="lcd-tile-label">{{ __('dashboard.safeguarding_active') }}</div>
             <div class="lcd-tile-value" style="font-size: 32px;">{{ $lcd['safeguarding'] }}</div>
         </div>
         <div class="lcd-tile {{ $lcd['sla_pct'] >= 90 ? 'tile-moss' : 'tile-red' }}" style="padding: 12px 16px;">
-            <div class="lcd-tile-label">SLA Compliance</div>
+            <div class="lcd-tile-label">{{ __('dashboard.sla_compliance') }}</div>
             <div class="lcd-tile-value" style="font-size: 32px;">{{ $lcd['sla_pct'] }}%</div>
         </div>
         <div class="lcd-tile {{ $lcd['sla_breach'] > 0 ? 'tile-red' : 'tile-moss' }}" style="padding: 12px 16px;">
-            <div class="lcd-tile-label">SLA Breaches</div>
+            <div class="lcd-tile-label">{{ __('dashboard.sla_breaches') }}</div>
             <div class="lcd-tile-value" style="font-size: 32px;">{{ $lcd['sla_breach'] }}</div>
         </div>
     </div>
@@ -317,8 +317,8 @@
 
 {{-- ═══ FOOTER ═══ --}}
 <div class="lcd-footer">
-    <span>Legal Aid Society · Justice Hub CMS v1.0</span>
-    <span>Last refreshed: {{ now()->format('d M Y, h:i:s A') }}</span>
+    <span>{{ __('dashboard.justice_hub_cms_version') }}</span>
+    <span>{{ __('dashboard.last_refreshed') }}: {{ now()->format('d M Y, h:i:s A') }}</span>
 </div>
 
 <script>
@@ -407,7 +407,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 data: {
                     labels: monthLabels,
                     datasets: [{
-                        label: 'Cases Registered',
+                        label: '{{ __("dashboard.cases_registered") }}',
                         data: {!! json_encode(array_values($monthlyTrend)) !!},
                         borderColor: '#4dd8e8',
                         backgroundColor: 'rgba(77,216,232,0.1)',
@@ -445,7 +445,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             borderColor: 'rgba(255,255,255,0.1)',
                             borderWidth: 1,
                             callbacks: {
-                                label: ctx => ctx.parsed.y + ' cases'
+                                label: ctx => ctx.parsed.y + ' {{ __('dashboard.cases_registered') }}'
                             }
                         }
                     }

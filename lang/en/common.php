@@ -31,6 +31,11 @@ return [
     'update'    => 'Update',
     'add'       => 'Add',
     'remove'    => 'Remove',
+    'approve'   => 'Approve',
+    'reject'    => 'Reject',
+    'yes'       => 'Yes',
+    'no'        => 'No',
+    'select'    => 'Select...',
 
     // Status labels
     'active'     => 'Active',
@@ -76,5 +81,16 @@ return [
     'hours_ago'   => ':count hours ago',
     'minutes_ago' => ':count minutes ago',
     'just_now'    => 'Just now',
+
+    // Filters
+    'all'               => 'All',
+    'safeguarding'      => 'Safeguarding',
+    'all_hubs'          => 'All Hubs',
+    'all_districts'     => 'All Districts',
+    'search_placeholder'=> 'Search name, ID, issue…',
+    'reset_all_filters' => 'Reset all filters',
+    'export_excel'      => 'Export Excel',
+    'list_view'         => 'List view',
+    'grid_view'         => 'Grid view',
 
 ];

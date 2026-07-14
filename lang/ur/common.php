@@ -31,6 +31,11 @@ return [
     'update'    => 'تازہ کاری کریں',
     'add'       => 'شامل کریں',
     'remove'    => 'ہٹائیں',
+    'approve'   => 'منظور کریں',
+    'reject'    => 'مسترد کریں',
+    'yes'       => 'ہاں',
+    'no'        => 'نہیں',
+    'select'    => 'منتخب کریں...',
 
     // اسٹیٹس لیبل
     'active'     => 'فعال',
@@ -76,5 +81,16 @@ return [
     'hours_ago'   => ':count گھنٹے پہلے',
     'minutes_ago' => ':count منٹ پہلے',
     'just_now'    => 'ابھی ابھی',
+
+    // فلٹرز
+    'all'               => 'تمام',
+    'safeguarding'      => 'تحفظ',
+    'all_hubs'          => 'تمام ہبز',
+    'all_districts'     => 'تمام اضلاع',
+    'search_placeholder'=> 'نام، آئی ڈی، مسئلہ تلاش کریں…',
+    'reset_all_filters' => 'تمام فلٹرز ری سیٹ کریں',
+    'export_excel'      => 'ایکسل برآمد کریں',
+    'list_view'         => 'فہرست نظارہ',
+    'grid_view'         => 'گرڈ نظارہ',
 
 ];

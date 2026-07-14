@@ -1,25 +1,25 @@
 <x-layouts.app>
 @php
     $stageConfig = [
-        'Intake'          => ['dot' => '#8a8a84', 'color' => 'var(--ink-3)',    'subtitle' => 'Registered · awaiting referral action',      'icon' => 'inbox'],
-        'Complaint Filed' => ['dot' => '#b87319', 'color' => 'var(--ochre)',    'subtitle' => 'Complaint filed or not filed · in progress',  'icon' => 'file-check'],
-        'Closed'          => ['dot' => '#2f7a4d', 'color' => '#2f7a4d',         'subtitle' => 'Complaint closed · outcome recorded',         'icon' => 'check-circle-2'],
+        'Intake'          => ['dot' => '#8a8a84', 'color' => 'var(--ink-3)',    'subtitle' => __('services.intake_subtitle'),      'icon' => 'inbox'],
+        'Complaint Filed' => ['dot' => '#b87319', 'color' => 'var(--ochre)',    'subtitle' => __('services.complaint_filed_subtitle'),  'icon' => 'file-check'],
+        'Closed'          => ['dot' => '#2f7a4d', 'color' => '#2f7a4d',         'subtitle' => __('services.closed_subtitle'),         'icon' => 'check-circle-2'],
     ];
 @endphp
 
-<x-slot:title>ADR Complaints Scorecard</x-slot:title>
+<x-slot:title>{{ __('services.adr_complaints') }}</x-slot:title>
 
 <div style="padding: 28px 32px; max-width: 1200px; margin: 0 auto;">
 
     {{-- Page header --}}
     <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:28px;">
         <div>
-            <div class="label-cap" style="font-size:10px; color:var(--ink-4); margin-bottom:6px;">SERVICE DELIVERY · ADR / DISPUTE RESOLUTION</div>
+            <div class="label-cap" style="font-size:10px; color:var(--ink-4); margin-bottom:6px;">{{ __('services.service_delivery_adr') }}</div>
             <h1 class="serif" style="font-size:32px; font-weight:400; margin:0; letter-spacing:-0.02em;">
-                ADR <em style="color:var(--ochre); font-style:italic;">Complaints</em>
+                {{ __('services.adr') }} <em style="color:var(--ochre); font-style:italic;">{{ __('services.complaints') }}</em>
             </h1>
             <div style="font-size:13px; color:var(--ink-3); margin-top:6px;">
-                Complaint pipeline for {{ $total }} ADR / Dispute Resolution cases · filed status and outcome tracking.
+                {{ __('services.complaint_pipeline_desc', ['total' => $total]) }}
             </div>
         </div>
     </div>
@@ -28,44 +28,44 @@
     <div style="display:grid; grid-template-columns: repeat(5,1fr); gap:16px; margin-bottom:32px;">
 
         <div class="card" style="padding:20px 22px; border-top:3px solid var(--ink-3);">
-            <div class="label-cap" style="font-size:9.5px; color:var(--ink-4); margin-bottom:8px;">Total Cases</div>
+            <div class="label-cap" style="font-size:9.5px; color:var(--ink-4); margin-bottom:8px;">{{ __('services.total_cases') }}</div>
             <div class="serif" style="font-size:32px; font-weight:400; line-height:1;">{{ $total }}</div>
-            <div style="font-size:11px; color:var(--ink-4); margin-top:4px;">ADR pathway</div>
+            <div style="font-size:11px; color:var(--ink-4); margin-top:4px;">{{ __('services.adr_pathway') }}</div>
         </div>
 
         <div class="card" style="padding:20px 22px; border-top:3px solid var(--ochre);">
-            <div class="label-cap" style="font-size:9.5px; color:var(--ink-4); margin-bottom:8px;">Complaint Filed</div>
+            <div class="label-cap" style="font-size:9.5px; color:var(--ink-4); margin-bottom:8px;">{{ __('services.complaint_filed') }}</div>
             <div class="serif" style="font-size:32px; font-weight:400; line-height:1; color:var(--ochre);">{{ $filed }}</div>
-            <div style="font-size:11px; color:var(--ink-4); margin-top:4px;">tracking in progress</div>
+            <div style="font-size:11px; color:var(--ink-4); margin-top:4px;">{{ __('services.tracking_progress') }}</div>
         </div>
 
         <div class="card" style="padding:20px 22px; border-top:3px solid var(--burgundy);">
-            <div class="label-cap" style="font-size:9.5px; color:var(--ink-4); margin-bottom:8px;">Not Filed</div>
+            <div class="label-cap" style="font-size:9.5px; color:var(--ink-4); margin-bottom:8px;">{{ __('services.not_filed') }}</div>
             <div class="serif" style="font-size:32px; font-weight:400; line-height:1; color:var(--burgundy);">{{ $notFiled }}</div>
-            <div style="font-size:11px; color:var(--ink-4); margin-top:4px;">with justification</div>
+            <div style="font-size:11px; color:var(--ink-4); margin-top:4px;">{{ __('services.with_justification') }}</div>
         </div>
 
         <div class="card" style="padding:20px 22px; border-top:3px solid #2f7a4d;">
-            <div class="label-cap" style="font-size:9.5px; color:var(--ink-4); margin-bottom:8px;">Closed — In Favour</div>
+            <div class="label-cap" style="font-size:9.5px; color:var(--ink-4); margin-bottom:8px;">{{ __('services.closed_in_favour') }}</div>
             <div class="serif" style="font-size:32px; font-weight:400; line-height:1; color:#2f7a4d;">{{ $closedInFavour }}</div>
-            <div style="font-size:11px; color:var(--ink-4); margin-top:4px;">of {{ $totalClosed }} closed</div>
+            <div style="font-size:11px; color:var(--ink-4); margin-top:4px;">{{ __('services.of_closed', ['total' => $totalClosed]) }}</div>
         </div>
 
         <div class="card" style="padding:20px 22px; border-top:3px solid var(--forest);">
-            <div class="label-cap" style="font-size:9.5px; color:var(--ink-4); margin-bottom:8px;">Success Rate</div>
+            <div class="label-cap" style="font-size:9.5px; color:var(--ink-4); margin-bottom:8px;">{{ __('services.success_rate') }}</div>
             <div style="display:flex; align-items:baseline; gap:4px;">
                 <div class="serif" style="font-size:32px; font-weight:400; line-height:1; color:var(--forest);">{{ $successRate }}</div>
                 <div style="font-size:16px; color:var(--forest);">%</div>
             </div>
-            <div style="font-size:11px; color:var(--ink-4); margin-top:4px;">closed in client's favour</div>
+            <div style="font-size:11px; color:var(--ink-4); margin-top:4px;">{{ __('services.closed_favour') }}</div>
         </div>
 
     </div>
 
     {{-- Kanban pipeline --}}
     <div style="margin-bottom:10px;">
-        <div style="font-size:15px; font-weight:600; color:var(--ink); margin-bottom:4px;">Complaint pipeline</div>
-        <div style="font-size:12px; color:var(--ink-3);">{{ $total }} cases across 3 stages · sorted by intake date</div>
+        <div style="font-size:15px; font-weight:600; color:var(--ink); margin-bottom:4px;">{{ __('services.complaint_pipeline') }}</div>
+        <div style="font-size:12px; color:var(--ink-3);">{{ $total }} {{ __('services.stages_sorted', ['count' => 3]) }}</div>
     </div>
 
     <div style="display:grid; grid-template-columns: repeat(3,1fr); gap:12px; align-items:start;">
@@ -160,7 +160,7 @@
                 </a>
                 @empty
                 <div style="padding:24px 12px; text-align:center; color:var(--ink-4); font-size:12px;">
-                    No cases in this stage
+                    {{ __('services.no_cases_stage') }}
                 </div>
                 @endforelse
             </div>

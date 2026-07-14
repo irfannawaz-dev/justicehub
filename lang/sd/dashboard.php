@@ -1,6 +1,7 @@
 <?php
 
 return [
+    // Existing keys
     'strategic_overview' => 'اسٽريٽجڪ جائزو',
     'total_cases' => 'ڪُل ڪيس',
     'active_cases' => 'فعال ڪيس',
@@ -11,4 +12,173 @@ return [
     'cases_by_pathway' => 'رستي مطابق ڪيس',
     'recent_activity' => 'تازيون سرگرميون',
     'pending_actions' => 'زير التوا عمل',
+
+    // ── ڪمانڊ سينٽر ──
+    'command_centre' => 'جسٽس هب · ڪمانڊ سينٽر',
+    'real_time_overview' => 'سڄي پاڪستان ۾ جسٽس هب جو حقيقي وقت جو جائزو',
+    'legal_aid_society' => 'ليگل ايڊ سوسائٽي',
+    'justice_hub_cms' => 'جسٽس هب سي ايم ايس',
+    'date_range' => 'تاريخ جي حد',
+    'custom_date_range' => 'ڪسٽم تاريخ جي حد',
+    'from' => 'کان',
+    'to' => 'تائين',
+    'apply' => 'لاڳو ڪريو',
+    'reset_filters' => 'فلٽر ري سيٽ ڪريو',
+    'download_report' => 'رپورٽ ڊائونلوڊ ڪريو',
+    'showing' => 'ڏيکاريو پيو',
+    'last_updated' => 'آخري تازه ڪاري',
+    'live' => 'لائيو',
+    'new_this_week' => ':count هن هفتي نوان',
+    'this_week' => ':count هن هفتي',
+    'cases_resolved' => 'حل ٿيل ڪيس',
+    'high_risk' => 'اعليٰ خطرو',
+    'needs_attention' => 'ڌيان جي ضرورت آهي',
+    'clear_status' => 'صاف',
+    'flagged_for_escalation' => 'وڌائڻ لاءِ نشان لڳل',
+    'on_target' => 'هدف تي',
+    'breaches' => ':count ڀڃڪڙيون',
+    'pending' => 'زير التوا',
+    'pending_review' => ':count جائزي لاءِ زير التوا',
+
+    // نقشو سيڪشن
+    'programme_coverage' => 'پروگرام ڪوريج',
+    'click_pin_for_details' => 'سڄي پاڪستان ۾ جسٽس هب مقام · تفصيلات لاءِ پن تي ڪلڪ ڪريو',
+    'active_hub' => 'فعال هب',
+    'hubs_count_cases' => ':hubs هب · :cases ڪُل ڪيس',
+    'of_total_caseload' => 'ڪُل ڪيس لوڊ جو :pct%',
+
+    // چارٽ
+    'case_intake_resolution_trend' => 'ڪيس اِنٽيڪ ۽ حل جو رُجحان',
+    'last_30_days_daily_activity' => 'آخري 30 ڏينهن جي روزاني سرگرمي',
+    'daily_intakes' => 'روزاني اِنٽيڪ',
+    'case_distribution_by_type' => 'قسم مطابق ڪيس ورهاست',
+    'primary_issue_breakdown' => 'بنيادي مسئلي جي تقسيم',
+    'cases_by_status' => 'اسٽيٽس مطابق ڪيس',
+    'current_status_distribution' => 'موجوده اسٽيٽس ورهاست',
+
+    // هب ڪارڪردگي
+    'hub_performance' => 'هب ڪارڪردگي',
+    'hubs_count' => ':count هب',
+    'hub' => 'هب',
+    'total' => 'ڪُل',
+    'active' => 'فعال',
+    'closed' => 'بند ٿيل',
+    'sla_pct' => 'ايس ايل اي %',
+
+    // ريفرل ذريعا
+    'referral_sources' => 'ريفرل ذريعا',
+    'no_referral_data' => 'ريفرل ڊيٽا دستياب ناهي',
+
+    // الرٽ ۽ وڌائڻ
+    'alerts_escalations' => 'الرٽ ۽ وڌائڻ',
+    'high_risk_cases' => 'اعليٰ خطري وارا ڪيس',
+    'sla_breaches' => 'ايس ايل اي ڀڃڪڙيون',
+    'pending_approval' => 'منظوري لاءِ زير التوا',
+    'complaints_open' => 'کليل شڪايتون',
+
+    // ڪمزوري ۽ حفاظت
+    'vulnerability_safeguarding' => 'ڪمزوري ۽ حفاظت',
+    'gbv' => 'صنفي تشدد',
+    'child' => 'ٻار',
+    'minority' => 'اقليت',
+    'disability' => 'معذوري',
+    'underserved' => 'پسماندا',
+
+    // صنف ۽ جلدي اعداد
+    'gender_split' => 'صنف جي تقسيم',
+    'quick_stats' => 'جلدي اعداد',
+    'satisfaction' => 'اطمينان',
+    'outreach_sessions' => 'آئوٽ ريچ سيشن',
+    'participants' => 'شرڪاء',
+    'cost_per_case_pkr' => 'في ڪيس لاڳت (پي ڪي آر)',
+
+    // جغرافيائي ۽ خدمت ۽ عمر
+    'geographic_distribution' => 'جغرافيائي ورهاست',
+    'service_mix' => 'خدمت ميلاپ',
+    'age_distribution' => 'عمر ورهاست',
+
+    // تعيناتي ۽ ايس ايل اي خطرو
+    'case_disposition' => 'ڪيس تعيناتي',
+    'sla_risk_segmentation' => 'ايس ايل اي خطري جي ورهاست',
+    'on_track' => 'ٽريڪ تي',
+    'at_risk' => 'خطري ۾',
+    'breached' => 'ڀڃيل',
+    'status_breakdown' => 'اسٽيٽس تقسيم',
+
+    // فلٽر ليبل
+    'select_all_none' => 'سڀ چونڊيو / ڪو به نه',
+    'all_hubs' => 'سڀ هب',
+    'all_provinces' => 'سڀ صوبا',
+    'all_districts' => 'سڀ ضلعا',
+    'all_services' => 'سڀ خدمتون',
+
+    // ── ايل سي ڊي ڊيش بورڊ ──
+    'live_dashboard' => 'جسٽس هب — لائيو ڊيش بورڊ',
+    'case_management_system' => 'ليگل ايڊ سوسائٽي · ڪيس مئنيجمينٽ سسٽم',
+    'auto_refresh_every_2_min' => 'هر 2 منٽ ۾ پاڻمرادو ريفريش',
+    'filter_by_hub' => 'هب ذريعي فلٽر ڪريو:',
+    'todays_intakes' => 'اڄ جا اِنٽيڪ',
+    'resolved_closed' => 'حل ٿيل / بند ٿيل',
+    'high_immediate' => 'اعليٰ / فوري',
+    'heard_from_referral' => 'ٻڌل / ريفرل ذريعو',
+    'category_wise' => 'قسم وار',
+    'monthly_intake_trend' => 'مهيني وار اِنٽيڪ رُجحان',
+    'staff_active_caseload' => 'اسٽاف — فعال ڪيس لوڊ',
+    'show_all' => 'سڀ ڏيکاريو',
+    'show_less' => 'گهٽ ڏيکاريو',
+    'hub_wise_breakdown' => 'هب وار تقسيم',
+    'pathway_distribution' => 'رستي جي ورهاست',
+    'no_data' => 'ڊيٽا ناهي',
+    'no_active_assignments' => 'ڪا به فعال تفويض ناهي',
+    'safeguarding_active' => 'حفاظت فعال (صنفي تشدد/ٻار)',
+    'cases_registered' => 'رجسٽر ٿيل ڪيس',
+    'last_refreshed' => 'آخري ريفريش',
+    'justice_hub_cms_version' => 'ليگل ايڊ سوسائٽي · جسٽس هب سي ايم ايس v1.0',
+
+    // ── ليٽيگيشن ۽ اي ڊي آر ڊيش بورڊ ──
+    'mediation_dispute_resolution' => 'ثالثي ۽ تنازعن جو حل',
+    'mediation_scorecard' => 'ثالثي',
+    'scorecard' => 'اسڪور ڪارڊ',
+    'mediation_pathway_performance' => 'ثالثي رستي جي ڪارڪردگي · اشاري O2.1 + O2.2 · هن ٽي ماهي',
+    'mediation_resolution_rate' => 'O2.1 ثالثي حل جي شرح',
+    'of_completed_via_mediation' => 'ثالثي ذريعي حل ٿيل مڪمل ڪيسن مان',
+    'target_pct' => 'هدف: :pct%',
+    'active_mediations' => 'فعال ثالثيون',
+    'across_all_hubs' => 'سڀني هبن ۾',
+    'avg_days_to_resolution' => 'حل تائين اوسط ڏينهن',
+    'days_under_target' => ':count ڏينهن هدف کان گهٽ',
+    'days_over_target' => ':count ڏينهن هدف کان وڌيڪ',
+    'no_resolved_cases' => 'ڪي به حل ٿيل ڪيس ناهن',
+    'total_mediation_cases' => 'ڪُل ثالثي ڪيس',
+    'settled' => 'طئي ٿيل',
+    'other' => 'ٻيو',
+    'mediation_case_outcome_split' => 'ثالثي ڪيس نتيجي جي تقسيم',
+    'mediation_performance_vs_target' => 'ثالثي ڪارڪردگي بمقابله هدف',
+
+    'court_representation' => 'عدالتي نمائندگي',
+    'litigation_scorecard' => 'قانوني ڪارروائي',
+    'court_pathway_performance' => 'عدالتي رستي جي ڪارڪردگي · اشارو O2.4 · هن ٽي ماهي',
+    'favourable_outcome_rate' => 'O2.4 سازگار نتيجي جي شرح',
+    'cases_with_favourable_judgment' => 'سازگار فيصلي / تصفيي وارا ڪيس',
+    'active_litigation' => 'فعال قانوني ڪارروائي',
+    'criminal' => 'فوجداري',
+    'civil' => 'ديواني',
+    'avg_days_to_disposal' => 'نبٽاري تائين اوسط ڏينهن',
+    'total_litigation_cases' => 'ڪُل قانوني ڪارروائي ڪيس',
+    'favourable' => 'سازگار',
+    'criminal_vs_civil_split' => 'فوجداري بمقابله ديواني تقسيم',
+    'litigation_outcome_split' => 'قانوني ڪارروائي نتيجي جي تقسيم',
+
+    'team_capacity' => 'ٽيم صلاحيت',
+    'staff_workload' => 'اسٽاف ڪم جو بار',
+    'active_case_assignments' => 'في اسٽاف رڪن فعال ڪيس تفويض · صلاحيت استعمال',
+    'staff' => 'اسٽاف',
+    'role' => 'ڪردار',
+    'capacity' => 'صلاحيت',
+    'utilisation' => 'استعمال',
+    'no_staff_records' => 'ڪو به اسٽاف رڪارڊ نه مليو. فيز 5 ۾ اسٽاف ڊيٽا شامل ڪريو.',
+
+    // نقشي جا پاپ اپ ليبل (جاوا اسڪرپٽ ۾ استعمال ٿيل)
+    'justice_hub' => 'جسٽس هب',
+    'share' => 'حصو',
 ];

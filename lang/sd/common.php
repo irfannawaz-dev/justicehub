@@ -31,6 +31,11 @@ return [
     'update'    => 'تازه ڪاري ڪريو',
     'add'       => 'شامل ڪريو',
     'remove'    => 'هٽايو',
+    'approve'   => 'منظور ڪريو',
+    'reject'    => 'رد ڪريو',
+    'yes'       => 'ها',
+    'no'        => 'نه',
+    'select'    => 'چونڊيو...',
 
     // اسٽيٽس ليبل
     'active'     => 'فعال',
@@ -76,5 +81,16 @@ return [
     'hours_ago'   => ':count ڪلاڪ اڳ',
     'minutes_ago' => ':count منٽ اڳ',
     'just_now'    => 'ھاڻي ئي',
+
+    // فلٽرز
+    'all'               => 'سڀ',
+    'safeguarding'      => 'حفاظت',
+    'all_hubs'          => 'سڀ هب',
+    'all_districts'     => 'سڀ ضلعا',
+    'search_placeholder'=> 'نالو، آئي ڊي، مسئلو ڳولھيو…',
+    'reset_all_filters' => 'سڀ فلٽر ري سيٽ ڪريو',
+    'export_excel'      => 'ايڪسل برآمد ڪريو',
+    'list_view'         => 'لسٽ ڏيک',
+    'grid_view'         => 'گرڊ ڏيک',
 
 ];

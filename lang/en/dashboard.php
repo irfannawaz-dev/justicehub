@@ -1,6 +1,7 @@
 <?php
 
 return [
+    // Existing keys
     'strategic_overview' => 'Strategic Overview',
     'total_cases' => 'Total Cases',
     'active_cases' => 'Active Cases',
@@ -11,4 +12,173 @@ return [
     'cases_by_pathway' => 'Cases by Pathway',
     'recent_activity' => 'Recent Activity',
     'pending_actions' => 'Pending Actions',
+
+    // ── Command Centre ──
+    'command_centre' => 'Justice Hub · Command Centre',
+    'real_time_overview' => 'Real-time overview of Justice Hubs across Pakistan',
+    'legal_aid_society' => 'Legal Aid Society',
+    'justice_hub_cms' => 'Justice Hub CMS',
+    'date_range' => 'Date Range',
+    'custom_date_range' => 'Custom Date Range',
+    'from' => 'From',
+    'to' => 'To',
+    'apply' => 'Apply',
+    'reset_filters' => 'Reset filters',
+    'download_report' => 'Download Report',
+    'showing' => 'Showing',
+    'last_updated' => 'Last updated',
+    'live' => 'Live',
+    'new_this_week' => ':count new this week',
+    'this_week' => ':count this week',
+    'cases_resolved' => 'Cases Resolved',
+    'high_risk' => 'High Risk',
+    'needs_attention' => 'needs attention',
+    'clear_status' => 'clear',
+    'flagged_for_escalation' => 'Flagged for escalation',
+    'on_target' => 'on target',
+    'breaches' => ':count breaches',
+    'pending' => 'pending',
+    'pending_review' => ':count pending review',
+
+    // Map section
+    'programme_coverage' => 'Programme Coverage',
+    'click_pin_for_details' => 'Justice Hub locations across Pakistan · click a pin for details',
+    'active_hub' => 'Active hub',
+    'hubs_count_cases' => ':hubs hubs · :cases total cases',
+    'of_total_caseload' => ':pct% of total caseload',
+
+    // Charts
+    'case_intake_resolution_trend' => 'Case Intake & Resolution Trend',
+    'last_30_days_daily_activity' => 'Last 30 days daily activity',
+    'daily_intakes' => 'Daily Intakes',
+    'case_distribution_by_type' => 'Case Distribution by Type',
+    'primary_issue_breakdown' => 'Primary issue breakdown',
+    'cases_by_status' => 'Cases by Status',
+    'current_status_distribution' => 'Current status distribution',
+
+    // Hub Performance
+    'hub_performance' => 'Hub Performance',
+    'hubs_count' => ':count hubs',
+    'hub' => 'Hub',
+    'total' => 'Total',
+    'active' => 'Active',
+    'closed' => 'Closed',
+    'sla_pct' => 'SLA %',
+
+    // Referral Sources
+    'referral_sources' => 'Referral Sources',
+    'no_referral_data' => 'No referral data available',
+
+    // Alerts & Escalations
+    'alerts_escalations' => 'Alerts & Escalations',
+    'high_risk_cases' => 'High Risk Cases',
+    'sla_breaches' => 'SLA Breaches',
+    'pending_approval' => 'Pending Approval',
+    'complaints_open' => 'Complaints Open',
+
+    // Vulnerability & Safeguarding
+    'vulnerability_safeguarding' => 'Vulnerability & Safeguarding',
+    'gbv' => 'GBV',
+    'child' => 'Child',
+    'minority' => 'Minority',
+    'disability' => 'Disability',
+    'underserved' => 'Underserved',
+
+    // Gender & Quick Stats
+    'gender_split' => 'Gender Split',
+    'quick_stats' => 'Quick Stats',
+    'satisfaction' => 'Satisfaction',
+    'outreach_sessions' => 'Outreach Sessions',
+    'participants' => 'Participants',
+    'cost_per_case_pkr' => 'Cost / Case (PKR)',
+
+    // Geographic & Service & Age
+    'geographic_distribution' => 'Geographic Distribution',
+    'service_mix' => 'Service Mix',
+    'age_distribution' => 'Age Distribution',
+
+    // Disposition & SLA Risk
+    'case_disposition' => 'Case Disposition',
+    'sla_risk_segmentation' => 'SLA Risk Segmentation',
+    'on_track' => 'On Track',
+    'at_risk' => 'At Risk',
+    'breached' => 'Breached',
+    'status_breakdown' => 'Status Breakdown',
+
+    // Filter labels
+    'select_all_none' => 'Select All / None',
+    'all_hubs' => 'All Hubs',
+    'all_provinces' => 'All Provinces',
+    'all_districts' => 'All Districts',
+    'all_services' => 'All Services',
+
+    // ── LCD Dashboard ──
+    'live_dashboard' => 'Justice Hub — Live Dashboard',
+    'case_management_system' => 'Legal Aid Society · Case Management System',
+    'auto_refresh_every_2_min' => 'Auto-refresh every 2 min',
+    'filter_by_hub' => 'Filter by Hub:',
+    'todays_intakes' => "Today's Intakes",
+    'resolved_closed' => 'Resolved / Closed',
+    'high_immediate' => 'High / Immediate',
+    'heard_from_referral' => 'Heard From / Referral Source',
+    'category_wise' => 'Category Wise',
+    'monthly_intake_trend' => 'Monthly Intake Trend',
+    'staff_active_caseload' => 'Staff — Active Caseload',
+    'show_all' => 'Show All',
+    'show_less' => 'Show Less',
+    'hub_wise_breakdown' => 'Hub Wise Breakdown',
+    'pathway_distribution' => 'Pathway Distribution',
+    'no_data' => 'No data',
+    'no_active_assignments' => 'No active assignments',
+    'safeguarding_active' => 'Safeguarding Active (GBV/Child)',
+    'cases_registered' => 'Cases Registered',
+    'last_refreshed' => 'Last refreshed',
+    'justice_hub_cms_version' => 'Legal Aid Society · Justice Hub CMS v1.0',
+
+    // ── Litigation & ADR Dashboard ──
+    'mediation_dispute_resolution' => 'Mediation & Dispute Resolution',
+    'mediation_scorecard' => 'Mediation',
+    'scorecard' => 'scorecard',
+    'mediation_pathway_performance' => 'Mediation pathway performance · indicators O2.1 + O2.2 · this quarter',
+    'mediation_resolution_rate' => 'O2.1 Mediation Resolution Rate',
+    'of_completed_via_mediation' => 'of completed cases resolved via mediation',
+    'target_pct' => 'Target: :pct%',
+    'active_mediations' => 'Active Mediations',
+    'across_all_hubs' => 'across all hubs',
+    'avg_days_to_resolution' => 'Avg Days to Resolution',
+    'days_under_target' => ':count days under target',
+    'days_over_target' => ':count days over target',
+    'no_resolved_cases' => 'No resolved cases',
+    'total_mediation_cases' => 'Total Mediation Cases',
+    'settled' => 'settled',
+    'other' => 'other',
+    'mediation_case_outcome_split' => 'Mediation Case Outcome Split',
+    'mediation_performance_vs_target' => 'Mediation Performance vs Target',
+
+    'court_representation' => 'Court Representation',
+    'litigation_scorecard' => 'Litigation',
+    'court_pathway_performance' => 'Court pathway performance · indicator O2.4 · this quarter',
+    'favourable_outcome_rate' => 'O2.4 Favourable Outcome Rate',
+    'cases_with_favourable_judgment' => 'cases with favourable judgment / settlement',
+    'active_litigation' => 'Active Litigation',
+    'criminal' => 'criminal',
+    'civil' => 'civil',
+    'avg_days_to_disposal' => 'Avg Days to Disposal',
+    'total_litigation_cases' => 'Total Litigation Cases',
+    'favourable' => 'favourable',
+    'criminal_vs_civil_split' => 'Criminal vs Civil Split',
+    'litigation_outcome_split' => 'Litigation Outcome Split',
+
+    'team_capacity' => 'Team Capacity',
+    'staff_workload' => 'Staff workload',
+    'active_case_assignments' => 'Active case assignments per staff member · capacity utilisation',
+    'staff' => 'Staff',
+    'role' => 'Role',
+    'capacity' => 'Capacity',
+    'utilisation' => 'Utilisation',
+    'no_staff_records' => 'No staff records found. Seed staff data in Phase 5.',
+
+    // Map popup labels (used in JS)
+    'justice_hub' => 'Justice Hub',
+    'share' => 'Share',
 ];

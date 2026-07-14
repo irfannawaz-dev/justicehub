@@ -14,15 +14,15 @@
 
     {{-- ═══ Disposition Tabs ═══ --}}
     <div style="margin-bottom: 18px; border-bottom: 1px solid var(--rule);">
-        <div class="label-cap" style="font-size: 9.5px; margin-bottom: 10px;">Case Disposition</div>
+        <div class="label-cap" style="font-size: 9.5px; margin-bottom: 10px;">{{ __('cases.case_disposition') }}</div>
         <div style="display: flex; gap: 4px; flex-wrap: wrap;">
             @foreach([
-                ['id' => 'all',         'label' => 'All Cases',                  'sub' => 'every intake',       'color' => 'var(--ink)'],
-                ['id' => 'advice-only', 'label' => 'Advice given, client left',  'sub' => 'no further action',  'color' => 'var(--ink-3)'],
-                ['id' => 'litigation',  'label' => 'Taken up for litigation',    'sub' => 'in court',           'color' => 'var(--burgundy)'],
-                ['id' => 'adr',         'label' => 'Taken up for ADR',           'sub' => 'mediation pathway',  'color' => 'var(--ochre)'],
-                ['id' => 'referred',    'label' => 'Referred',                   'sub' => 'partner pathway',    'color' => 'var(--moss)'],
-                ['id' => 'pending',    'label' => 'Pending triage',             'sub' => 'awaiting assignment', 'color' => 'var(--ink-3)'],
+                ['id' => 'all',         'label' => __('cases.all_cases'),        'sub' => __('cases.every_intake'),       'color' => 'var(--ink)'],
+                ['id' => 'advice-only', 'label' => __('cases.advice_only'),      'sub' => __('cases.advice_only_sub'),    'color' => 'var(--ink-3)'],
+                ['id' => 'litigation',  'label' => __('cases.litigation'),       'sub' => __('cases.litigation_sub'),     'color' => 'var(--burgundy)'],
+                ['id' => 'adr',         'label' => __('cases.adr_disposition'),  'sub' => __('cases.adr_sub'),            'color' => 'var(--ochre)'],
+                ['id' => 'referred',    'label' => __('cases.referred'),         'sub' => __('cases.referred_sub'),       'color' => 'var(--moss)'],
+                ['id' => 'pending',    'label' => __('cases.pending_triage'),    'sub' => __('cases.pending_triage_sub'), 'color' => 'var(--ink-3)'],
             ] as $d)
                 @php
                     $isActive = $currentDisposition === $d['id'];
@@ -42,14 +42,14 @@
     </div>
 
     {{-- ═══ Service Pathways · At a Glance ═══ --}}
-    <div class="label-cap" style="font-size: 9.5px; margin-bottom: 8px;">Service Pathways &middot; at a glance &middot; click to filter cases</div>
+    <div class="label-cap" style="font-size: 9.5px; margin-bottom: 8px;">{{ __('cases.service_pathways') }} &middot; {{ __('cases.at_a_glance') }} &middot; {{ __('cases.click_to_filter_cases') }}</div>
     <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px;">
         @foreach([
-            ['key' => 'legal_advice',   'label' => 'Free Legal Advice',       'sub' => 'counsel sessions delivered',  'icon' => 'file-text',      'indicator' => 'O2.1', 'color' => 'var(--forest)',   'bg' => 'rgba(22,48,41,0.08)',  'filter' => 'legal_advice'],
-            ['key' => 'mediation',      'label' => 'Mediation',               'sub' => 'cases on mediation pathway',  'icon' => 'heart-handshake','indicator' => 'O2.2', 'color' => 'var(--moss)',     'bg' => 'var(--moss-tint)',     'filter' => 'mediation'],
-            ['key' => 'adr',            'label' => 'ADR',                     'sub' => 'dispute resolution support',  'icon' => 'scale',          'indicator' => 'O2.2', 'color' => 'var(--ochre)',    'bg' => 'var(--ochre-tint)',    'filter' => 'adr'],
-            ['key' => 'court',          'label' => 'Representation in Court', 'sub' => 'litigation in progress',      'icon' => 'gavel',          'indicator' => 'O2.4', 'color' => 'var(--burgundy)', 'bg' => 'var(--burgundy-tint)', 'filter' => 'court'],
-            ['key' => 'referred',       'label' => 'Referred (loop)',         'sub' => 'total referrals logged',      'icon' => 'share-2',        'indicator' => 'O3.2', 'color' => 'var(--forest)',   'bg' => 'rgba(22,48,41,0.08)', 'filter' => 'referred'],
+            ['key' => 'legal_advice',   'label' => __('cases.free_legal_advice'),       'sub' => __('cases.legal_advice_sub'),       'icon' => 'file-text',      'indicator' => 'O2.1', 'color' => 'var(--forest)',   'bg' => 'rgba(22,48,41,0.08)',  'filter' => 'legal_advice'],
+            ['key' => 'mediation',      'label' => __('cases.mediation'),              'sub' => __('cases.mediation_sub'),          'icon' => 'heart-handshake','indicator' => 'O2.2', 'color' => 'var(--moss)',     'bg' => 'var(--moss-tint)',     'filter' => 'mediation'],
+            ['key' => 'adr',            'label' => __('cases.adr'),                    'sub' => __('cases.adr_cases_sub'),          'icon' => 'scale',          'indicator' => 'O2.2', 'color' => 'var(--ochre)',    'bg' => 'var(--ochre-tint)',    'filter' => 'adr'],
+            ['key' => 'court',          'label' => __('cases.representation_in_court'),'sub' => __('cases.court_sub'),              'icon' => 'gavel',          'indicator' => 'O2.4', 'color' => 'var(--burgundy)', 'bg' => 'var(--burgundy-tint)', 'filter' => 'court'],
+            ['key' => 'referred',       'label' => __('cases.referred_loop'),          'sub' => __('cases.referred_loop_sub'),      'icon' => 'share-2',        'indicator' => 'O3.2', 'color' => 'var(--forest)',   'bg' => 'rgba(22,48,41,0.08)', 'filter' => 'referred'],
         ] as $pw)
         @php
             $pwCount = $pathwayCounts[$pw['key']] ?? 0;
@@ -73,20 +73,20 @@
     </div>
 
     {{-- ═══ Cohort KPI Tiles ═══ --}}
-    <div class="label-cap" style="font-size: 9.5px; margin-bottom: 8px;">Cohorts &amp; safeguarding &middot; at a glance &middot; click to filter</div>
+    <div class="label-cap" style="font-size: 9.5px; margin-bottom: 8px;">{{ __('cases.cohorts_safeguarding') }} &middot; {{ __('cases.at_a_glance') }} &middot; {{ __('cases.click_to_filter') }}</div>
     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(115px, 1fr)); gap: 8px; margin-bottom: 18px;">
         @foreach([
-            ['id' => 'total',      'label' => 'Total Cases',     'icon' => 'scale',           'value' => $counts['total'],      'hue' => 'var(--forest)'],
-            ['id' => 'pending',    'label' => 'Pending Approval','icon' => 'clock',           'value' => $counts['pending'],    'hue' => 'var(--ochre)'],
-            ['id' => 'female',     'label' => 'Female Clients',  'icon' => 'user',            'value' => $counts['female'],     'hue' => 'var(--burgundy)'],
-            ['id' => 'male',       'label' => 'Male Clients',    'icon' => 'user',            'value' => $counts['male'],       'hue' => 'var(--ink-2)'],
-            ['id' => 'minority',   'label' => 'Minority Served', 'icon' => 'heart-handshake', 'value' => $counts['minority'],   'hue' => 'var(--ochre)'],
-            ['id' => 'disability', 'label' => 'Disabled Served', 'icon' => 'accessibility',   'value' => $counts['disability'], 'hue' => '#7e57c2'],
-            ['id' => 'gbv',        'label' => 'GBV-flagged',     'icon' => 'shield',          'value' => $counts['gbv'],        'hue' => 'var(--burgundy)'],
-            ['id' => 'child',      'label' => 'Child cases',     'icon' => 'user',            'value' => $counts['child'],      'hue' => 'var(--ochre)'],
-            ['id' => 'high_risk',  'label' => 'High Risk',       'icon' => 'alert-triangle',  'value' => $counts['high_risk'],  'hue' => 'var(--burgundy)'],
-            ['id' => 'sla_breach', 'label' => 'SLA Breach',      'icon' => 'clock',           'value' => $counts['sla_breach'], 'hue' => 'var(--burgundy)'],
-            ['id' => 'underserved','label' => 'Underserved',     'icon' => 'users',           'value' => $counts['underserved'],'hue' => 'var(--moss)'],
+            ['id' => 'total',      'label' => __('cases.total_cases'),      'icon' => 'scale',           'value' => $counts['total'],      'hue' => 'var(--forest)'],
+            ['id' => 'pending',    'label' => __('cases.pending_approval'),'icon' => 'clock',           'value' => $counts['pending'],    'hue' => 'var(--ochre)'],
+            ['id' => 'female',     'label' => __('cases.female_clients'),  'icon' => 'user',            'value' => $counts['female'],     'hue' => 'var(--burgundy)'],
+            ['id' => 'male',       'label' => __('cases.male_clients'),    'icon' => 'user',            'value' => $counts['male'],       'hue' => 'var(--ink-2)'],
+            ['id' => 'minority',   'label' => __('cases.minority_served'), 'icon' => 'heart-handshake', 'value' => $counts['minority'],   'hue' => 'var(--ochre)'],
+            ['id' => 'disability', 'label' => __('cases.disabled_served'), 'icon' => 'accessibility',   'value' => $counts['disability'], 'hue' => '#7e57c2'],
+            ['id' => 'gbv',        'label' => __('cases.gbv_flagged'),     'icon' => 'shield',          'value' => $counts['gbv'],        'hue' => 'var(--burgundy)'],
+            ['id' => 'child',      'label' => __('cases.child_cases'),     'icon' => 'user',            'value' => $counts['child'],      'hue' => 'var(--ochre)'],
+            ['id' => 'high_risk',  'label' => __('cases.high_risk'),       'icon' => 'alert-triangle',  'value' => $counts['high_risk'],  'hue' => 'var(--burgundy)'],
+            ['id' => 'sla_breach', 'label' => __('cases.sla_breach'),      'icon' => 'clock',           'value' => $counts['sla_breach'], 'hue' => 'var(--burgundy)'],
+            ['id' => 'underserved','label' => __('cases.underserved'),     'icon' => 'users',           'value' => $counts['underserved'],'hue' => 'var(--moss)'],
         ] as $k)
         <div class="card" style="padding: 12px 12px 10px; border-radius: 4px; text-align: left;">
             <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px;">
@@ -103,14 +103,14 @@
         {{-- Preserve existing filters --}}
         <input type="hidden" name="disposition" value="{{ $currentDisposition }}">
 
-        <div class="label-cap" style="font-size: 9.5px;">Status</div>
+        <div class="label-cap" style="font-size: 9.5px;">{{ __('common.status') }}</div>
         <div style="display: flex; gap: 1px; background: var(--rule); padding: 1px;">
             @foreach([
-                ['id' => 'all',          'label' => 'All',          'n' => $cases->total()],
-                ['id' => 'active',       'label' => 'Active',       'n' => $counts['active']],
-                ['id' => 'safeguarding', 'label' => 'Safeguarding', 'n' => $counts['safeguarding']],
-                ['id' => 'sla',          'label' => 'SLA breach',   'n' => $counts['sla_breach']],
-                ['id' => 'closed',       'label' => 'Closed',       'n' => $counts['closed']],
+                ['id' => 'all',          'label' => __('common.all'),          'n' => $cases->total()],
+                ['id' => 'active',       'label' => __('common.active'),       'n' => $counts['active']],
+                ['id' => 'safeguarding', 'label' => __('common.safeguarding'), 'n' => $counts['safeguarding']],
+                ['id' => 'sla',          'label' => __('cases.sla_breach'),    'n' => $counts['sla_breach']],
+                ['id' => 'closed',       'label' => __('common.closed'),       'n' => $counts['closed']],
             ] as $f)
                 <button type="submit" name="status" value="{{ $f['id'] }}"
                     style="padding: 7px 14px; background: {{ $currentStatus === $f['id'] ? 'var(--forest)' : 'var(--paper)' }}; color: {{ $currentStatus === $f['id'] ? 'var(--cream)' : 'var(--ink-2)' }}; border: none; font-size: 12px; font-weight: 500; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 7px;">
@@ -123,14 +123,14 @@
         <div style="height: 18px; width: 1px; background: var(--rule);"></div>
 
         <select name="hub" onchange="this.form.submit()" class="inp" style="width: 170px; padding: 7px 10px; font-size: 12px;">
-            <option value="all" {{ $currentHub === 'all' ? 'selected' : '' }}>All Hubs</option>
+            <option value="all" {{ $currentHub === 'all' ? 'selected' : '' }}>{{ __('common.all_hubs') }}</option>
             @foreach($hubs as $hub)
                 <option value="{{ $hub->id }}" {{ $currentHub === $hub->id ? 'selected' : '' }}>{{ $hub->name }}</option>
             @endforeach
         </select>
 
         <select name="district" onchange="this.form.submit()" class="inp" style="width: 160px; padding: 7px 10px; font-size: 12px;">
-            <option value="all" {{ $currentDistrict === 'all' ? 'selected' : '' }}>All Districts</option>
+            <option value="all" {{ $currentDistrict === 'all' ? 'selected' : '' }}>{{ __('common.all_districts') }}</option>
             @foreach($availableDistricts as $dist)
                 <option value="{{ $dist }}" {{ $currentDistrict === $dist ? 'selected' : '' }}>{{ $dist }}</option>
             @endforeach
@@ -141,14 +141,14 @@
         {{-- Search --}}
         <div style="position: relative;">
             <x-lucide-search style="width: 14px; height: 14px; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--ink-4);" />
-            <input type="text" name="search" value="{{ $currentSearch }}" placeholder="Search name, ID, issue…" class="inp" style="padding-left: 32px; width: 220px; font-size: 12px; height: 34px;">
+            <input type="text" name="search" value="{{ $currentSearch }}" placeholder="{{ __('common.search_placeholder') }}" class="inp" style="padding-left: 32px; width: 220px; font-size: 12px; height: 34px;">
         </div>
 
         @if($hasFilters)
             <a href="{{ route('cases.index') }}" style="display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--ink-3); text-decoration: none; padding: 5px 10px; border: 1px solid var(--rule); transition: all 120ms;"
                onmouseenter="this.style.borderColor='var(--burgundy)';this.style.color='var(--burgundy)'"
                onmouseleave="this.style.borderColor='var(--rule)';this.style.color='var(--ink-3)'">
-                <x-lucide-x style="width:11px;height:11px;" /> Reset all filters
+                <x-lucide-x style="width:11px;height:11px;" /> {{ __('common.reset_all_filters') }}
             </a>
         @endif
 
@@ -158,17 +158,17 @@
            style="display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border:1px solid var(--moss); color:var(--moss); font-size:12px; font-weight:500; text-decoration:none; font-family:inherit; transition:all 120ms;"
            onmouseenter="this.style.background='var(--moss)';this.style.color='#fff'"
            onmouseleave="this.style.background='transparent';this.style.color='var(--moss)'">
-            <x-lucide-download style="width:12px;height:12px;" /> Export Excel
+            <x-lucide-download style="width:12px;height:12px;" /> {{ __('common.export_excel') }}
         </a>
         @endcan
 
         {{-- View mode toggle --}}
         <div style="display: flex; gap: 1px; padding: 1px; background: var(--rule); border: 1px solid var(--rule);">
-            <button id="jh-btn-list" type="button" onclick="jhSetViewMode('list')" title="List view"
+            <button id="jh-btn-list" type="button" onclick="jhSetViewMode('list')" title="{{ __('common.list_view') }}"
                 style="padding:7px 11px; background:{{ $viewMode === 'list' ? 'var(--forest)' : 'var(--paper)' }}; color:{{ $viewMode === 'list' ? 'var(--cream)' : 'var(--ink-2)' }}; border:none; cursor:pointer;">
                 <x-lucide-list style="width: 14px; height: 14px;" />
             </button>
-            <button id="jh-btn-grid" type="button" onclick="jhSetViewMode('grid')" title="Grid view"
+            <button id="jh-btn-grid" type="button" onclick="jhSetViewMode('grid')" title="{{ __('common.grid_view') }}"
                 style="padding:7px 11px; background:{{ $viewMode === 'grid' ? 'var(--forest)' : 'var(--paper)' }}; color:{{ $viewMode === 'grid' ? 'var(--cream)' : 'var(--ink-2)' }}; border:none; cursor:pointer;">
                 <x-lucide-layout-grid style="width: 14px; height: 14px;" />
             </button>
@@ -181,15 +181,15 @@
             <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                 <thead>
                     <tr style="border-bottom: 1px solid var(--rule);">
-                        <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Case ID</th>
-                        <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Client</th>
-                        <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Issue</th>
-                        <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Status</th>
-                        <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Assigned To</th>
-                        <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Assigned By</th>
-                        <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Hub</th>
-                        <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">SLA</th>
-                        <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Updated</th>
+                        <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">{{ __('cases.case_uid') }}</th>
+                        <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">{{ __('cases.client_name') }}</th>
+                        <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">{{ __('cases.issue') }}</th>
+                        <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">{{ __('cases.status') }}</th>
+                        <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">{{ __('cases.assigned_to') }}</th>
+                        <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">{{ __('cases.assigned_by') }}</th>
+                        <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">{{ __('cases.hub') }}</th>
+                        <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">{{ __('cases.sla') }}</th>
+                        <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">{{ __('cases.updated') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -236,7 +236,7 @@
                         <td style="padding: 12px 14px;">
                             @php
                                 $slaC = $case->sla_met ? 'var(--moss)' : 'var(--burgundy)';
-                                $slaT = $case->sla_met ? 'Met' : 'Breach';
+                                $slaT = $case->sla_met ? __('cases.sla_met') : __('cases.sla_breach_label');
                             @endphp
                             <span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:0.05em;color:{{ $slaC }};background:{{ $slaC }}18;border:1px solid {{ $slaC }}40;">
                                 {{ $slaT }}
@@ -249,7 +249,7 @@
                     @empty
                     <tr>
                         <td colspan="8">
-                            <x-empty-state icon="folder" message="No cases match your filters." />
+                            <x-empty-state icon="folder" :message="__('cases.no_cases_match')" />
                         </td>
                     </tr>
                     @endforelse
@@ -292,17 +292,17 @@
             {{-- Vulnerability flags --}}
             @if($case->is_gbv || $case->is_child || $case->is_minority || $case->is_disability || $case->is_underserved)
             <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-                @if($case->is_gbv)<span style="font-size: 9px; padding: 1px 5px; background: var(--burgundy-tint); color: var(--burgundy); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;">GBV</span>@endif
-                @if($case->is_child)<span style="font-size: 9px; padding: 1px 5px; background: var(--ochre-tint); color: var(--ochre); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;">CHILD</span>@endif
-                @if($case->is_minority)<span style="font-size: 9px; padding: 1px 5px; background: var(--ochre-tint); color: var(--ochre); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;">MINORITY</span>@endif
-                @if($case->is_disability)<span style="font-size: 9px; padding: 1px 5px; background: rgba(126,87,194,0.1); color: #7e57c2; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;">DISABILITY</span>@endif
-                @if($case->is_underserved)<span style="font-size: 9px; padding: 1px 5px; background: rgba(74,122,92,0.1); color: var(--moss); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;">UNDERSERVED</span>@endif
+                @if($case->is_gbv)<span style="font-size: 9px; padding: 1px 5px; background: var(--burgundy-tint); color: var(--burgundy); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;">{{ __('cases.flag_gbv') }}</span>@endif
+                @if($case->is_child)<span style="font-size: 9px; padding: 1px 5px; background: var(--ochre-tint); color: var(--ochre); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;">{{ __('cases.flag_child') }}</span>@endif
+                @if($case->is_minority)<span style="font-size: 9px; padding: 1px 5px; background: var(--ochre-tint); color: var(--ochre); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;">{{ __('cases.flag_minority') }}</span>@endif
+                @if($case->is_disability)<span style="font-size: 9px; padding: 1px 5px; background: rgba(126,87,194,0.1); color: #7e57c2; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;">{{ __('cases.flag_disability') }}</span>@endif
+                @if($case->is_underserved)<span style="font-size: 9px; padding: 1px 5px; background: rgba(74,122,92,0.1); color: var(--moss); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;">{{ __('cases.flag_underserved') }}</span>@endif
             </div>
             @endif
         </a>
         @empty
         <div style="grid-column: 1 / -1;">
-            <x-empty-state icon="folder" message="No cases match your filters." />
+            <x-empty-state icon="folder" :message="__('cases.no_cases_match')" />
         </div>
         @endforelse
     </div>
@@ -316,7 +316,7 @@
 
     {{-- Results count --}}
     <div style="text-align: center; margin-top: 12px; font-size: 11px; color: var(--ink-4);">
-        Showing {{ $cases->firstItem() ?? 0 }}–{{ $cases->lastItem() ?? 0 }} of {{ $cases->total() }} cases
+        {{ __('cases.showing_cases', ['from' => $cases->firstItem() ?? 0, 'to' => $cases->lastItem() ?? 0, 'total' => $cases->total()]) }}
     </div>
 </div>
 </x-layouts.app>

@@ -10,11 +10,11 @@
 
     // Stage config
     $stageConfig = [
-        'Mediation Intake' => ['color' => 'var(--ink-3)',    'dot' => '#8a8a84', 'subtitle' => 'Accepted · awaiting 1st session'],
-        'Joint Session'    => ['color' => 'var(--ochre)',    'dot' => '#b87319', 'subtitle' => 'Sessions in progress'],
-        'Agreement Draft'  => ['color' => 'var(--moss)',     'dot' => '#4a7a5c', 'subtitle' => 'Agreement being finalised'],
-        'Resolved'         => ['color' => '#2f7a4d',         'dot' => '#2f7a4d', 'subtitle' => 'Settled & compliance confirmed'],
-        'Escalated'        => ['color' => 'var(--burgundy)', 'dot' => '#8a2e1d', 'subtitle' => 'Moved to court · failed mediation'],
+        'Mediation Intake' => ['color' => 'var(--ink-3)',    'dot' => '#8a8a84', 'subtitle' => __('services.mediation_intake_subtitle')],
+        'Joint Session'    => ['color' => 'var(--ochre)',    'dot' => '#b87319', 'subtitle' => __('services.joint_session_subtitle')],
+        'Agreement Draft'  => ['color' => 'var(--moss)',     'dot' => '#4a7a5c', 'subtitle' => __('services.agreement_draft_subtitle')],
+        'Resolved'         => ['color' => '#2f7a4d',         'dot' => '#2f7a4d', 'subtitle' => __('services.resolved_subtitle')],
+        'Escalated'        => ['color' => 'var(--burgundy)', 'dot' => '#8a2e1d', 'subtitle' => __('services.escalated_subtitle')],
     ];
 
     // Outcome colors for chart and bars
@@ -64,18 +64,18 @@
     <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; animation: jh-fade-up 0.5s ease both;">
         <div>
             <div class="label-cap" style="font-size: 9.5px; margin-bottom: 4px; letter-spacing: 0.12em;">
-                SERVICE DELIVERY &middot; REPRESENTATION & MEDIATION
+                {{ __('services.service_delivery_mediation') }}
             </div>
             <h1 class="serif" style="font-size: 34px; font-weight: 400; letter-spacing: -0.02em; margin: 0; line-height: 1.15;">
-                Services & <em style="color: var(--ochre); font-style: italic;">Mediation</em>
+                {{ __('services.services_and') }} <em style="color: var(--ochre); font-style: italic;">{{ __('services.mediation') }}</em>
             </h1>
             <p style="margin: 6px 0 0 0; font-size: 13px; color: var(--ink-3); max-width: 520px; line-height: 1.45;">
-                Mediation pathway performance, service delivery tracking, and staff workload for {{ $total }} mediation cases across the programme.
+                {{ __('services.mediation_pathway_desc', ['total' => $total]) }}
             </p>
         </div>
         <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-shrink: 0;">
             <button onclick="jhOpenModal('log-service')" style="display: inline-flex; align-items: center; gap: 5px; padding: 7px 14px; font-size: 12px; font-weight: 500; font-family: inherit; border: 1px solid var(--rule); background: transparent; color: var(--ink-2); cursor: pointer;">
-                <x-lucide-plus style="width: 13px; height: 13px;" /> Log service
+                <x-lucide-plus style="width: 13px; height: 13px;" /> {{ __('services.log_service') }}
             </button>
         </div>
     </div>
@@ -88,7 +88,7 @@
         {{-- O2.1 ADR Resolution Rate --}}
         <div class="card jh-scorecard jh-anim-card" style="padding: 20px 22px; border-top: 3px solid var(--ochre); display: flex; flex-direction: column; gap: 6px; min-height: 140px;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div class="label-cap" style="font-size: 9.5px; line-height: 1.4;">O2.1 Mediation Resolution Rate</div>
+                <div class="label-cap" style="font-size: 9.5px; line-height: 1.4;">{{ __('services.resolution_rate_label') }}</div>
                 <x-lucide-heart-handshake style="width: 13px; height: 13px; color: var(--ink-4);" />
             </div>
             <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 4px;">
@@ -98,24 +98,24 @@
             <div style="margin-top: auto;">
                 <div style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--moss); font-weight: 600;">
                     <x-lucide-trending-up style="width: 12px; height: 12px;" />
-                    <span>+3 pp vs last quarter</span>
+                    <span>{{ __('services.pp_vs_last_quarter') }}</span>
                 </div>
-                <div style="font-size: 11px; color: var(--ink-3); margin-top: 2px;">{{ $settled }} of {{ $total }} resolved &middot; target 70%</div>
+                <div style="font-size: 11px; color: var(--ink-3); margin-top: 2px;">{{ __('services.resolved_of_total', ['settled' => $settled, 'total' => $total]) }}</div>
             </div>
         </div>
 
         {{-- Active Mediations --}}
         <div class="card jh-scorecard jh-anim-card" style="padding: 20px 22px; border-top: 3px solid var(--ochre); display: flex; flex-direction: column; gap: 6px; min-height: 140px;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div class="label-cap" style="font-size: 9.5px; line-height: 1.4;">Active Mediations</div>
+                <div class="label-cap" style="font-size: 9.5px; line-height: 1.4;">{{ __('services.active_mediations') }}</div>
                 <x-lucide-gavel style="width: 13px; height: 13px; color: var(--ink-4);" />
             </div>
             <div class="serif jh-anim-num" style="font-size: 44px; font-weight: 400; line-height: 1; letter-spacing: -0.02em; margin-top: 4px;">{{ $active }}</div>
             <div style="margin-top: auto;">
-                <div style="font-size: 11px; color: var(--ink-3);">{{ $awaitingFirst }} awaiting first session</div>
+                <div style="font-size: 11px; color: var(--ink-3);">{{ __('services.awaiting_first_session', ['count' => $awaitingFirst]) }}</div>
                 <div style="display: inline-flex; align-items: center; gap: 3px; margin-top: 3px; font-size: 11px;">
                     <span style="display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; background: rgba(184,115,25,0.1); color: var(--ochre); font-weight: 600; border-radius: 10px;">
-                        <x-lucide-shield style="width: 10px; height: 10px;" /> {{ $gbvActive }} are GBV-sensitive
+                        <x-lucide-shield style="width: 10px; height: 10px;" /> {{ __('services.are_gbv_sensitive', ['count' => $gbvActive]) }}
                     </span>
                 </div>
             </div>
@@ -124,7 +124,7 @@
         {{-- Avg Days to Resolution --}}
         <div class="card jh-scorecard jh-anim-card" style="padding: 20px 22px; border-top: 3px solid var(--moss); display: flex; flex-direction: column; gap: 6px; min-height: 140px;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div class="label-cap" style="font-size: 9.5px; line-height: 1.4;">Avg Days to Resolution</div>
+                <div class="label-cap" style="font-size: 9.5px; line-height: 1.4;">{{ __('services.avg_days_resolution') }}</div>
                 <x-lucide-clock style="width: 13px; height: 13px; color: var(--ink-4);" />
             </div>
             <div class="serif jh-anim-num" style="font-size: 44px; font-weight: 400; line-height: 1; letter-spacing: -0.02em; margin-top: 4px;">{{ $avgDays }}</div>
@@ -133,29 +133,29 @@
                     <div class="jh-anim-bar" style="height: 100%; width: {{ $avgDays > 0 ? min(100, round($avgDays/45*100)) : 0 }}%; background: {{ $avgDays <= 45 ? 'var(--moss)' : 'var(--burgundy)' }}; border-radius: 3px;"></div>
                 </div>
                 @if($avgDays > 0 && $avgDays <= 45)
-                <span style="font-size: 11px; font-weight: 600; color: var(--moss);">{{ 45 - $avgDays }} days under target</span>
+                <span style="font-size: 11px; font-weight: 600; color: var(--moss);">{{ __('services.days_under_target', ['count' => 45 - $avgDays]) }}</span>
                 @elseif($avgDays > 45)
-                <span style="font-size: 11px; font-weight: 600; color: var(--burgundy);">{{ $avgDays - 45 }} days over target</span>
+                <span style="font-size: 11px; font-weight: 600; color: var(--burgundy);">{{ __('services.days_over_target', ['count' => $avgDays - 45]) }}</span>
                 @else
-                <span style="font-size: 11px; color: var(--ink-3);">No resolved cases yet</span>
+                <span style="font-size: 11px; color: var(--ink-3);">{{ __('services.no_resolved_cases') }}</span>
                 @endif
-                <span style="font-size: 11px; color: var(--ink-3);"> &middot; target &le; 45</span>
+                <span style="font-size: 11px; color: var(--ink-3);"> &middot; {{ __('services.target_lte_45') }}</span>
             </div>
         </div>
 
         {{-- Services Delivered --}}
         <div class="card jh-scorecard jh-anim-card" style="padding: 20px 22px; border-top: 3px solid var(--moss); display: flex; flex-direction: column; gap: 6px; min-height: 140px;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div class="label-cap" style="font-size: 9.5px; line-height: 1.4;">Services Delivered &middot; Q</div>
+                <div class="label-cap" style="font-size: 9.5px; line-height: 1.4;">{{ __('services.services_delivered_q') }}</div>
                 <x-lucide-activity style="width: 13px; height: 13px; color: var(--ink-4);" />
             </div>
             <div class="serif jh-anim-num" style="font-size: 44px; font-weight: 400; line-height: 1; letter-spacing: -0.02em; margin-top: 4px;">{{ $servicesDelivered }}</div>
             <div style="margin-top: auto;">
                 <div style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--moss); font-weight: 600;">
                     <x-lucide-trending-up style="width: 12px; height: 12px;" />
-                    <span>+12% vs last quarter</span>
+                    <span>{{ __('services.pct_vs_last_quarter') }}</span>
                 </div>
-                <div style="font-size: 11px; color: var(--ink-3); margin-top: 2px;">total service encounters this quarter</div>
+                <div style="font-size: 11px; color: var(--ink-3); margin-top: 2px;">{{ __('services.total_service_encounters') }}</div>
             </div>
         </div>
     </div>
@@ -167,28 +167,28 @@
         <div style="display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 6px;">
             <div>
                 <h2 class="serif" style="font-size: 26px; font-weight: 400; letter-spacing: -0.015em; margin: 0; line-height: 1.1;">
-                    Mediation caseload
+                    {{ __('services.mediation_caseload') }}
                 </h2>
                 <div style="font-size: 12.5px; color: var(--ink-3); margin-top: 5px;">
-                    {{ $active }} active cases across five stages &middot; cards sorted by days-in-stage
+                    {{ __('services.active_cases_stages', ['count' => $active]) }}
                 </div>
             </div>
         </div>
 
         {{-- Filter pills --}}
         <div id="kanbanFilters" style="display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap;">
-            <button class="jh-pill-filter active" data-filter="all" onclick="filterKanban('all', this)">All cases</button>
+            <button class="jh-pill-filter active" data-filter="all" onclick="filterKanban('all', this)">{{ __('services.all_cases') }}</button>
             <button class="jh-pill-filter" data-filter="gbv" onclick="filterKanban('gbv', this)">
-                <span style="display: inline-flex; align-items: center; gap: 3px;"><x-lucide-shield style="width: 11px; height: 11px;" /> GBV-flagged</span>
+                <span style="display: inline-flex; align-items: center; gap: 3px;"><x-lucide-shield style="width: 11px; height: 11px;" /> {{ __('services.gbv_flagged') }}</span>
             </button>
             <button class="jh-pill-filter" data-filter="child" onclick="filterKanban('child', this)">
-                <span style="display: inline-flex; align-items: center; gap: 3px;"><x-lucide-baby style="width: 11px; height: 11px;" /> Child protection</span>
+                <span style="display: inline-flex; align-items: center; gap: 3px;"><x-lucide-baby style="width: 11px; height: 11px;" /> {{ __('services.child_protection') }}</span>
             </button>
             <button class="jh-pill-filter" data-filter="minority" onclick="filterKanban('minority', this)">
-                <span style="display: inline-flex; align-items: center; gap: 3px;"><x-lucide-users style="width: 11px; height: 11px;" /> Minority</span>
+                <span style="display: inline-flex; align-items: center; gap: 3px;"><x-lucide-users style="width: 11px; height: 11px;" /> {{ __('services.minority_filter') }}</span>
             </button>
             <button class="jh-pill-filter" data-filter="disability" onclick="filterKanban('disability', this)">
-                <span style="display: inline-flex; align-items: center; gap: 3px;"><x-lucide-accessibility style="width: 11px; height: 11px;" /> PwD</span>
+                <span style="display: inline-flex; align-items: center; gap: 3px;"><x-lucide-accessibility style="width: 11px; height: 11px;" /> {{ __('services.pwd') }}</span>
             </button>
         </div>
 
@@ -196,7 +196,7 @@
         <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
             <div style="position: relative; max-width: 280px; flex: 1;">
                 <x-lucide-search style="width:13px;height:13px; position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--ink-4); pointer-events:none;" />
-                <input type="text" id="adr-search" placeholder="Search name or UID…"
+                <input type="text" id="adr-search" placeholder="{{ __('services.search_name_uid') }}"
                     oninput="adrSearchCards(this.value)"
                     class="inp" style="padding-left:30px; font-size:12.5px; height:34px; width:100%; box-sizing:border-box;" />
             </div>
@@ -263,14 +263,14 @@
 
                         {{-- Row 4: Hub ID + session count --}}
                         <div style="font-size: 10px; color: var(--ink-4); margin-bottom: 4px;">
-                            {{ $case->hub_id }} &middot; {{ $case->session_count > 0 ? $case->session_count . ' session' . ($case->session_count > 1 ? 's' : '') : 'No sessions' }}
+                            {{ $case->hub_id }} &middot; {{ $case->session_count > 0 ? $case->session_count . ' ' . ($case->session_count > 1 ? __('services.sessions') : __('services.session')) : __('services.no_sessions') }}
                         </div>
 
                         {{-- Row 5: Next session (only for ADR Intake and In Mediation) --}}
                         @if($showNextSession && $nextSession)
                         <div style="display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--ink-3); padding: 3px 0; margin-bottom: 3px;">
                             <x-lucide-calendar style="width: 10px; height: 10px; color: var(--ink-4);" />
-                            <span>Next</span>
+                            <span>{{ __('services.next') }}</span>
                             <span style="font-weight: 600;">{{ \Carbon\Carbon::parse($nextSession->date)->format('d M Y') }}</span>
                         </div>
                         @endif
@@ -329,7 +329,7 @@
                     </div>
                     @empty
                     <div style="padding: 24px 14px; text-align: center; color: var(--ink-4); font-size: 11px; border: 1px dashed var(--rule);">
-                        No cases in this stage
+                        {{ __('services.no_cases_stage') }}
                     </div>
                     @endforelse
                 </div>
@@ -345,20 +345,20 @@
 
         {{-- Card header bar --}}
         <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 22px; border-bottom: 1px solid var(--rule); background: var(--parchment);">
-            <div class="label-cap" style="font-size: 9.5px; letter-spacing: 0.1em;">COMPLETED + ONGOING &middot; ALL TIME</div>
+            <div class="label-cap" style="font-size: 9.5px; letter-spacing: 0.1em;">{{ __('services.completed_ongoing_all_time') }}</div>
             <div style="display: flex; align-items: center; gap: 8px;">
-                <span class="label-cap" style="font-size: 9.5px; letter-spacing: 0.1em;">INDICATOR O2.1</span>
+                <span class="label-cap" style="font-size: 9.5px; letter-spacing: 0.1em;">{{ __('services.indicator_o21') }}</span>
                 <span class="mono" style="font-size: 18px; font-weight: 700; color: var(--ochre);">{{ $rate }}%</span>
-                <span style="font-size: 11px; color: var(--ink-3);">resolved via mediation</span>
+                <span style="font-size: 11px; color: var(--ink-3);">{{ __('services.resolved_via_mediation') }}</span>
             </div>
         </div>
 
         <div style="padding: 28px 22px;">
             <h3 class="serif" style="font-size: 24px; font-weight: 400; letter-spacing: -0.015em; margin: 0 0 4px 0;">
-                Resolution outcomes
+                {{ __('services.resolution_outcomes') }}
             </h3>
             <p style="font-size: 12.5px; color: var(--ink-3); margin: 0 0 24px 0;">
-                How {{ $total }} cases were resolved across the programme
+                {{ __('services.how_cases_resolved', ['total' => $total]) }}
             </p>
 
             {{-- Two-column: doughnut left, bars right --}}
@@ -381,7 +381,7 @@
                     {{-- Center label --}}
                     <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none;">
                         <div class="serif" style="font-size: 32px; font-weight: 500; line-height: 1;">{{ $total }}</div>
-                        <div class="label-cap" style="font-size: 9px; color: var(--ink-3); margin-top: 2px;">TOTAL CASES</div>
+                        <div class="label-cap" style="font-size: 9px; color: var(--ink-3); margin-top: 2px;">{{ __('services.total_cases_chart') }}</div>
                     </div>
                 </div>
 
@@ -412,7 +412,7 @@
             </div>
 
             <p style="font-size: 11px; color: var(--ink-4); margin: 24px 0 0 0; line-height: 1.5; border-top: 1px solid var(--rule-2); padding-top: 14px;">
-                Mediation resolution rate counts cases settled via mediation over the sum of completed routes (settled + escalated + withdrawn). Ongoing cases are excluded from the denominator until they reach a terminal state.
+                {{ __('services.resolution_rate_note') }}
             </p>
         </div>
     </div>
@@ -423,31 +423,31 @@
     <div style="margin-bottom: 32px; animation: jh-fade-up 0.6s ease both; animation-delay: 0.35s;">
         <div style="margin-bottom: 14px;">
             <h2 class="serif" style="font-size: 26px; font-weight: 400; letter-spacing: -0.015em; margin: 0; line-height: 1.1;">
-                Lawyer & paralegal <em style="font-style: italic;">workload</em>
+                {{ __('services.lawyer_paralegal') }} <em style="font-style: italic;">{{ __('services.workload') }}</em>
             </h2>
             <div style="font-size: 12.5px; color: var(--ink-3); margin-top: 5px;">
-                Active caseload vs. capacity &middot; SLA-aware &middot; {{ $staffCount }} staff across {{ $uniqueHubs }} hubs
+                {{ __('services.staff_across_hubs', ['staff' => $staffCount, 'hubs' => $uniqueHubs]) }}
             </div>
         </div>
 
         {{-- Staff filter pills --}}
         <div id="staffFilters" style="display: flex; gap: 6px; margin-bottom: 14px;">
-            <button class="jh-pill-filter active" data-staff-filter="all" onclick="filterStaff('all', this)">All</button>
-            <button class="jh-pill-filter" data-staff-filter="Lawyer" onclick="filterStaff('Lawyer', this)">Lawyers</button>
-            <button class="jh-pill-filter" data-staff-filter="Paralegal" onclick="filterStaff('Paralegal', this)">Paralegals</button>
+            <button class="jh-pill-filter active" data-staff-filter="all" onclick="filterStaff('all', this)">{{ __('common.all') }}</button>
+            <button class="jh-pill-filter" data-staff-filter="Lawyer" onclick="filterStaff('Lawyer', this)">{{ __('services.lawyers') }}</button>
+            <button class="jh-pill-filter" data-staff-filter="Paralegal" onclick="filterStaff('Paralegal', this)">{{ __('services.paralegals') }}</button>
         </div>
 
         <div class="card" style="padding: 0; overflow: hidden;">
             <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                 <thead>
                     <tr style="border-bottom: 1px solid var(--rule);">
-                        <th style="text-align: left; padding: 11px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Staff Member</th>
-                        <th style="text-align: left; padding: 11px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Role &middot; Hub</th>
-                        <th style="text-align: left; padding: 11px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Active Caseload</th>
-                        <th style="text-align: center; padding: 11px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Mediation</th>
-                        <th style="text-align: center; padding: 11px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Court</th>
-                        <th style="text-align: center; padding: 11px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">SLA</th>
-                        <th style="text-align: right; padding: 11px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Utilisation</th>
+                        <th style="text-align: left; padding: 11px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">{{ __('services.staff_member') }}</th>
+                        <th style="text-align: left; padding: 11px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">{{ __('services.role_hub') }}</th>
+                        <th style="text-align: left; padding: 11px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">{{ __('services.active_caseload') }}</th>
+                        <th style="text-align: center; padding: 11px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">{{ __('services.mediation') }}</th>
+                        <th style="text-align: center; padding: 11px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">{{ __('services.court') }}</th>
+                        <th style="text-align: center; padding: 11px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">{{ __('services.sla') }}</th>
+                        <th style="text-align: right; padding: 11px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">{{ __('services.utilisation') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -500,11 +500,11 @@
                         <td style="padding: 12px 14px; text-align: center;">
                             @if($slaClean)
                             <span style="display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--moss);">
-                                <x-lucide-check-circle style="width: 12px; height: 12px;" /> Clean
+                                <x-lucide-check-circle style="width: 12px; height: 12px;" /> {{ __('services.clean') }}
                             </span>
                             @else
                             <span style="display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--burgundy);">
-                                <x-lucide-alert-triangle style="width: 12px; height: 12px;" /> {{ $s['sla_breach'] }} breach{{ $s['sla_breach'] > 1 ? 'es' : '' }}
+                                <x-lucide-alert-triangle style="width: 12px; height: 12px;" /> {{ $s['sla_breach'] }} {{ $s['sla_breach'] > 1 ? __('services.breaches') : __('services.breach') }}
                             </span>
                             @endif
                         </td>
@@ -517,7 +517,7 @@
                     @empty
                     <tr>
                         <td colspan="7">
-                            <x-empty-state icon="user-check" message="No staff records found." />
+                            <x-empty-state icon="user-check" message="{{ __('services.no_staff_found') }}" />
                         </td>
                     </tr>
                     @endforelse
