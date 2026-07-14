@@ -8,13 +8,13 @@
     @vite(['resources/css/app.css', 'resources/css/justice-hub.css', 'resources/js/app.js'])
 </head>
 <body class="jh-app" style="margin: 0; min-height: 100vh;">
-    <div style="display: flex; min-height: 100vh;">
+    <div style="display: flex; min-height: 100vh; direction: ltr;">
 
         {{-- Sidebar --}}
         @include('components.sidebar')
 
         {{-- Main area --}}
-        <div style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
+        <div style="flex: 1; display: flex; flex-direction: column; min-width: 0; direction: {{ in_array(app()->getLocale(), ['sd', 'ur']) ? 'rtl' : 'ltr' }};">
 
             {{-- Top bar --}}
             @include('components.topbar')
@@ -60,6 +60,7 @@
             opacity: 0;
             overflow: hidden;
             border-right: none;
+            border-left: none;
         }
         #jh-sidebar-toggle.jh-sidebar-collapsed {
             background: var(--parchment-2) !important;

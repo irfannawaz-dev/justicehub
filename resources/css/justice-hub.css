@@ -6,6 +6,7 @@
  */
 
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;500;600;700&display=swap');
 
 /* ─────────────────────────────────────────────────────────────
    LIGHT THEME (default)
@@ -463,4 +464,150 @@ body, .jh-app {
 .dropdown-item:hover, .dropdown-item:focus {
   background: var(--parchment) !important;
   color: var(--ink) !important;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   RTL SUPPORT (Sindhi / Urdu)
+   ───────────────────────────────────────────────────────────── */
+
+/* ── Font ─────────────────────────────────────────────────── */
+[dir="rtl"] body,
+[dir="rtl"] .jh-app {
+  font-family: 'Noto Nastaliq Urdu', 'Instrument Sans', Tahoma, sans-serif;
+}
+[dir="rtl"] .serif {
+  font-family: 'Noto Nastaliq Urdu', 'Fraunces', serif;
+}
+[dir="rtl"] .mono {
+  font-family: 'JetBrains Mono', monospace; /* keep monospace LTR */
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* ── Main layout: keep sidebar on the LEFT even in RTL ────── */
+[dir="rtl"] body > .jh-app > div,
+[dir="rtl"] .jh-app > div {
+  direction: ltr; /* flex container stays LTR so sidebar stays left */
+}
+[dir="rtl"] .jh-app > div > div:last-child,
+[dir="rtl"] .jh-app > div > div:last-child > main {
+  direction: rtl; /* content area is RTL */
+}
+[dir="rtl"] .jh-app > div > div:last-child > header {
+  direction: rtl; /* topbar is RTL */
+}
+
+/* ── Sidebar ──────────────────────────────────────────────── */
+[dir="rtl"] #jh-sidebar {
+  direction: rtl;
+  text-align: right;
+}
+[dir="rtl"] #jh-sidebar .nav-item {
+  flex-direction: row-reverse;
+}
+[dir="rtl"] #jh-sidebar .nav-item span {
+  text-align: right;
+}
+
+/* ── Topbar ───────────────────────────────────────────────── */
+[dir="rtl"] header {
+  flex-direction: row-reverse;
+}
+/* Breadcrumb chevron flip */
+[dir="rtl"] header svg[class*="chevron-right"] {
+  transform: rotate(180deg);
+}
+/* Search icon position */
+[dir="rtl"] [data-jh-search] svg {
+  left: auto !important;
+  right: 12px !important;
+}
+[dir="rtl"] [data-jh-search] input {
+  padding-left: 12px !important;
+  padding-right: 34px !important;
+  text-align: right;
+}
+/* Notification dropdown */
+[dir="rtl"] #jh-notif-panel {
+  right: auto !important;
+  left: -8px !important;
+}
+/* User dropdown */
+[dir="rtl"] .dropdown-menu-end {
+  right: auto !important;
+  left: 0 !important;
+}
+
+/* ── Form labels & inputs ─────────────────────────────────── */
+[dir="rtl"] label {
+  text-align: right;
+}
+[dir="rtl"] .inp,
+[dir="rtl"] input[type="text"],
+[dir="rtl"] input[type="number"],
+[dir="rtl"] input[type="email"],
+[dir="rtl"] input[type="password"],
+[dir="rtl"] select,
+[dir="rtl"] textarea {
+  text-align: right;
+}
+
+/* ── Cards: accent border flip ────────────────────────────── */
+[dir="rtl"] [style*="border-left: 3px"],
+[dir="rtl"] [style*="border-left: 4px"],
+[dir="rtl"] [style*="border-left:3px"],
+[dir="rtl"] [style*="border-left:4px"] {
+  border-left: none !important;
+  border-right: 3px solid var(--moss) !important;
+}
+
+/* ── Toast position ───────────────────────────────────────── */
+[dir="rtl"] #jh-toast {
+  right: auto !important;
+  left: 28px !important;
+}
+
+/* ── Buttons with icons ───────────────────────────────────── */
+[dir="rtl"] .btn-primary,
+[dir="rtl"] .btn-ghost,
+[dir="rtl"] .jh-btn {
+  flex-direction: row-reverse;
+}
+
+/* ── Step wizard ──────────────────────────────────────────── */
+[dir="rtl"] .jh-step-wizard {
+  direction: ltr; /* keep step numbers L→R */
+}
+
+/* ── Tables ───────────────────────────────────────────────── */
+[dir="rtl"] th,
+[dir="rtl"] td {
+  text-align: right;
+}
+
+/* ── Modals ───────────────────────────────────────────────── */
+[dir="rtl"] .modal-content {
+  text-align: right;
+}
+[dir="rtl"] .modal-content label {
+  text-align: right;
+}
+
+/* ── Misc ─────────────────────────────────────────────────── */
+[dir="rtl"] .label-cap {
+  text-align: right;
+}
+[dir="rtl"] ul {
+  padding-right: 18px;
+  padding-left: 0;
+}
+/* Kanban pipeline stays LTR (left-to-right flow is universal) */
+[dir="rtl"] [style*="grid-template-columns: repeat(3"],
+[dir="rtl"] [style*="grid-template-columns: repeat(5"] {
+  direction: ltr;
+}
+[dir="rtl"] [style*="grid-template-columns: repeat(3"] > *,
+[dir="rtl"] [style*="grid-template-columns: repeat(5"] > * {
+  direction: rtl;
+  text-align: right;
 }
