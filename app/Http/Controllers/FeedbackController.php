@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CaseRecord;
 use App\Models\Feedback;
+use App\Models\FeedbackSurvey;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -50,12 +51,19 @@ class FeedbackController extends Controller
             'understood'      => $all->where('understood_rights', 'yes')->count(),
         ];
 
-        $cases = CaseRecord::forAuthUser()->active()->orderBy('name')->get(['id', 'case_uid', 'name']);
+        $cases = CaseRecord::forAuthUser()->active()->orderBy('name')->get(['id', 'case_uid', 'name', 'hub_id', 'assigned_pathway', 'intake_date', 'returning_client', 'consent']);
 
         $trendJson   = json_encode(['labels' => $trendData->pluck('month')->values(), 'values' => $trendData->map(fn($r) => round((float)$r->avg_score, 1))->values()]);
         $serviceJson = json_encode(['labels' => $byService->pluck('service')->values(), 'values' => $byService->map(fn($r) => round((float)$r->avg_score, 1))->values()]);
 
-        return view('feedback.index', compact('feedback', 'avgScore', 'counts', 'cases', 'byService', 'trendJson', 'serviceJson'));
+        // Detailed surveys
+        $hubId = session('active_hub');
+        $surveyQuery = FeedbackSurvey::query()
+            ->when($hubId && $hubId !== 'all', fn($q) => $q->where('hub_id', $hubId))
+            ->latest();
+        $surveys = $surveyQuery->paginate(15, ['*'], 'survey_page')->withQueryString();
+
+        return view('feedback.index', compact('feedback', 'avgScore', 'counts', 'cases', 'byService', 'trendJson', 'serviceJson', 'surveys'));
     }
 
     public function store(Request $request)
@@ -84,8 +92,8 @@ class FeedbackController extends Controller
             'hub_id'            => $case?->hub_id ?? session('active_hub'),
             'client_name'       => $request->boolean('is_anonymous') ? 'Anonymous' : ($request->client_name ?? 'Unknown'),
             'is_anonymous'      => $request->boolean('is_anonymous'),
-            'service'           => $request->service,
-            'lawyer'            => $request->lawyer,
+            'service'           => $request->service ?? $case?->assigned_pathway ?? 'General',
+            'lawyer'            => $request->lawyer ?? $case?->assigned_to,
             'date'              => now()->toDateString(),
             'channel'           => $request->channel,
             'score_overall'     => $request->score_overall,
@@ -98,5 +106,61 @@ class FeedbackController extends Controller
         ]);
 
         return back()->with('success', 'Feedback captured.');
+    }
+
+    public function storeSurvey(Request $request)
+    {
+        $data = $request->validate([
+            'case_id'           => 'nullable|exists:cases,id',
+            'consent'           => 'required|in:yes,no',
+            'visit_date'        => 'nullable|date',
+            'service_date'      => 'nullable|date',
+            'service_type'      => 'nullable|string|max:60',
+            'first_visit'       => 'nullable|in:yes,no',
+            'q11_access'        => 'nullable|integer|min:1|max:5',
+            'q12_reception'     => 'nullable|integer|min:1|max:5',
+            'q13_explanation'   => 'nullable|integer|min:1|max:5',
+            'q14_waiting'       => 'nullable|integer|min:1|max:5',
+            'q15_difficulty'    => 'nullable|string|max:120',
+            'q16_listened'      => 'nullable|string|max:30',
+            'q17_comfortable'   => 'nullable|string|max:30',
+            'q18_understood'    => 'nullable|integer|min:1|max:5',
+            'q19_fair_treatment'=> 'nullable|string|max:30',
+            'q20_info_safety'   => 'nullable|string|max:30',
+            'q21_data_explained'=> 'nullable|string|max:30',
+            'q22_confidence'    => 'nullable|integer|min:1|max:5',
+            'q23_complaint_info'=> 'nullable|string|max:30',
+            'q24_advice_useful' => 'nullable|string|max:30',
+            'q25_referral_clarity' => 'nullable|string|max:30',
+            'q26_next_steps'    => 'nullable|string|max:30',
+            'q27_clarity'       => 'nullable|string|max:30',
+            'q28_satisfaction'  => 'nullable|integer|min:1|max:5',
+            'q29_resolution_help'=> 'nullable|string|max:30',
+            'q30_recommend'     => 'nullable|string|max:30',
+            'q31_trust'         => 'nullable|integer|min:1|max:5',
+            'q32_helpful_part'  => 'nullable|string|max:2000',
+            'q33_improvement'   => 'nullable|string|max:2000',
+            'q34_additional'    => 'nullable|string|max:2000',
+        ]);
+
+        if ($data['consent'] === 'no') {
+            return back()->with('error', 'Survey cannot be submitted without consent.');
+        }
+
+        $case = $data['case_id'] ? CaseRecord::forAuthUser()->find($data['case_id']) : null;
+
+        $lastNum = FeedbackSurvey::selectRaw("MAX(CAST(SUBSTRING(survey_uid, 4) AS UNSIGNED)) as max_num")->value('max_num');
+        $nextNum = ($lastNum ?? 0) + 1;
+
+        $data['survey_uid']      = 'FS-' . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
+        $data['case_id']         = $case?->id;
+        $data['hub_id']          = $case?->hub_id ?? session('active_hub', 'unknown');
+        $data['enumerator_name'] = auth()->user()->name;
+        $data['consent']         = true;
+        $data['first_visit']     = isset($data['first_visit']) ? ($data['first_visit'] === 'yes') : null;
+
+        FeedbackSurvey::create($data);
+
+        return back()->with('success', 'Detailed feedback survey submitted successfully.');
     }
 }

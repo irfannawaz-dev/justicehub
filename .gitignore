@@ -25,3 +25,4 @@ Thumbs.db
 *.xlsx
 *.xls
 database/seeders/TestReferralCasesSeeder.php
+DUAL-LANGUAGE-PLAN.md

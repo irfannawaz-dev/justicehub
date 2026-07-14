@@ -491,10 +491,16 @@
             scrollWheelZoom: false,
         });
 
-        // Muted monochrome tile — CartoDB Positron
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+        // Satellite imagery — Esri World Imagery
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '&copy; Esri, Maxar, Earthstar Geographics',
             maxZoom: 18,
+        }).addTo(map);
+
+        // Place-name labels overlay
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 18,
+            pane: 'overlayPane',
         }).addTo(map);
 
         var markers = {};
@@ -506,15 +512,15 @@
             var radius = Math.max(12, Math.min(28, 10 + Math.sqrt(hub.count) * 1.4));
 
             var pct = totalCases > 0 ? Math.round((hub.count / totalCases) * 100) : 0;
-            var color = hub.count > 100 ? '#163029' : (hub.count > 30 ? '#b87319' : '#4a7a5c');
+            var color = hub.count > 100 ? '#f5c542' : (hub.count > 30 ? '#ff8c42' : '#4af5a0');
 
             var circle = L.circleMarker([hub.lat, hub.lng], {
                 radius: radius,
                 fillColor: color,
                 color: '#fff',
-                weight: 2.5,
+                weight: 3,
                 opacity: 1,
-                fillOpacity: 0.88,
+                fillOpacity: 0.92,
             }).addTo(map);
 
             circle.bindPopup(
