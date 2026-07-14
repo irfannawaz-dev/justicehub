@@ -1,25 +1,25 @@
 @php
     $pageTitles = [
-        'dashboard'                  => 'Strategic Overview',
-        'dashboard.litigation-adr'   => 'Litigation & Mediation Dashboard',
-        'dashboard.lcd'              => 'LCD Dashboard',
-        'cases.index'                => 'Case Management',
-        'cases.show'                 => 'Case File',
-        'intake.create'              => 'Client Intake & Registration',
-        'services.adr'               => 'Mediation Scorecard',
-        'services.adr-calendar'      => 'Mediation Calendar',
-        'services.litigation'        => 'Litigation Scorecard',
-        'services.litigation-calendar'=> 'Litigation Calendar',
-        'referrals.index'            => 'Referrals & Linkages',
-        'outreach.index'             => 'Outreach & Legal Literacy',
-        'complaints.index'           => 'Complaints Register',
-        'indicators.index'           => 'Results Framework & Indicators',
-        'evidence.index'             => 'Evidence Register',
-        'feedback.index'             => 'Client Feedback',
-        'staff.index'                => 'Staff & Training Register',
-        'learning.index'             => 'Learning, Evidence & VfM',
-        'impact.index'               => 'Impact Reports',
-        'settings.index'             => 'Settings & Preferences',
+        'dashboard'                  => __('nav.page_strategic_overview'),
+        'dashboard.litigation-adr'   => __('nav.page_litigation_mediation_dash'),
+        'dashboard.lcd'              => __('nav.page_lcd_dashboard'),
+        'cases.index'                => __('nav.page_case_management'),
+        'cases.show'                 => __('nav.page_case_file'),
+        'intake.create'              => __('nav.page_client_intake'),
+        'services.adr'               => __('nav.page_mediation_scorecard'),
+        'services.adr-calendar'      => __('nav.page_mediation_calendar'),
+        'services.litigation'        => __('nav.page_litigation_scorecard'),
+        'services.litigation-calendar'=> __('nav.page_litigation_calendar'),
+        'referrals.index'            => __('nav.page_referrals'),
+        'outreach.index'             => __('nav.page_outreach'),
+        'complaints.index'           => __('nav.page_complaints'),
+        'indicators.index'           => __('nav.page_indicators'),
+        'evidence.index'             => __('nav.page_evidence_register'),
+        'feedback.index'             => __('nav.page_client_feedback'),
+        'staff.index'                => __('nav.page_staff_training'),
+        'learning.index'             => __('nav.page_learning_vfm'),
+        'impact.index'               => __('nav.page_impact_reports'),
+        'settings.index'             => __('nav.page_settings'),
     ];
     $currentRoute = Route::currentRouteName() ?? '';
     $pageTitle    = $pageTitles[$currentRoute] ?? 'Justice Hub';
@@ -40,7 +40,7 @@
     {{-- Breadcrumb / Page title --}}
     <div style="flex: 1; min-width: 0;">
         <div style="display: flex; align-items: center; gap: 8px;">
-            <div class="label-cap" style="font-size: 9px; white-space: nowrap;">Justice Hub</div>
+            <div class="label-cap" style="font-size: 9px; white-space: nowrap;">{{ __('nav.topbar_breadcrumb_hub') }}</div>
             <x-lucide-chevron-right style="width: 10px; height: 10px; color: var(--ink-4);" />
             <div style="font-size: 14px; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                 {{ $pageTitle }}
@@ -55,7 +55,7 @@
             <input
                 id="jh-search-input"
                 type="text"
-                placeholder="Search cases… ⌘K"
+                placeholder="{{ __('nav.topbar_search_placeholder') }}"
                 class="inp"
                 style="padding-left: 34px; padding-right: 12px; font-size: 13px; height: 36px;"
                 autocomplete="off"
@@ -86,6 +86,22 @@
         </span>
     </button>
 
+    {{-- Language toggle --}}
+    @php
+        $currentLocale = app()->getLocale();
+        $localeLabels = ['en' => 'EN', 'sd' => 'سنڌي', 'ur' => 'اردو'];
+        $nextLocales = ['en' => 'sd', 'sd' => 'ur', 'ur' => 'en'];
+        $nextLocale = $nextLocales[$currentLocale] ?? 'en';
+    @endphp
+    <form method="POST" action="{{ route('settings.locale') }}" style="margin:0;">
+        @csrf
+        <button type="submit" name="locale" value="{{ $nextLocale }}"
+            style="background: none; border: 1px solid var(--rule); padding: 5px 10px; cursor: pointer; color: var(--ink-2); font-size: 11px; font-weight: 600; font-family: inherit; letter-spacing: 0.02em;{{ in_array($currentLocale, ['sd', 'ur']) ? ' font-family:\"Noto Nastaliq Urdu\", Tahoma, sans-serif;' : '' }}"
+            title="Switch language">
+            {{ $localeLabels[$currentLocale] ?? 'EN' }}
+        </button>
+    </form>
+
     {{-- Notification bell --}}
     <div style="position: relative;" id="jh-notif-wrap">
         <button id="jh-notif-btn" onclick="jhToggleNotifications()"
@@ -103,13 +119,13 @@
 
             {{-- Header --}}
             <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--rule);">
-                <span style="font-size:12px; font-weight:600; color:var(--ink);">Notifications</span>
-                <button onclick="jhMarkAllRead()" style="background:none; border:none; cursor:pointer; font-size:11px; color:var(--forest); padding:0;">Mark all read</button>
+                <span style="font-size:12px; font-weight:600; color:var(--ink);">{{ __('nav.topbar_notifications') }}</span>
+                <button onclick="jhMarkAllRead()" style="background:none; border:none; cursor:pointer; font-size:11px; color:var(--forest); padding:0;">{{ __('nav.topbar_mark_all_read') }}</button>
             </div>
 
             {{-- List --}}
             <div id="jh-notif-list" style="overflow-y:auto; flex:1; max-height:380px;">
-                <div id="jh-notif-empty" style="padding:28px 16px; text-align:center; font-size:12px; color:var(--ink-4);">No notifications</div>
+                <div id="jh-notif-empty" style="padding:28px 16px; text-align:center; font-size:12px; color:var(--ink-4);">{{ __('nav.topbar_no_notifications') }}</div>
             </div>
         </div>
     </div>
@@ -132,14 +148,14 @@
             <li>
                 <a href="{{ route('profile.edit') }}" class="dropdown-item tr-hover"
                    style="display: block; padding: 10px 16px; font-size: 13px; color: var(--ink-2); text-decoration: none; background: transparent;">
-                    My Profile
+                    {{ __('nav.topbar_my_profile') }}
                 </a>
             </li>
             @if(auth()->user()->can('settings.view'))
             <li>
                 <a href="{{ route('settings.index') }}" class="dropdown-item tr-hover"
                    style="display: block; padding: 10px 16px; font-size: 13px; color: var(--ink-2); text-decoration: none; background: transparent;">
-                    Settings
+                    {{ __('nav.topbar_settings') }}
                 </a>
             </li>
             @endif
@@ -148,7 +164,7 @@
                     @csrf
                     <button type="submit" class="dropdown-item tr-hover"
                         style="width: 100%; padding: 10px 16px; font-size: 13px; color: var(--burgundy); text-align: left; border: none; background: none; cursor: pointer; font-family: inherit;">
-                        Sign Out
+                        {{ __('nav.topbar_sign_out') }}
                     </button>
                 </form>
             </li>

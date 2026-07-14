@@ -3,38 +3,38 @@
     $currentRoute = Route::currentRouteName() ?? '';
 
     $navGroups = [
-        'Dashboards' => [
-            ['route' => 'dashboard',               'label' => 'Main Dashboard',              'icon' => 'activity',         'permission' => 'cases.view'],
-            ['route' => 'dashboard.litigation-adr', 'label' => 'Litigation & Mediation Dashboard', 'icon' => 'gavel', 'permission' => 'cases.view'],
+        __('nav.group_dashboards') => [
+            ['route' => 'dashboard',               'label' => __('nav.nav_main_dashboard'),              'icon' => 'activity',         'permission' => 'cases.view'],
+            ['route' => 'dashboard.litigation-adr', 'label' => __('nav.nav_litigation_mediation_dash'), 'icon' => 'gavel', 'permission' => 'cases.view'],
         ],
-        'Work' => [
-            ['route' => 'cases.index',  'label' => 'Cases',      'icon' => 'folder',    'permission' => 'cases.view'],
-            ['route' => 'intake.create','label' => 'New Intake',  'icon' => 'file-plus', 'permission' => 'cases.create'],
+        __('nav.group_work') => [
+            ['route' => 'cases.index',  'label' => __('nav.nav_cases'),      'icon' => 'folder',    'permission' => 'cases.view'],
+            ['route' => 'intake.create','label' => __('nav.nav_new_intake'),  'icon' => 'file-plus', 'permission' => 'cases.create'],
         ],
-        'Service Delivery' => [
-            ['route' => 'services.adr',              'label' => 'Mediation Scorecard',  'icon' => 'heart-handshake', 'permission' => 'cases.view'],
-            ['route' => 'services.adr-calendar',     'label' => 'Mediation Calendar',   'icon' => 'calendar',        'permission' => 'cases.view'],
-            ['route' => 'services.adr-complaints',   'label' => 'ADR Complaints',        'icon' => 'file-search',     'permission' => 'cases.view'],
-            ['route' => 'services.litigation',       'label' => 'Litigation Scorecard',  'icon' => 'gavel',           'permission' => 'cases.view'],
-            ['route' => 'services.litigation-calendar','label' => 'Litigation Calendar', 'icon' => 'calendar',        'permission' => 'cases.view'],
-            ['route' => 'referrals.index',           'label' => 'Referrals',            'icon' => 'share-2',         'permission' => 'cases.view'],
-            ['route' => 'outreach.index',            'label' => 'Outreach',             'icon' => 'megaphone',       'permission' => 'outreach.view'],
-            ['route' => 'complaints.index',          'label' => 'Complaints',           'icon' => 'alert-triangle',  'permission' => 'complaints.view'],
+        __('nav.group_service_delivery') => [
+            ['route' => 'services.adr',              'label' => __('nav.nav_mediation_scorecard'),  'icon' => 'heart-handshake', 'permission' => 'cases.view'],
+            ['route' => 'services.adr-calendar',     'label' => __('nav.nav_mediation_calendar'),   'icon' => 'calendar',        'permission' => 'cases.view'],
+            ['route' => 'services.adr-complaints',   'label' => __('nav.nav_adr_complaints'),        'icon' => 'file-search',     'permission' => 'cases.view'],
+            ['route' => 'services.litigation',       'label' => __('nav.nav_litigation_scorecard'),  'icon' => 'gavel',           'permission' => 'cases.view'],
+            ['route' => 'services.litigation-calendar','label' => __('nav.nav_litigation_calendar'), 'icon' => 'calendar',        'permission' => 'cases.view'],
+            ['route' => 'referrals.index',           'label' => __('nav.nav_referrals'),            'icon' => 'share-2',         'permission' => 'cases.view'],
+            ['route' => 'outreach.index',            'label' => __('nav.nav_outreach'),             'icon' => 'megaphone',       'permission' => 'outreach.view'],
+            ['route' => 'complaints.index',          'label' => __('nav.nav_complaints'),           'icon' => 'alert-triangle',  'permission' => 'complaints.view'],
         ],
-        'Measurement' => [
-            ['route' => 'indicators.index', 'label' => 'Indicators',       'icon' => 'bar-chart-3',     'permission' => 'indicators.view'],
-            ['route' => 'evidence.index',   'label' => 'Evidence Register', 'icon' => 'book-open',       'permission' => 'evidence.view'],
-            ['route' => 'feedback.index',   'label' => 'Client Feedback',  'icon' => 'heart-handshake', 'permission' => 'feedback.view'],
-            ['route' => 'staff.index',      'label' => 'Staff & Training', 'icon' => 'user-check',      'permission' => 'staff.view'],
-            ['route' => 'learning.index',   'label' => 'Learning & VfM',   'icon' => 'graduation-cap',  'permission' => 'indicators.view'],
+        __('nav.group_measurement') => [
+            ['route' => 'indicators.index', 'label' => __('nav.nav_indicators'),       'icon' => 'bar-chart-3',     'permission' => 'indicators.view'],
+            ['route' => 'evidence.index',   'label' => __('nav.nav_evidence_register'), 'icon' => 'book-open',       'permission' => 'evidence.view'],
+            ['route' => 'feedback.index',   'label' => __('nav.nav_client_feedback'),  'icon' => 'heart-handshake', 'permission' => 'feedback.view'],
+            ['route' => 'staff.index',      'label' => __('nav.nav_staff_training'), 'icon' => 'user-check',      'permission' => 'staff.view'],
+            ['route' => 'learning.index',   'label' => __('nav.nav_learning_vfm'),   'icon' => 'graduation-cap',  'permission' => 'indicators.view'],
         ],
-        'Reporting' => [
-            ['route' => 'impact.index',       'label' => 'Impact Reports', 'icon' => 'flag',          'permission' => 'reports.view'],
-            ['route' => 'activity-log.index', 'label' => 'Activity Log',   'icon' => 'scroll-text',   'permission' => 'reports.view'],
+        __('nav.group_reporting') => [
+            ['route' => 'impact.index',       'label' => __('nav.nav_impact_reports'), 'icon' => 'flag',          'permission' => 'reports.view'],
+            ['route' => 'activity-log.index', 'label' => __('nav.nav_activity_log'),   'icon' => 'scroll-text',   'permission' => 'reports.view'],
         ],
-        'System' => [
-            ['route' => 'settings.index', 'label' => 'Settings',         'icon' => 'settings', 'permission' => 'settings.view'],
-            ['route' => 'users.index',    'label' => 'User Management',   'icon' => 'users',    'permission' => 'users.manage'],
+        __('nav.group_system') => [
+            ['route' => 'settings.index', 'label' => __('nav.nav_settings'),         'icon' => 'settings', 'permission' => 'settings.view'],
+            ['route' => 'users.index',    'label' => __('nav.nav_user_management'),   'icon' => 'users',    'permission' => 'users.manage'],
         ],
     ];
 
@@ -69,7 +69,7 @@
     {{-- Hub selector (Bootstrap dropdown — only for global roles) --}}
     @if($canSwitchHub ?? false)
     <div style="padding: 18px 22px 14px; border-bottom: 1px solid rgba(255,255,255,0.08);">
-        <div class="label-cap" style="color: rgba(247,243,235,0.5); margin-bottom: 8px; font-size: 9.5px;">Active Hub</div>
+        <div class="label-cap" style="color: rgba(247,243,235,0.5); margin-bottom: 8px; font-size: 9.5px;">{{ __('nav.sidebar_active_hub') }}</div>
 
         <div class="dropdown">
             <button class="dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"
@@ -89,7 +89,7 @@
                         <button type="submit" name="hub_id" value="all"
                             style="width: 100%; padding: 10px 14px; text-align: left; border: none; background: {{ $activeHubId === 'all' ? 'var(--parchment-2)' : 'transparent' }}; color: var(--ink); font-size: 13px; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 8px;">
                             <x-lucide-globe style="width: 13px; height: 13px; color: var(--ink-3);" />
-                            All Hubs
+                            {{ __('nav.sidebar_all_hubs') }}
                         </button>
                     </form>
                 </li>
@@ -113,7 +113,7 @@
     </div>
     @else
     <div style="padding: 18px 22px 14px; border-bottom: 1px solid rgba(255,255,255,0.08);">
-        <div class="label-cap" style="color: rgba(247,243,235,0.5); margin-bottom: 8px; font-size: 9.5px;">Your Hub</div>
+        <div class="label-cap" style="color: rgba(247,243,235,0.5); margin-bottom: 8px; font-size: 9.5px;">{{ __('nav.sidebar_your_hub') }}</div>
         <div style="display: flex; align-items: center; gap: 10px; padding: 9px 0;">
             <x-lucide-map-pin style="width: 13px; height: 13px; color: var(--ochre-2); flex-shrink: 0;" />
             <div>
