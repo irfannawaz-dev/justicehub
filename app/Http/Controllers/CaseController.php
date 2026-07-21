@@ -30,6 +30,12 @@ class CaseController extends Controller
                 ->orWhereIn('assigned_pathway', ['Representation in Court', 'Court Representation'])
             );
         }
+        if ($user->isLitigationManager()) {
+            $base->whereIn('assigned_pathway', ['Representation in Court', 'Court Representation']);
+        }
+        if ($user->isMediationManager()) {
+            $base->where('assigned_pathway', 'Mediation');
+        }
 
         if ($request->filled('hub') && $request->hub !== 'all') {
             $base->where('hub_id', $request->hub);
@@ -72,6 +78,12 @@ class CaseController extends Controller
         $hubBase = CaseRecord::query()->forHub($hubId);
         if ($user->isLawyer()) {
             $hubBase->where('assigned_to', $user->name);
+        }
+        if ($user->isLitigationManager()) {
+            $hubBase->whereIn('assigned_pathway', ['Representation in Court', 'Court Representation']);
+        }
+        if ($user->isMediationManager()) {
+            $hubBase->where('assigned_pathway', 'Mediation');
         }
         if ($user->isCourtClerk()) {
             $hubBase->where(fn($q) => $q
@@ -179,12 +191,26 @@ class CaseController extends Controller
 
     public function show(CaseRecord $case)
     {
+        $viewer = auth()->user();
+
         // Lawyers cannot access mediation / ADR cases
-        if (auth()->user()->isLawyer() && in_array($case->assigned_pathway, [
+        if ($viewer->isLawyer() && in_array($case->assigned_pathway, [
             'Mediation',
             'ADR / Dispute Resolution Support',
         ])) {
             abort(403, 'Lawyers are not permitted to view mediation cases.');
+        }
+
+        // Litigation Manager: only Representation in Court cases
+        if ($viewer->isLitigationManager() && !in_array($case->assigned_pathway, [
+            'Representation in Court', 'Court Representation',
+        ])) {
+            abort(403, 'Litigation Managers can only view litigation cases.');
+        }
+
+        // Mediation Manager: only Mediation cases
+        if ($viewer->isMediationManager() && $case->assigned_pathway !== 'Mediation') {
+            abort(403, 'Mediation Managers can only view mediation cases.');
         }
 
         // Hub scope enforced via Route::bind() in AppServiceProvider

@@ -99,6 +99,16 @@ class User extends Authenticatable
         return $this->role === UserRole::CourtClerk;
     }
 
+    public function isLitigationManager(): bool
+    {
+        return $this->role === UserRole::LitigationManager;
+    }
+
+    public function isMediationManager(): bool
+    {
+        return $this->role === UserRole::MediationManager;
+    }
+
     public function isOperationsOfficer(): bool
     {
         return $this->role === UserRole::OperationsOfficer;

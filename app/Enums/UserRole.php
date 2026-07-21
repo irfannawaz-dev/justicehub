@@ -13,6 +13,8 @@ enum UserRole: string
     case DataEntry = 'data-entry';
     case MELead = 'me-lead';
     case ComplaintInvestigator = 'complaint-investigator';
+    case LitigationManager = 'litigation-manager';
+    case MediationManager = 'mediation-manager';
     case Viewer = 'viewer';
 
     public function label(): string
@@ -27,6 +29,8 @@ enum UserRole: string
             self::DataEntry            => 'Data Entry',
             self::MELead               => 'M&E Lead',
             self::ComplaintInvestigator => 'Complaint Investigator',
+            self::LitigationManager    => 'Litigation Manager',
+            self::MediationManager     => 'Mediation Manager',
             self::Viewer               => 'Viewer (Read Only)',
         };
     }
@@ -35,6 +39,7 @@ enum UserRole: string
     {
         return match ($this) {
             self::Head, self::ProvincialLead, self::MELead => true,
+            self::LitigationManager, self::MediationManager => false,
             self::Viewer => null,
             default => false,
         };
@@ -130,6 +135,20 @@ enum UserRole: string
                 'feedback.view',
                 'outreach.view',
                 'indicators.view',
+                'staff.view',
+                'reports.view',
+            ],
+            self::LitigationManager => [
+                'cases.view', 'cases.edit',
+                'complaints.view',
+                'feedback.view',
+                'staff.view',
+                'reports.view',
+            ],
+            self::MediationManager => [
+                'cases.view', 'cases.edit',
+                'complaints.view',
+                'feedback.view',
                 'staff.view',
                 'reports.view',
             ],
