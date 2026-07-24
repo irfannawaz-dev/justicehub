@@ -460,8 +460,8 @@
 
         <div id="staffFilters" style="display: flex; gap: 6px; margin-bottom: 14px;">
             <button class="staff-pill-filter active" onclick="litStaffFilter('all', this)">All</button>
-            <button class="staff-pill-filter" onclick="litStaffFilter('Lawyer', this)">Lawyers</button>
-            <button class="staff-pill-filter" onclick="litStaffFilter('Paralegal', this)">Paralegals</button>
+            <button class="staff-pill-filter" onclick="litStaffFilter('lawyer', this)">Lawyers</button>
+            <button class="staff-pill-filter" onclick="litStaffFilter('hub-coordinator', this)">Coordinators</button>
         </div>
 
         <div class="card" style="padding: 0; overflow: hidden;">

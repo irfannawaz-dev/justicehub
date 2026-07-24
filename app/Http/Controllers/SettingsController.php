@@ -404,14 +404,14 @@ class SettingsController extends Controller
     public function updateSla(Request $request)
     {
         $request->validate([
-            'sla_Critical' => 'required|integer|min:1|max:8760',
-            'sla_High'     => 'required|integer|min:1|max:8760',
-            'sla_Medium'   => 'required|integer|min:1|max:8760',
-            'sla_Low'      => 'required|integer|min:1|max:8760',
+            'sla_Immediate' => 'required|integer|min:1|max:8760',
+            'sla_High'      => 'required|integer|min:1|max:8760',
+            'sla_Medium'    => 'required|integer|min:1|max:8760',
+            'sla_Low'       => 'required|integer|min:1|max:8760',
         ]);
 
         $hours = [
-            'Critical' => (int) $request->sla_Critical,
+            'Immediate' => (int) $request->sla_Immediate,
             'High'     => (int) $request->sla_High,
             'Medium'   => (int) $request->sla_Medium,
             'Low'      => (int) $request->sla_Low,
@@ -423,5 +423,27 @@ class SettingsController extends Controller
         );
 
         return back()->with('success', 'SLA thresholds updated.');
+    }
+
+    // ── Workload Capacity Management ────────────────────────────
+
+    public function updateCapacity(Request $request)
+    {
+        $request->validate([
+            'cap_Lawyer'          => 'required|integer|min:1|max:200',
+            'cap_HubCoordinator'  => 'required|integer|min:1|max:200',
+        ]);
+
+        $capacity = [
+            'Lawyer'          => (int) $request->cap_Lawyer,
+            'Hub Coordinator' => (int) $request->cap_HubCoordinator,
+        ];
+
+        DB::table('settings')->updateOrInsert(
+            ['key' => 'workload_capacity'],
+            ['value' => json_encode($capacity), 'updated_at' => now(), 'created_at' => now()]
+        );
+
+        return back()->with('success', 'Staff capacity limits updated.');
     }
 }

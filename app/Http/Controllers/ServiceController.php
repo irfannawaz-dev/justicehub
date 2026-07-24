@@ -86,20 +86,27 @@ class ServiceController extends Controller
             'Withdrawn'             => 0,
         ];
 
-        // Staff workload
-        $staff = \App\Models\Staff::with(['hub', 'user'])->where('status', 'active')->get()->map(function ($s) {
-            $allActive  = CaseRecord::where('assigned_to', $s->name)->where('status', 'Active');
-            $adrCount   = (clone $allActive)->where('assigned_pathway', 'Mediation')->count();
-            $courtCount = (clone $allActive)->whereIn('assigned_pathway', ['Representation in Court', 'Court Representation'])->count();
+        // Staff workload from users table (lawyers + hub coordinators)
+        $capDb = json_decode(\DB::table('settings')->where('key', 'workload_capacity')->value('value') ?? '{}', true);
+        $staff = \App\Models\User::whereIn('role', [
+            \App\Enums\UserRole::Lawyer->value,
+            \App\Enums\UserRole::HubCoordinator->value,
+        ])->where('is_active', true)->get()->map(function ($u) use ($capDb) {
+            $allActive   = CaseRecord::where('assigned_to', $u->name)->whereNotIn('status', [\App\Enums\CaseStatus::Closed, \App\Enums\CaseStatus::Settlement, \App\Enums\CaseStatus::Rejected]);
+            $adrCount    = (clone $allActive)->where('assigned_pathway', 'Mediation')->count();
+            $courtCount  = (clone $allActive)->whereIn('assigned_pathway', ['Representation in Court', 'Court Representation'])->count();
             $totalActive = (clone $allActive)->count();
-            $capacity   = $s->role === 'Lawyer' ? 25 : 35;
+            $capacity    = $u->isLawyer() ? ($capDb['Lawyer'] ?? 25) : ($capDb['Hub Coordinator'] ?? 35);
+            $utilization = $capacity > 0 ? round(($totalActive / $capacity) * 100) : 0;
+            $slaBreach   = CaseRecord::where('assigned_to', $u->name)->where('sla_met', false)->count();
+            $initials    = collect(explode(' ', $u->name))->map(fn($w) => strtoupper($w[0] ?? ''))->take(2)->join('');
             return [
-                'name' => $s->name, 'initials' => $s->initials, 'role' => $s->role,
-                'designation' => $s->user?->designation ?: $s->role,
-                'hub' => $s->hub?->name ?? $s->hub_id, 'hub_id' => $s->hub_id,
+                'name' => $u->name, 'initials' => $initials, 'role' => $u->role->value,
+                'designation' => $u->designation ?: $u->role->label(),
+                'hub' => $u->hub_id, 'hub_id' => $u->hub_id,
                 'active' => $totalActive, 'adr' => $adrCount, 'court' => $courtCount,
-                'capacity' => $capacity, 'utilization' => min($capacity > 0 ? round(($totalActive / $capacity) * 100) : 0, 100),
-                'sla_breach' => CaseRecord::where('assigned_to', $s->name)->where('sla_met', false)->count(),
+                'capacity' => $capacity, 'utilization' => min($utilization, 100),
+                'sla_breach' => $slaBreach,
             ];
         })->sortByDesc('active')->values();
 
@@ -548,19 +555,24 @@ class ServiceController extends Controller
                 $sq->where('type', 'like', '%Court%')->orWhere('type', 'like', '%Hearing%');
             })->count();
 
-        // Staff workload (sorted by court caseload)
-        $staff = \App\Models\Staff::with(['hub', 'user'])->where('status', 'active')->get()->map(function ($s) {
-            $allActive   = CaseRecord::where('assigned_to', $s->name)->whereNotIn('status', ['Closed', 'Settlement', 'Rejected']);
-            $adrCount    = (clone $allActive)->where('disposition', 'adr')->count();
-            $courtCount  = (clone $allActive)->where('disposition', 'litigation')->count();
+        // Staff workload from users table (lawyers + hub coordinators)
+        $capDb = json_decode(\DB::table('settings')->where('key', 'workload_capacity')->value('value') ?? '{}', true);
+        $staff = \App\Models\User::whereIn('role', [
+            \App\Enums\UserRole::Lawyer->value,
+            \App\Enums\UserRole::HubCoordinator->value,
+        ])->where('is_active', true)->get()->map(function ($u) use ($capDb) {
+            $allActive   = CaseRecord::where('assigned_to', $u->name)->whereNotIn('status', [\App\Enums\CaseStatus::Closed, \App\Enums\CaseStatus::Settlement, \App\Enums\CaseStatus::Rejected]);
+            $adrCount    = (clone $allActive)->whereIn('assigned_pathway', ['ADR / Dispute Resolution Support', 'Mediation'])->count();
+            $courtCount  = (clone $allActive)->whereIn('assigned_pathway', ['Court Representation', 'Representation in Court'])->count();
             $totalActive = (clone $allActive)->count();
-            $capacity    = $s->role === 'Lawyer' ? 25 : 35;
+            $capacity    = $u->isLawyer() ? ($capDb['Lawyer'] ?? 25) : ($capDb['Hub Coordinator'] ?? 35);
             $utilization = $capacity > 0 ? round(($totalActive / $capacity) * 100) : 0;
-            $slaBreach   = CaseRecord::where('assigned_to', $s->name)->where('sla_met', false)->count();
+            $slaBreach   = CaseRecord::where('assigned_to', $u->name)->where('sla_met', false)->count();
+            $initials    = collect(explode(' ', $u->name))->map(fn($w) => strtoupper($w[0] ?? ''))->take(2)->join('');
             return [
-                'name' => $s->name, 'initials' => $s->initials, 'role' => $s->role,
-                'designation' => $s->user?->designation ?: $s->role,
-                'hub' => $s->hub?->name ?? $s->hub_id, 'hub_id' => $s->hub_id,
+                'name' => $u->name, 'initials' => $initials, 'role' => $u->role->value,
+                'designation' => $u->designation ?: $u->role->label(),
+                'hub' => $u->hub_id, 'hub_id' => $u->hub_id,
                 'active' => $totalActive, 'adr' => $adrCount, 'court' => $courtCount,
                 'capacity' => $capacity, 'utilization' => min($utilization, 100),
                 'sla_breach' => $slaBreach,

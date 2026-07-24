@@ -433,8 +433,8 @@
         {{-- Staff filter pills --}}
         <div id="staffFilters" style="display: flex; gap: 6px; margin-bottom: 14px;">
             <button class="jh-pill-filter active" data-staff-filter="all" onclick="filterStaff('all', this)">{{ __('common.all') }}</button>
-            <button class="jh-pill-filter" data-staff-filter="Lawyer" onclick="filterStaff('Lawyer', this)">{{ __('services.lawyers') }}</button>
-            <button class="jh-pill-filter" data-staff-filter="Paralegal" onclick="filterStaff('Paralegal', this)">{{ __('services.paralegals') }}</button>
+            <button class="jh-pill-filter" data-staff-filter="lawyer" onclick="filterStaff('lawyer', this)">{{ __('services.lawyers') }}</button>
+            <button class="jh-pill-filter" data-staff-filter="hub-coordinator" onclick="filterStaff('hub-coordinator', this)">Coordinators</button>
         </div>
 
         <div class="card" style="padding: 0; overflow: hidden;">

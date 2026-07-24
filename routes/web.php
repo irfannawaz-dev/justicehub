@@ -20,7 +20,6 @@ use App\Http\Controllers\ServiceEncounterController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\UserManagementController;
-use App\Http\Controllers\HrController;
 use App\Http\Controllers\MediationController;
 use Illuminate\Support\Facades\Route;
 
@@ -116,14 +115,6 @@ Route::middleware(['auth', 'hub.scope', 'can.write'])->group(function () {
     Route::post('/feedback', [FeedbackController::class, 'store'])->name('feedback.store');
     Route::post('/feedback/survey', [FeedbackController::class, 'storeSurvey'])->name('feedback.survey.store');
 
-    // ── Human Resources ─────────────────────────────────────────────
-    Route::get('/hr/attendance', [HrController::class, 'attendance'])->name('hr.attendance');
-    Route::post('/hr/attendance', [HrController::class, 'markAttendance'])->name('hr.attendance.mark');
-    Route::post('/hr/attendance/bulk', [HrController::class, 'bulkAttendance'])->name('hr.attendance.bulk');
-    Route::get('/hr/leaves', [HrController::class, 'leaves'])->name('hr.leaves');
-    Route::post('/hr/leaves', [HrController::class, 'storeLeave'])->name('hr.leaves.store');
-    Route::patch('/hr/leaves/{leave}/approve', [HrController::class, 'approveLeave'])->name('hr.leaves.approve');
-    Route::patch('/hr/leaves/{leave}/reject', [HrController::class, 'rejectLeave'])->name('hr.leaves.reject');
 
     // ── Staff & Training ─────────────────────────────────────────────
     Route::get('/staff', [StaffController::class, 'index'])->name('staff.index');
@@ -181,6 +172,9 @@ Route::middleware(['auth', 'hub.scope', 'can.write'])->group(function () {
 
     // ── SLA Thresholds ────────────────────────────────────────────────
     Route::post('/settings/sla', [SettingsController::class, 'updateSla'])->name('settings.sla.update');
+
+    // ── Workload Capacity ──────────────────────────────────────────────
+    Route::post('/settings/capacity', [SettingsController::class, 'updateCapacity'])->name('settings.capacity.update');
 
     // ── Partner Organisations ────────────────────────────────────────
     Route::post('/settings/partners/category',    [SettingsController::class, 'storePartnerCategory'])->name('settings.partner.category.store');

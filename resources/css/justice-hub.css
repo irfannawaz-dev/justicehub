@@ -8,6 +8,15 @@
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;500;600;700&display=swap');
 
+/* MB Sindhi — local TTF for Sindhi language */
+@font-face {
+    font-family: 'MB Sindhi';
+    src: url('/fonts/MB-Sindhi-Web-SK-2.0.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
 /* ─────────────────────────────────────────────────────────────
    LIGHT THEME (default)
    ───────────────────────────────────────────────────────────── */
@@ -480,6 +489,21 @@ body, .jh-app {
 }
 [dir="rtl"] .mono {
   font-family: 'JetBrains Mono', monospace; /* keep monospace LTR */
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* ── Sindhi: use MB Sindhi font instead of Noto Nastaliq ──── */
+[lang="sd"] body,
+[lang="sd"] .jh-app,
+[lang="sd"] .jh-app * {
+  font-family: 'MB Sindhi', 'Noto Nastaliq Urdu', Tahoma, sans-serif;
+}
+[lang="sd"] .serif {
+  font-family: 'MB Sindhi', 'Fraunces', serif;
+}
+[lang="sd"] .mono {
+  font-family: 'JetBrains Mono', monospace;
   direction: ltr;
   unicode-bidi: isolate;
 }

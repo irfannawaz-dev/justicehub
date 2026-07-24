@@ -361,7 +361,7 @@
         $slaDb = json_decode(\DB::table('settings')->where('key', 'sla_urgency_hours')->value('value') ?? '{}', true);
         $slaValues = array_merge($slaDefaults, $slaDb);
         $slaLevels = [
-            'Critical' => ['desc' => 'Life-threatening, imminent harm', 'color' => 'var(--burgundy)'],
+            'Immediate' => ['desc' => 'Life-threatening, imminent harm', 'color' => 'var(--burgundy)'],
             'High'     => ['desc' => 'Urgent legal deadline or risk',   'color' => 'var(--ochre)'],
             'Medium'   => ['desc' => 'Standard case processing',        'color' => 'var(--forest)'],
             'Low'      => ['desc' => 'Non-urgent enquiry or follow-up', 'color' => 'var(--ink-3)'],
@@ -394,6 +394,47 @@
             </div>
             <button type="submit" class="btn-primary" style="display: inline-flex; align-items: center; gap: 6px;">
                 <x-lucide-save style="width: 13px; height: 13px;" /> Save SLA Thresholds
+            </button>
+        </form>
+    </div>
+
+    {{-- ═══════════════════════════════════════════════════════════════
+        Workload Capacity (Head only)
+        ═══════════════════════════════════════════════════════════════ --}}
+    @php
+        $capDb = json_decode(\DB::table('settings')->where('key', 'workload_capacity')->value('value') ?? '{}', true);
+        $capValues = [
+            'Lawyer'          => $capDb['Lawyer'] ?? 25,
+            'Hub Coordinator' => $capDb['Hub Coordinator'] ?? 35,
+        ];
+    @endphp
+    <div style="margin-bottom: 28px;">
+        <div style="margin-bottom: 12px;">
+            <div class="label-cap" style="font-size: 9.5px; margin-bottom: 4px;">Workload Management</div>
+            <h3 class="serif" style="font-size: 19px; font-weight: 500; margin: 0; color: var(--ink);">Staff Capacity</h3>
+            <p style="font-size: 12.5px; color: var(--ink-3); margin: 6px 0 0 0; line-height: 1.55; max-width: 680px;">
+                Maximum active cases each role can handle. The utilization bar on scorecards uses these limits to show workload percentage.
+            </p>
+        </div>
+
+        <form method="POST" action="{{ route('settings.capacity.update') }}" style="max-width: 420px;">
+            @csrf
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                <div style="background: var(--surface); border: 1px solid var(--rule); padding: 16px 14px; border-top: 3px solid var(--forest);">
+                    <div style="font-size: 11px; font-weight: 700; color: var(--forest); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px;">Lawyer</div>
+                    <div style="font-size: 10px; color: var(--ink-4); margin-bottom: 12px; line-height: 1.4;">Max active cases per lawyer</div>
+                    <input type="number" name="cap_Lawyer" value="{{ $capValues['Lawyer'] }}" min="1" max="200"
+                           class="inp" style="width: 100%; font-size: 16px; font-weight: 600; text-align: center; padding: 8px; box-sizing: border-box;">
+                </div>
+                <div style="background: var(--surface); border: 1px solid var(--rule); padding: 16px 14px; border-top: 3px solid var(--ochre);">
+                    <div style="font-size: 11px; font-weight: 700; color: var(--ochre); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px;">Hub Coordinator</div>
+                    <div style="font-size: 10px; color: var(--ink-4); margin-bottom: 12px; line-height: 1.4;">Max active cases per coordinator</div>
+                    <input type="number" name="cap_HubCoordinator" value="{{ $capValues['Hub Coordinator'] }}" min="1" max="200"
+                           class="inp" style="width: 100%; font-size: 16px; font-weight: 600; text-align: center; padding: 8px; box-sizing: border-box;">
+                </div>
+            </div>
+            <button type="submit" class="btn-primary" style="display: inline-flex; align-items: center; gap: 6px;">
+                <x-lucide-save style="width: 13px; height: 13px;" /> Save Capacity Limits
             </button>
         </form>
     </div>

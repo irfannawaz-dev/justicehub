@@ -12,7 +12,7 @@
     $isRejected = $case->status->value === 'Rejected';
     $initials = collect(explode(' ', $case->name))->map(fn($n) => strtoupper(substr($n, 0, 1)))->join('');
     $encounterCount = $case->serviceEncounters->count();
-    $firstEncounterDate = $case->serviceEncounters->first()?->date?->toDateString();
+    $firstEncounterDate = $case->serviceEncounters->where('type', '!=', 'Intake')->sortBy('date')->first()?->date?->toDateString();
     $sla = $case->computeSlaStatus($firstEncounterDate);
     $pathways = \DB::table('case_pathway')->where('case_id', $case->id)->pluck('pathway_value');
 
@@ -721,7 +721,14 @@
                                 <x-lucide-activity style="width: 15px; height: 15px; color: var(--forest);" />
                                 <div class="label-cap" style="font-size: 10px;">{{ __('cases.activity_timeline') }}</div>
                             </div>
-                            <span class="mono" style="font-size: 10px; color: var(--ink-4);">{{ __('cases.events_count', ['count' => $timeline->count()]) }}</span>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span class="mono" style="font-size: 10px; color: var(--ink-4);">{{ __('cases.events_count', ['count' => $timeline->count()]) }}</span>
+                                @if($canWrite && !$isResolved)
+                                <button class="btn-ghost" style="font-size: 11px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 5px;" onclick="jhOpenModal('log-encounter')">
+                                    <x-lucide-plus style="width: 11px; height: 11px;" /> Log Encounter
+                                </button>
+                                @endif
+                            </div>
                         </div>
 
                         @forelse($timeline as $event)

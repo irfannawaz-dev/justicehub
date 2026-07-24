@@ -38,7 +38,7 @@ return [
 
     'sla' => [
         'urgency_hours' => [
-            'Critical'  => 4,
+            'Immediate' => 4,
             'High'      => 24,
             'Medium'    => 72,
             'Low'       => 168,   // 7 days

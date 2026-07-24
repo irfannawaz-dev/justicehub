@@ -164,9 +164,12 @@ class CaseRecord extends Model
         $deadline  = $intakeDt->copy()->addHours($hours);
         $now       = now();
 
-        // If not provided, try loading from DB
+        // If not provided, try loading from DB — skip auto-created "Intake" encounter
         if ($firstEncounterDate === null) {
-            $firstEncounterDate = $this->serviceEncounters()->orderBy('date')->value('date');
+            $firstEncounterDate = $this->serviceEncounters()
+                ->where('type', '!=', 'Intake')
+                ->orderBy('date')
+                ->value('date');
         }
 
         if ($firstEncounterDate) {
