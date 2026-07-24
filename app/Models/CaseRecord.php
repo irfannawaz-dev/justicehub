@@ -155,7 +155,9 @@ class CaseRecord extends Model
      */
     public function computeSlaStatus(?string $firstEncounterDate = null): array
     {
-        $hours     = config('justice_hub.sla.urgency_hours')[$this->urgency->value] ?? 168;
+        $dbSla     = json_decode(\DB::table('settings')->where('key', 'sla_urgency_hours')->value('value') ?? '{}', true);
+        $allHours  = array_merge(config('justice_hub.sla.urgency_hours'), $dbSla);
+        $hours     = $allHours[$this->urgency->value] ?? 168;
         $intakeDt  = \Carbon\Carbon::parse(
             $this->intake_date->toDateString() . ' ' . ($this->intake_time ?? '00:00')
         );

@@ -353,6 +353,53 @@
     </div>
 
     {{-- ═══════════════════════════════════════════════════════════════
+        Section — SLA Configuration (Head only)
+        ═══════════════════════════════════════════════════════════════ --}}
+    @if($user->isHead())
+    @php
+        $slaDefaults = config('justice_hub.sla.urgency_hours');
+        $slaDb = json_decode(\DB::table('settings')->where('key', 'sla_urgency_hours')->value('value') ?? '{}', true);
+        $slaValues = array_merge($slaDefaults, $slaDb);
+        $slaLevels = [
+            'Critical' => ['desc' => 'Life-threatening, imminent harm', 'color' => 'var(--burgundy)'],
+            'High'     => ['desc' => 'Urgent legal deadline or risk',   'color' => 'var(--ochre)'],
+            'Medium'   => ['desc' => 'Standard case processing',        'color' => 'var(--forest)'],
+            'Low'      => ['desc' => 'Non-urgent enquiry or follow-up', 'color' => 'var(--ink-3)'],
+        ];
+    @endphp
+    <div style="margin-bottom: 28px;">
+        <div style="margin-bottom: 12px;">
+            <div class="label-cap" style="font-size: 9.5px; margin-bottom: 4px;">Service Level Agreement</div>
+            <h3 class="serif" style="font-size: 19px; font-weight: 500; margin: 0; color: var(--ink);">SLA Thresholds</h3>
+            <p style="font-size: 12.5px; color: var(--ink-3); margin: 6px 0 0 0; line-height: 1.55; max-width: 680px;">
+                Maximum hours from intake to first service encounter before a case is flagged as SLA-breached. Each urgency level has its own deadline.
+            </p>
+        </div>
+
+        <form method="POST" action="{{ route('settings.sla.update') }}" style="max-width: 640px;">
+            @csrf
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px;">
+                @foreach($slaLevels as $level => $meta)
+                <div style="background: var(--surface); border: 1px solid var(--rule); padding: 16px 14px; border-top: 3px solid {{ $meta['color'] }};">
+                    <div style="font-size: 11px; font-weight: 700; color: {{ $meta['color'] }}; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px;">{{ $level }}</div>
+                    <div style="font-size: 10px; color: var(--ink-4); margin-bottom: 12px; line-height: 1.4;">{{ $meta['desc'] }}</div>
+                    <label style="font-size: 9px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 4px;">Hours</label>
+                    <input type="number" name="sla_{{ $level }}" value="{{ $slaValues[$level] ?? 168 }}" min="1" max="8760"
+                           class="inp" style="width: 100%; font-size: 16px; font-weight: 600; text-align: center; padding: 8px; box-sizing: border-box;">
+                    <div style="font-size: 10px; color: var(--ink-4); margin-top: 4px; text-align: center;">
+                        ≈ {{ round(($slaValues[$level] ?? 168) / 24, 1) }} days
+                    </div>
+                </div>
+                @endforeach
+            </div>
+            <button type="submit" class="btn-primary" style="display: inline-flex; align-items: center; gap: 6px;">
+                <x-lucide-save style="width: 13px; height: 13px;" /> Save SLA Thresholds
+            </button>
+        </form>
+    </div>
+    @endif
+
+    {{-- ═══════════════════════════════════════════════════════════════
         Section 5 — Lookup Management (Head / lookups.manage only)
         ═══════════════════════════════════════════════════════════════ --}}
     @can('lookups.manage')
