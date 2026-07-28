@@ -1280,13 +1280,16 @@
                             <div>
                                 <label class="jh-field-label">Referred To <span style="color:var(--burgundy)">*</span></label>
                                 @php
+                                    // Only auto-fill with actual partner/org names, not pathway categories
                                     $autoReferredTo = $case->pathway_govt_dept
                                         ?? $case->pathway_ngo_name
-                                        ?? $case->pathway_specific
-                                        ?? $case->assigned_pathway
+                                        ?? (! in_array($case->pathway_specific, [
+                                               null, '', 'Justice Hub Lawyer',
+                                               'Justice Hub Accredited Mediator', 'Other',
+                                           ]) ? $case->pathway_specific : null)
                                         ?? '';
                                 @endphp
-                                <input type="text" name="referred_to" required placeholder="Organisation name"
+                                <input type="text" name="referred_to" required placeholder="Organisation / partner name"
                                     value="{{ old('referred_to', $autoReferredTo) }}"
                                     {{ $autoReferredTo ? 'readonly' : '' }}
                                     class="inp" style="width:100%; font-size:13px; box-sizing:border-box; {{ $autoReferredTo ? 'background:var(--paper); color:var(--ink-3); cursor:default;' : '' }}" />
