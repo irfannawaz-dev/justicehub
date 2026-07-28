@@ -341,7 +341,7 @@ $sections = [
         </div>
 
         {{-- Filter row --}}
-        <div style="display:grid; grid-template-columns:1fr 1fr 2fr auto auto; gap:10px; margin-bottom:14px; align-items:center;">
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr 2fr auto auto; gap:10px; margin-bottom:14px; align-items:center;">
             <select id="refFilterStage" onchange="jhFilterRefTable()" class="inp" style="font-size:11px; padding:6px 10px;">
                 <option value="">All Statuses</option>
                 <option value="Sent">Sent</option>
@@ -356,6 +356,8 @@ $sections = [
                 <option value="{{ $hub }}">{{ $hub }}</option>
                 @endforeach
             </select>
+            <input type="date" id="refFilterFrom" onchange="jhFilterRefTable()" class="inp" style="font-size:11px; padding:6px 10px;" title="From date">
+            <input type="date" id="refFilterTo" onchange="jhFilterRefTable()" class="inp" style="font-size:11px; padding:6px 10px;" title="To date">
             <input type="text" id="refFilterSearch" onkeyup="jhFilterRefTable()" placeholder="Search client or partner..."
                    class="inp" style="font-size:11px; padding:6px 10px;">
             <button onclick="jhExportRefTable()" class="btn-ghost" style="font-size:11px; padding:6px 12px; display:inline-flex; align-items:center; gap:5px; white-space:nowrap;">
@@ -393,7 +395,7 @@ $sections = [
                         ];
                         $sc = $stageColors[$r['stage']] ?? $stageColors['Sent'];
                     @endphp
-                    <tr class="ref-record-row" data-stage="{{ $r['stage'] }}" data-hub="{{ $r['hub_id'] }}" data-search="{{ strtolower($r['client_name'] . ' ' . $r['partner_name'] . ' ' . $r['case_uid']) }}"
+                    <tr class="ref-record-row" data-stage="{{ $r['stage'] }}" data-hub="{{ $r['hub_id'] }}" data-date="{{ $r['date'] ? \Carbon\Carbon::parse($r['date'])->format('Y-m-d') : '' }}" data-search="{{ strtolower($r['client_name'] . ' ' . $r['partner_name'] . ' ' . $r['case_uid']) }}"
                         style="border-bottom:1px solid var(--rule-2); transition:background 100ms;"
                         onmouseenter="this.style.background='var(--parchment)'" onmouseleave="this.style.background=''">
                         <td style="padding:10px 14px;">
@@ -447,15 +449,22 @@ $sections = [
 function jhFilterRefTable() {
     var stage  = document.getElementById('refFilterStage').value.toLowerCase();
     var hub    = document.getElementById('refFilterHub').value;
+    var from   = document.getElementById('refFilterFrom').value;
+    var to     = document.getElementById('refFilterTo').value;
     var search = document.getElementById('refFilterSearch').value.toLowerCase();
     var rows   = document.querySelectorAll('.ref-record-row');
     var count  = 0;
     rows.forEach(function(row) {
         var s = row.dataset.stage.toLowerCase();
         var h = row.dataset.hub;
+        var d = row.dataset.date;
         var t = row.dataset.search;
+        var dateOk = true;
+        if (from && d) dateOk = dateOk && (d >= from);
+        if (to   && d) dateOk = dateOk && (d <= to);
         var show = (!stage || s === stage)
                 && (!hub || h === hub)
+                && dateOk
                 && (!search || t.indexOf(search) !== -1);
         row.style.display = show ? '' : 'none';
         if (show) count++;
