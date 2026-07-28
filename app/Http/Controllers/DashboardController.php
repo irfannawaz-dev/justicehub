@@ -340,4 +340,59 @@ class DashboardController extends Controller
         return compact('highRisk', 'casesLast7', 'resolvedLast7', 'hubDist',
             'referralSources', 'primaryIssues', 'availableDistricts');
     }
+
+    public function downloadReport(Request $request)
+    {
+        $role = $request->user()->role;
+        $userRole = $role instanceof UserRole ? $role : UserRole::tryFrom((string) $role);
+
+        $period   = $request->input('period', 'All time');
+        $dateFrom = $request->input('date_from');
+        $dateTo   = $request->input('date_to');
+        $hubNames = $request->input('hub', []);
+        $services = $request->input('service', []);
+        $districts = $request->input('district', []);
+
+        if (is_string($hubNames)) $hubNames = $hubNames === 'All Hubs' ? [] : [$hubNames];
+        if (is_string($services)) $services = $services === 'All Services' ? [] : [$services];
+        if (is_string($districts)) $districts = $districts === 'All Districts' ? [] : [$districts];
+
+        $hubIds = [];
+        if (!empty($hubNames)) {
+            $hubIds = \App\Models\Hub::whereIn('name', $hubNames)->pluck('id')->toArray();
+        }
+
+        $user = $request->user();
+        if (! $user->canSeeAllHubs()) {
+            $hubIds = [$user->hub_id];
+        }
+
+        $metrics = new DashboardMetricsService(
+            count($hubIds) === 1 ? $hubIds[0] : 'all',
+            $period,
+            count($services) === 1 ? $services[0] : null
+        );
+        $metrics->setMultiFilters($hubIds, $services);
+        $metrics->setDistricts($districts);
+        if ($dateFrom || $dateTo) {
+            $metrics->setDateRange($dateFrom, $dateTo);
+        }
+        if ($user->isLawyer()) {
+            $metrics->setAssignedTo($user->name);
+        }
+
+        $m = $metrics->all();
+        $extras = $this->computeDashboardExtras($hubIds, $user, $period, $dateFrom, $dateTo, $services, $districts);
+
+        $filterLabel = 'All Hubs · All Services · ' . $period;
+        if (!empty($hubNames)) $filterLabel = implode(', ', $hubNames) . ' · ' . $period;
+
+        $data = array_merge(compact('m', 'filterLabel', 'user'), $extras);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.dashboard-pdf', $data)
+            ->setPaper('a4', 'landscape');
+
+        $filename = 'JusticeHub_Dashboard_' . now()->format('Y-m-d_His') . '.pdf';
+        return $pdf->download($filename);
+    }
 }

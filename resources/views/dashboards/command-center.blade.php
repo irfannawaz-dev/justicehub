@@ -246,8 +246,8 @@
                 {{ __('dashboard.reset_filters') }}
             </button>
 
-            {{-- Download --}}
-            <a href="{{ route('impact.index') }}"
+            {{-- Download PDF --}}
+            <a href="{{ route('dashboard.download', request()->query()) }}"
                 style="display:flex; align-items:center; gap:6px; font-size:11.5px; padding:5px 12px; background:var(--forest); color:var(--cream); text-decoration:none; font-weight:500; letter-spacing:0.01em;">
                 <x-lucide-download style="width:12px; height:12px;" />
                 {{ __('dashboard.download_report') }}

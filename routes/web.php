@@ -33,6 +33,7 @@ Route::middleware(['auth', 'hub.scope', 'can.write'])->group(function () {
 
     // ── Dashboards ──────────────────────────────────────────────────
     Route::get('/', [DashboardController::class, 'commandCenter'])->name('dashboard');
+    Route::get('/dashboard/download', [DashboardController::class, 'downloadReport'])->name('dashboard.download');
     Route::get('/dashboard/litigation-adr', [DashboardController::class, 'litigationAdr'])->name('dashboard.litigation-adr');
 
     // ── Cases ────────────────────────────────────────────────────────

@@ -281,9 +281,211 @@ $sections = [
     </div>
     @endif
 
+    {{-- ═══ Referral Records Table ═══ --}}
+    @php
+        $allRefRecords = $referralTracker;
+        $totalRef      = $allRefRecords->count();
+        $resolvedRef   = $allRefRecords->whereIn('stage', ['Completed', 'Failed'])->count();
+        $pendingRef    = $allRefRecords->whereIn('stage', ['Sent', 'Acknowledged', 'In progress'])->count();
+        $completedRef  = $allRefRecords->where('stage', 'Completed')->count();
+        $failedRef     = $allRefRecords->where('stage', 'Failed')->count();
+        $resolvedPctRef = $totalRef > 0 ? round(($resolvedRef / $totalRef) * 100, 1) : 0;
+    @endphp
+    <div style="margin-top:40px; border-top:2px solid var(--rule); padding-top:32px;">
+
+        {{-- Section header --}}
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px;">
+            <div>
+                <div class="label-cap" style="font-size:9.5px; margin-bottom:6px;">Referral Tracking</div>
+                <h2 class="serif" style="font-size:26px; font-weight:400; margin:0;">
+                    Referral <em style="color:var(--forest); font-style:italic;">Records</em>
+                </h2>
+                <div style="font-size:12px; color:var(--ink-3); margin-top:6px;">
+                    All outgoing referrals logged across cases — track status, filing, and outcomes.
+                </div>
+            </div>
+        </div>
+
+        {{-- KPI cards --}}
+        <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:10px; margin-bottom:20px;">
+            <div class="card" style="padding:14px 16px; border-top:3px solid var(--forest);">
+                <div class="label-cap" style="font-size:8px; margin-bottom:4px;">Total</div>
+                <div class="serif" style="font-size:26px; font-weight:400; line-height:1;">{{ $totalRef }}</div>
+                <div style="font-size:10px; color:var(--ink-4); margin-top:3px;">Referrals</div>
+            </div>
+            <div class="card" style="padding:14px 16px; border-top:3px solid #2f7a4d;">
+                <div class="label-cap" style="font-size:8px; margin-bottom:4px;">Completed</div>
+                <div class="serif" style="font-size:26px; font-weight:400; line-height:1; color:#2f7a4d;">{{ $completedRef }}</div>
+                <div style="font-size:10px; color:var(--ink-4); margin-top:3px;">{{ $resolvedPctRef }}% resolved</div>
+            </div>
+            <div class="card" style="padding:14px 16px; border-top:3px solid var(--ochre);">
+                <div class="label-cap" style="font-size:8px; margin-bottom:4px;">Pending</div>
+                <div class="serif" style="font-size:26px; font-weight:400; line-height:1; color:var(--ochre);">{{ $pendingRef }}</div>
+                <div style="font-size:10px; color:var(--ink-4); margin-top:3px;">In progress</div>
+            </div>
+            <div class="card" style="padding:14px 16px; border-top:3px solid var(--burgundy);">
+                <div class="label-cap" style="font-size:8px; margin-bottom:4px;">Failed</div>
+                <div class="serif" style="font-size:26px; font-weight:400; line-height:1; color:var(--burgundy);">{{ $failedRef }}</div>
+                <div style="font-size:10px; color:var(--ink-4); margin-top:3px;">Unsuccessful</div>
+            </div>
+            <div class="card" style="padding:14px 16px; border-top:3px solid var(--ink-3);">
+                <div class="label-cap" style="font-size:8px; margin-bottom:4px;">Incoming</div>
+                <div class="serif" style="font-size:26px; font-weight:400; line-height:1;">{{ $incomingCount }}</div>
+                <div style="font-size:10px; color:var(--ink-4); margin-top:3px;">From partners</div>
+            </div>
+            <div class="card" style="padding:14px 16px; border-top:3px solid var(--ochre);">
+                <div class="label-cap" style="font-size:8px; margin-bottom:4px;">Outgoing</div>
+                <div class="serif" style="font-size:26px; font-weight:400; line-height:1;">{{ $outgoingCount }}</div>
+                <div style="font-size:10px; color:var(--ink-4); margin-top:3px;">To external services</div>
+            </div>
+        </div>
+
+        {{-- Filter row --}}
+        <div style="display:grid; grid-template-columns:1fr 1fr 2fr auto auto; gap:10px; margin-bottom:14px; align-items:center;">
+            <select id="refFilterStage" onchange="jhFilterRefTable()" class="inp" style="font-size:11px; padding:6px 10px;">
+                <option value="">All Statuses</option>
+                <option value="Sent">Sent</option>
+                <option value="Acknowledged">Acknowledged</option>
+                <option value="In progress">In Progress</option>
+                <option value="Completed">Completed</option>
+                <option value="Failed">Failed</option>
+            </select>
+            <select id="refFilterHub" onchange="jhFilterRefTable()" class="inp" style="font-size:11px; padding:6px 10px;">
+                <option value="">All Hubs</option>
+                @foreach($allRefRecords->pluck('hub_id')->unique()->sort() as $hub)
+                <option value="{{ $hub }}">{{ $hub }}</option>
+                @endforeach
+            </select>
+            <input type="text" id="refFilterSearch" onkeyup="jhFilterRefTable()" placeholder="Search client or partner..."
+                   class="inp" style="font-size:11px; padding:6px 10px;">
+            <button onclick="jhExportRefTable()" class="btn-ghost" style="font-size:11px; padding:6px 12px; display:inline-flex; align-items:center; gap:5px; white-space:nowrap;">
+                <x-lucide-download style="width:12px; height:12px;" /> Export CSV
+            </button>
+            <div style="font-size:11px; color:var(--ink-4); white-space:nowrap;">
+                Showing <span id="refFilterCount">{{ $totalRef }}</span> of {{ $totalRef }}
+            </div>
+        </div>
+
+        {{-- Data table --}}
+        <div class="card" style="padding:0; overflow:hidden;">
+            <table style="width:100%; border-collapse:collapse; font-size:12px;" id="refRecordsTable">
+                <thead>
+                    <tr style="border-bottom:2px solid var(--rule); background:var(--parchment);">
+                        <th style="padding:10px 14px; text-align:left; font-size:9px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">Ref ID</th>
+                        <th style="padding:10px 14px; text-align:left; font-size:9px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">Date</th>
+                        <th style="padding:10px 14px; text-align:left; font-size:9px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">Client</th>
+                        <th style="padding:10px 14px; text-align:left; font-size:9px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">Referred To</th>
+                        <th style="padding:10px 14px; text-align:center; font-size:9px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">Stage</th>
+                        <th style="padding:10px 14px; text-align:center; font-size:9px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">Days</th>
+                        <th style="padding:10px 14px; text-align:left; font-size:9px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">Hub</th>
+                        <th style="padding:10px 14px; text-align:center; font-size:9px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($allRefRecords as $r)
+                    @php
+                        $stageColors = [
+                            'Sent'          => ['bg' => 'rgba(107,106,101,0.1)', 'text' => 'var(--ink-3)'],
+                            'Acknowledged'  => ['bg' => 'rgba(184,115,25,0.1)',  'text' => 'var(--ochre)'],
+                            'In progress'   => ['bg' => 'rgba(22,48,41,0.1)',    'text' => 'var(--forest)'],
+                            'Completed'     => ['bg' => 'rgba(47,122,77,0.1)',   'text' => '#2f7a4d'],
+                            'Failed'        => ['bg' => 'rgba(138,46,29,0.1)',   'text' => 'var(--burgundy)'],
+                        ];
+                        $sc = $stageColors[$r['stage']] ?? $stageColors['Sent'];
+                    @endphp
+                    <tr class="ref-record-row" data-stage="{{ $r['stage'] }}" data-hub="{{ $r['hub_id'] }}" data-search="{{ strtolower($r['client_name'] . ' ' . $r['partner_name'] . ' ' . $r['case_uid']) }}"
+                        style="border-bottom:1px solid var(--rule-2); transition:background 100ms;"
+                        onmouseenter="this.style.background='var(--parchment)'" onmouseleave="this.style.background=''">
+                        <td style="padding:10px 14px;">
+                            <span class="mono" style="font-size:11px; font-weight:600; color:var(--forest);">{{ $r['ref'] }}</span>
+                        </td>
+                        <td style="padding:10px 14px;">
+                            <span style="font-size:11px; color:var(--ink-2);">{{ $r['date'] ? \Carbon\Carbon::parse($r['date'])->format('d M Y') : '—' }}</span>
+                        </td>
+                        <td style="padding:10px 14px;">
+                            <div style="font-size:12px; font-weight:600; color:var(--ink);">{{ $r['client_name'] }}</div>
+                            <div class="mono" style="font-size:10px; color:var(--ink-4);">{{ $r['case_uid'] }}</div>
+                        </td>
+                        <td style="padding:10px 14px;">
+                            <div style="font-size:11px; color:var(--ink-2); max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ $r['partner_name'] }}</div>
+                        </td>
+                        <td style="padding:10px 14px; text-align:center;">
+                            <span style="font-size:10px; padding:2px 8px; font-weight:600; background:{{ $sc['bg'] }}; color:{{ $sc['text'] }};">
+                                {{ $r['stage'] }}
+                            </span>
+                        </td>
+                        <td style="padding:10px 14px; text-align:center;">
+                            <span style="font-size:11px; font-weight:600; color:{{ $r['days_open'] > 30 ? 'var(--burgundy)' : ($r['days_open'] > 14 ? 'var(--ochre)' : 'var(--ink-3)') }};">
+                                {{ $r['days_open'] }}d
+                            </span>
+                        </td>
+                        <td style="padding:10px 14px;">
+                            <span class="mono" style="font-size:10px; color:var(--ink-3);">{{ $r['hub_id'] }}</span>
+                        </td>
+                        <td style="padding:10px 14px; text-align:center;">
+                            <a href="{{ route('cases.show', ['case' => \App\Models\CaseReferral::where('id', (int) ltrim(str_replace('R-', '', $r['ref']), '0'))->value('case_id') ?? 0]) }}#referrals"
+                               style="color:var(--forest); text-decoration:none; font-size:11px; font-weight:600;">
+                                View
+                            </a>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="8" style="padding:40px; text-align:center; color:var(--ink-4); font-size:13px;">
+                            No referral records found.
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
 </div>
 
 <script>
+function jhFilterRefTable() {
+    var stage  = document.getElementById('refFilterStage').value.toLowerCase();
+    var hub    = document.getElementById('refFilterHub').value;
+    var search = document.getElementById('refFilterSearch').value.toLowerCase();
+    var rows   = document.querySelectorAll('.ref-record-row');
+    var count  = 0;
+    rows.forEach(function(row) {
+        var s = row.dataset.stage.toLowerCase();
+        var h = row.dataset.hub;
+        var t = row.dataset.search;
+        var show = (!stage || s === stage)
+                && (!hub || h === hub)
+                && (!search || t.indexOf(search) !== -1);
+        row.style.display = show ? '' : 'none';
+        if (show) count++;
+    });
+    document.getElementById('refFilterCount').textContent = count;
+}
+
+function jhExportRefTable() {
+    var rows = document.querySelectorAll('.ref-record-row');
+    var csv = 'Ref ID,Date,Client,Case UID,Referred To,Stage,Days Open,Hub\n';
+    rows.forEach(function(row) {
+        if (row.style.display === 'none') return;
+        var cells = row.querySelectorAll('td');
+        var ref   = cells[0].textContent.trim();
+        var date  = cells[1].textContent.trim();
+        var name  = cells[2].querySelector('div').textContent.trim();
+        var uid   = cells[2].querySelectorAll('div')[1].textContent.trim();
+        var to    = cells[3].textContent.trim();
+        var stage = cells[4].textContent.trim();
+        var days  = cells[5].textContent.trim();
+        var hub   = cells[6].textContent.trim();
+        csv += '"' + ref + '","' + date + '","' + name + '","' + uid + '","' + to + '","' + stage + '","' + days + '","' + hub + '"\n';
+    });
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'Referral_Records_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+}
+
 function jhToggleReferralPanel(id) {
     const panel = document.getElementById(id);
     const chev  = document.getElementById('chev-' + id);
