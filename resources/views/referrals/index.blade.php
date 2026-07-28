@@ -341,29 +341,46 @@ $sections = [
         </div>
 
         {{-- Filter row --}}
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr 2fr auto auto; gap:10px; margin-bottom:14px; align-items:center;">
-            <select id="refFilterStage" onchange="jhFilterRefTable()" class="inp" style="font-size:11px; padding:6px 10px;">
-                <option value="">All Statuses</option>
-                <option value="Sent">Sent</option>
-                <option value="Acknowledged">Acknowledged</option>
-                <option value="In progress">In Progress</option>
-                <option value="Completed">Completed</option>
-                <option value="Failed">Failed</option>
-            </select>
-            <select id="refFilterHub" onchange="jhFilterRefTable()" class="inp" style="font-size:11px; padding:6px 10px;">
-                <option value="">All Hubs</option>
-                @foreach($allRefRecords->pluck('hub_id')->unique()->sort() as $hub)
-                <option value="{{ $hub }}">{{ $hub }}</option>
-                @endforeach
-            </select>
-            <input type="date" id="refFilterFrom" onchange="jhFilterRefTable()" class="inp" style="font-size:11px; padding:6px 10px;" title="From date">
-            <input type="date" id="refFilterTo" onchange="jhFilterRefTable()" class="inp" style="font-size:11px; padding:6px 10px;" title="To date">
-            <input type="text" id="refFilterSearch" onkeyup="jhFilterRefTable()" placeholder="Search client or partner..."
-                   class="inp" style="font-size:11px; padding:6px 10px;">
-            <button onclick="jhExportRefTable()" class="btn-ghost" style="font-size:11px; padding:6px 12px; display:inline-flex; align-items:center; gap:5px; white-space:nowrap;">
-                <x-lucide-download style="width:12px; height:12px;" /> Export CSV
-            </button>
-            <div style="font-size:11px; color:var(--ink-4); white-space:nowrap;">
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr 2fr auto auto; gap:10px; margin-bottom:14px; align-items:end;">
+            <div>
+                <div style="font-size:9.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-4); margin-bottom:4px;">Status</div>
+                <select id="refFilterStage" onchange="jhFilterRefTable()" class="inp" style="font-size:11px; padding:6px 10px; width:100%;">
+                    <option value="">All Statuses</option>
+                    <option value="Sent">Sent</option>
+                    <option value="Acknowledged">Acknowledged</option>
+                    <option value="In progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Failed">Failed</option>
+                </select>
+            </div>
+            <div>
+                <div style="font-size:9.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-4); margin-bottom:4px;">Hub</div>
+                <select id="refFilterHub" onchange="jhFilterRefTable()" class="inp" style="font-size:11px; padding:6px 10px; width:100%;">
+                    <option value="">All Hubs</option>
+                    @foreach($allRefRecords->pluck('hub_id')->unique()->sort() as $hub)
+                    <option value="{{ $hub }}">{{ $hub }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <div style="font-size:9.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-4); margin-bottom:4px;">Referral Date — From</div>
+                <input type="date" id="refFilterFrom" onchange="jhFilterRefTable()" class="inp" style="font-size:11px; padding:6px 10px; width:100%; box-sizing:border-box;">
+            </div>
+            <div>
+                <div style="font-size:9.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-4); margin-bottom:4px;">Referral Date — To</div>
+                <input type="date" id="refFilterTo" onchange="jhFilterRefTable()" class="inp" style="font-size:11px; padding:6px 10px; width:100%; box-sizing:border-box;">
+            </div>
+            <div>
+                <div style="font-size:9.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-4); margin-bottom:4px;">Search</div>
+                <input type="text" id="refFilterSearch" onkeyup="jhFilterRefTable()" placeholder="Search client or partner..."
+                       class="inp" style="font-size:11px; padding:6px 10px; width:100%; box-sizing:border-box;">
+            </div>
+            <div style="display:flex; align-items:flex-end;">
+                <button onclick="jhExportRefTable()" class="btn-ghost" style="font-size:11px; padding:6px 12px; display:inline-flex; align-items:center; gap:5px; white-space:nowrap;">
+                    <x-lucide-download style="width:12px; height:12px;" /> Export CSV
+                </button>
+            </div>
+            <div style="font-size:11px; color:var(--ink-4); white-space:nowrap; padding-bottom:8px;">
                 Showing <span id="refFilterCount">{{ $totalRef }}</span> of {{ $totalRef }}
             </div>
         </div>
