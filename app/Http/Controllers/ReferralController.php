@@ -37,8 +37,11 @@ class ReferralController extends Controller
             $cat => $defaultStyles[$cat] ?? ['color' => 'var(--ink-3)', 'tint' => 'var(--rule-2)', 'icon' => 'circle-dot'],
         ])->toArray();
 
-        // Load all CaseReferrals grouped by referred_to
-        $allReferrals = \App\Models\CaseReferral::all();
+        // Only referrals from external-partner pathways (not ADR / Mediation / Legal Advice / Litigation)
+        $externalPathways = ['Government Department / Public Institution', 'Civil Society / NGO / CSO / NPO', 'Other'];
+
+        // Load all CaseReferrals grouped by referred_to — external pathways only
+        $allReferrals = \App\Models\CaseReferral::whereHas('caseRecord', fn($q) => $q->whereIn('assigned_pathway', $externalPathways))->get();
 
         // Per-partner stats keyed by partner name (referred_to field)
         $partnerStats = $allReferrals->groupBy('referred_to')->map(function ($refs) {
@@ -97,7 +100,8 @@ class ReferralController extends Controller
             ->get(['id', 'case_uid', 'name', 'primary_issue', 'hub_id']);
 
         // Referral tracker — from CaseReferral records
-        $caseReferrals = \App\Models\CaseReferral::with(['caseRecord:id,case_uid,name,hub_id', 'threads'])
+        $caseReferrals = \App\Models\CaseReferral::with(['caseRecord:id,case_uid,name,hub_id,assigned_pathway', 'threads'])
+            ->whereHas('caseRecord', fn($q) => $q->whereIn('assigned_pathway', $externalPathways))
             ->orderByDesc('referral_date')
             ->get();
 
@@ -164,7 +168,7 @@ class ReferralController extends Controller
         $outgoingClosed = $trackerCounts['completed'] + $trackerCounts['failed'];
 
         // Referral Network KPI summary (Govt + NGO + Other pathways only)
-        $referralPathways = ['Government Department / Public Institution', 'Civil Society / NGO / CSO / NPO', 'Other'];
+        $referralPathways = $externalPathways;
         $referralKpi = \App\Models\CaseRecord::whereIn('assigned_pathway', $referralPathways)
             ->selectRaw('
                 COUNT(*) as total,
