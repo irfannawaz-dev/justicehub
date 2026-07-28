@@ -9,6 +9,24 @@ use Illuminate\Http\Request;
 
 class MediationController extends Controller
 {
+    // Step 1a — Set mediation type
+    public function updateType(Request $request, CaseRecord $case)
+    {
+        $request->validate([
+            'mediation_type' => 'required|in:Court Annexed Mediation,Private Mediation',
+        ]);
+
+        $case->update([
+            'meta' => array_merge($case->meta ?? [], [
+                'mediation_type' => $request->mediation_type,
+            ]),
+        ]);
+
+        return redirect()->route('cases.show', $case)
+            ->with('activeTab', 'pathway')
+            ->with('success', 'Mediation type saved.');
+    }
+
     // Step 1 — Add both parties at once
     public function storeParty(Request $request, CaseRecord $case)
     {

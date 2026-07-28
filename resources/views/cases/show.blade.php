@@ -1022,6 +1022,43 @@
                         <h3 class="serif" style="font-size: 20px; font-weight: 500; margin: 0 0 6px;">Who are the two parties in this mediation?</h3>
                         <p style="font-size: 13px; color: var(--ink-3); margin: 0 0 22px; line-height: 1.5;">Record both parties you'll invite to mediation.</p>
 
+                        {{-- Mediation Type --}}
+                        @php $mediationType = $case->meta['mediation_type'] ?? null; @endphp
+                        <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--rule-2);">
+                            <label style="font-size: 11px; font-weight: 700; color: var(--ink-3); display: block; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em;">
+                                Mediation Type <span style="color: var(--burgundy);">*</span>
+                            </label>
+                            @if($mediationType)
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <span style="font-size:13px; font-weight:600; color:var(--forest); padding:5px 14px; background:rgba(47,122,77,0.08); border:1px solid rgba(47,122,77,0.25);">
+                                    {{ $mediationType }}
+                                </span>
+                                <form method="POST" action="{{ route('mediation.type.update', $case) }}" style="display:inline;">
+                                    @csrf
+                                    <select name="mediation_type" onchange="this.form.submit()" class="inp" style="font-size:12px; padding:4px 8px;">
+                                        <option value="">— Change —</option>
+                                        <option value="Court Annexed Mediation">Court Annexed Mediation</option>
+                                        <option value="Private Mediation">Private Mediation</option>
+                                    </select>
+                                </form>
+                            </div>
+                            @else
+                            <form method="POST" action="{{ route('mediation.type.update', $case) }}">
+                                @csrf
+                                <div style="display:flex; gap:10px; align-items:center;">
+                                    <select name="mediation_type" required class="inp" style="font-size:13px; min-width:260px;">
+                                        <option value="">— Select mediation type —</option>
+                                        <option value="Court Annexed Mediation">Court Annexed Mediation</option>
+                                        <option value="Private Mediation">Private Mediation</option>
+                                    </select>
+                                    <button type="submit" style="padding:8px 18px; background:var(--forest); color:var(--cream); border:none; font-size:13px; font-family:inherit; font-weight:600; cursor:pointer; white-space:nowrap;">
+                                        Set Type
+                                    </button>
+                                </div>
+                            </form>
+                            @endif
+                        </div>
+
                         @if($parties->count())
                         {{-- Saved parties list --}}
                         <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px;">

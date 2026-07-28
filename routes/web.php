@@ -82,6 +82,7 @@ Route::middleware(['auth', 'hub.scope', 'can.write'])->group(function () {
     Route::delete('/cases/{case}/referrals/{referral}',                 [CaseController::class, 'destroyReferral'])->name('cases.referral.destroy');
 
     // ── Mediation Workflow ───────────────────────────────────────────
+    Route::post('/cases/{case}/mediation/type',                 [MediationController::class, 'updateType'])->name('mediation.type.update');
     Route::post('/cases/{case}/mediation/parties',              [MediationController::class, 'storeParty'])->name('mediation.party.store');
     Route::delete('/cases/{case}/mediation/parties/{party}',    [MediationController::class, 'destroyParty'])->name('mediation.party.destroy');
     Route::post('/cases/{case}/mediation/consent',              [MediationController::class, 'updateConsent'])->name('mediation.consent.update');
