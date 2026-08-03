@@ -80,6 +80,8 @@ class UserManagementController extends Controller
             'is_active'      => true,
         ]);
 
+        \Spatie\Permission\Models\Role::firstOrCreate(['name' => $role->value, 'guard_name' => 'web'])
+            ->syncPermissions($role->permissions());
         $user->syncRoles([$role->value]);
 
         return back()->with('success', "User \"{$user->name}\" created successfully.");
@@ -134,6 +136,8 @@ class UserManagementController extends Controller
         }
 
         $user->update($updateData);
+        \Spatie\Permission\Models\Role::firstOrCreate(['name' => $role->value, 'guard_name' => 'web'])
+            ->syncPermissions($role->permissions());
         $user->syncRoles([$role->value]);
 
         return back()->with('success', "User \"{$user->name}\" updated successfully.");
