@@ -38,8 +38,8 @@ enum UserRole: string
     public function isGlobalScope(): ?bool
     {
         return match ($this) {
-            self::Head, self::ProvincialLead, self::MELead => true,
-            self::LitigationManager, self::MediationManager => false,
+            self::Head, self::ProvincialLead, self::MELead,
+            self::LitigationManager, self::MediationManager => true,
             self::Viewer => null,
             default => false,
         };
