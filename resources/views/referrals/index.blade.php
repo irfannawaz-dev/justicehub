@@ -346,8 +346,6 @@ $sections = [
                 <div style="font-size:9.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-4); margin-bottom:4px;">Status</div>
                 <select id="refFilterStage" onchange="jhFilterRefTable()" class="inp" style="font-size:11px; padding:6px 10px; width:100%;">
                     <option value="">All Statuses</option>
-                    <option value="Sent">Sent</option>
-                    <option value="Acknowledged">Acknowledged</option>
                     <option value="In progress">In Progress</option>
                     <option value="Completed">Completed</option>
                     <option value="Failed">Failed</option>
@@ -442,7 +440,7 @@ $sections = [
                             <span class="mono" style="font-size:10px; color:var(--ink-3);">{{ $r['hub_id'] }}</span>
                         </td>
                         <td style="padding:10px 14px; text-align:center;">
-                            <a href="{{ route('cases.show', ['case' => \App\Models\CaseReferral::where('id', (int) ltrim(str_replace('R-', '', $r['ref']), '0'))->value('case_id') ?? 0]) }}#referrals"
+                            <a href="{{ route('cases.show', $r['case_id']) }}"
                                style="color:var(--forest); text-decoration:none; font-size:11px; font-weight:600;">
                                 View
                             </a>

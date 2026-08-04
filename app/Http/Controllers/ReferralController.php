@@ -99,54 +99,56 @@ class ReferralController extends Controller
             ->orderBy('name')
             ->get(['id', 'case_uid', 'name', 'primary_issue', 'hub_id']);
 
-        // Referral tracker — from CaseReferral records
-        $caseReferrals = \App\Models\CaseReferral::with(['caseRecord:id,case_uid,name,hub_id,assigned_pathway', 'threads'])
-            ->whereHas('caseRecord', fn($q) => $q->whereIn('assigned_pathway', $externalPathways))
-            ->orderByDesc('referral_date')
-            ->get();
+        // Referral tracker — built from CaseRecord (external pathways only)
+        $trackerCases = CaseRecord::whereIn('assigned_pathway', $externalPathways)
+            ->orderByDesc('intake_date')
+            ->get(['id', 'case_uid', 'name', 'hub_id', 'assigned_pathway', 'pathway_govt_dept',
+                   'pathway_ngo_name', 'pathway_other_details', 'status', 'intake_date',
+                   'referral_type', 'urgency', 'primary_issue']);
 
-        $referralTracker = $caseReferrals->map(function ($ref) {
-            // Derive stage from referral state
-            if ($ref->closed_at) {
-                $stage = $ref->closed_outcome === 'Successful' ? 'Completed' : 'Failed';
-            } elseif ($ref->threads->count() > 0) {
-                $stage = 'In progress';
-            } elseif ($ref->focal_person_name) {
-                $stage = 'Acknowledged';
-            } else {
-                $stage = 'Sent';
-            }
+        $referralTracker = $trackerCases->map(function ($c) {
+            // Stage from case status
+            $stage = match (true) {
+                in_array($c->status, [\App\Enums\CaseStatus::Closed, \App\Enums\CaseStatus::Settlement]) => 'Completed',
+                $c->status === \App\Enums\CaseStatus::Rejected => 'Failed',
+                default => 'In progress',
+            };
 
-            $days = $ref->referral_date
-                ? (int) now()->startOfDay()->diffInDays(Carbon::parse($ref->referral_date)->startOfDay())
+            // Referred-to name from pathway-specific field
+            $referredTo = match ($c->assigned_pathway) {
+                'Government Department / Public Institution' => $c->pathway_govt_dept ?? 'Government Dept',
+                'Civil Society / NGO / CSO / NPO'           => $c->pathway_ngo_name  ?? 'NGO / CSO',
+                default                                      => $c->pathway_other_details ?? 'Other',
+            };
+
+            $days = $c->intake_date
+                ? (int) $c->intake_date->startOfDay()->diffInDays(now()->startOfDay())
                 : 0;
 
-            $followUp = $ref->threads->sortByDesc('thread_date')->first()?->created_at ?? null;
-
             return [
-                'ref'          => 'R-' . str_pad($ref->id, 5, '0', STR_PAD_LEFT),
-                'date'         => $ref->referral_date,
-                'case_uid'     => $ref->caseRecord?->case_uid ?? '—',
-                'client_name'  => $ref->caseRecord?->name ?? '—',
-                'hub_id'       => $ref->caseRecord?->hub_id ?? '—',
-                'partner_name' => $ref->referred_to,
-                'partner_cat'  => $ref->caseRecord?->assigned_pathway ?? '—',
-                'urgency'      => 'Med',
-                'service'      => $ref->reason ?? '—',
+                'case_id'      => $c->id,
+                'ref'          => $c->case_uid,
+                'date'         => $c->intake_date?->toDateString(),
+                'case_uid'     => $c->case_uid,
+                'client_name'  => $c->name,
+                'hub_id'       => $c->hub_id,
+                'partner_name' => $referredTo,
+                'partner_cat'  => $c->assigned_pathway,
+                'urgency'      => $c->urgency ?? '—',
+                'service'      => $c->primary_issue ?? '—',
                 'stage'        => $stage,
                 'days_open'    => $days,
-                'follow_up'    => $followUp,
+                'follow_up'    => null,
             ];
         });
 
         $trackerCounts = [
-            'active'    => $referralTracker->whereIn('stage', ['Sent', 'Acknowledged', 'In progress'])->count(),
+            'active'    => $referralTracker->where('stage', 'In progress')->count(),
             'completed' => $referralTracker->where('stage', 'Completed')->count(),
             'failed'    => $referralTracker->where('stage', 'Failed')->count(),
             'all'       => $referralTracker->count(),
         ];
 
-        // Recalculate KPI stats from CaseReferral data
         $totalActive    = $trackerCounts['active'];
         $totalCompleted = $trackerCounts['completed'];
         $totalFailed    = $trackerCounts['failed'];
