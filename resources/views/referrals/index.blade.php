@@ -340,6 +340,50 @@ $sections = [
             </div>
         </div>
 
+        {{-- ── Charts row ── --}}
+        @php
+            $maxPathway = $pathwayRanking->max('total') ?: 1;
+            $maxPartner = $namedPartners->max('total') ?: 1;
+            $partnerColors = ['#2f5c3a','#b87319','#4a7a5c','#6b6a65','#8a2e1d','#163029','#5a6e4a','#a07830','#3d5a52','#7a4a2a','#2a4a3a','#6a5a3a'];
+        @endphp
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;">
+
+            {{-- Left: Pathway ranking --}}
+            <div class="card" style="padding:20px 24px;">
+                <div style="font-size:15px; font-weight:700; color:var(--ink); margin-bottom:4px;">Pathway ranking</div>
+                <div style="font-size:11px; color:var(--ink-4); margin-bottom:18px;">How cases are distributed across external pathways.</div>
+                @foreach($pathwayRanking as $row)
+                @if($row['total'] > 0)
+                <div style="display:grid; grid-template-columns:180px 1fr 52px 32px; align-items:center; gap:10px; margin-bottom:10px;">
+                    <div style="font-size:11px; color:var(--ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="{{ $row['label'] }}">{{ $row['label'] }}</div>
+                    <div style="background:var(--rule-2); border-radius:2px; height:8px; overflow:hidden;">
+                        <div style="width:{{ round(($row['total']/$maxPathway)*100) }}%; height:100%; background:{{ $row['color'] }}; border-radius:2px; transition:width 0.4s;"></div>
+                    </div>
+                    <div style="font-size:11px; font-weight:600; color:var(--ink-2); text-align:right;">{{ number_format($row['total']) }}</div>
+                    <div style="font-size:10px; color:var(--ink-4);">{{ $row['pct'] }}%</div>
+                </div>
+                @endif
+                @endforeach
+            </div>
+
+            {{-- Right: Named partners --}}
+            <div class="card" style="padding:20px 24px;">
+                <div style="font-size:15px; font-weight:700; color:var(--ink); margin-bottom:4px;">Named partners</div>
+                <div style="font-size:11px; color:var(--ink-4); margin-bottom:18px;">Organisations recorded by name — the relationships you manage.</div>
+                @foreach($namedPartners as $i => $row)
+                @php $barColor = $partnerColors[$i % count($partnerColors)]; @endphp
+                <div style="display:grid; grid-template-columns:160px 1fr 44px 32px; align-items:center; gap:10px; margin-bottom:9px;">
+                    <div style="font-size:11px; color:var(--ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="{{ $row['label'] }}">{{ Str::limit($row['label'], 22) }}</div>
+                    <div style="background:var(--rule-2); border-radius:2px; height:8px; overflow:hidden;">
+                        <div style="width:{{ round(($row['total']/$maxPartner)*100) }}%; height:100%; background:{{ $barColor }}; border-radius:2px; transition:width 0.4s;"></div>
+                    </div>
+                    <div style="font-size:11px; font-weight:600; color:var(--ink-2); text-align:right;">{{ $row['total'] }}</div>
+                    <div style="font-size:10px; color:var(--ink-4);">{{ $maxPartner > 0 ? round(($row['total']/$maxPartner)*100) : 0 }}%</div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+
         {{-- Filter row --}}
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr 2fr auto auto; gap:10px; margin-bottom:14px; align-items:end;">
             <div>

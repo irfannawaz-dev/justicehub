@@ -258,6 +258,28 @@ class ReferralController extends Controller
             ->get(['id', 'case_uid', 'name', 'primary_issue', 'urgency', 'status',
                    'referral_type', 'referral_contact_person', 'pathway_other_details', 'hub_id']);
 
+        // Chart data: pathway ranking (left chart)
+        $pathwayRanking = collect([
+            'Government Department / Public Institution' => ['label' => 'Government / Public Institution', 'color' => '#2f5c3a'],
+            'Civil Society / NGO / CSO / NPO'           => ['label' => 'Civil Society / NGO / CSO',       'color' => '#b87319'],
+            'Other'                                      => ['label' => 'Other Pathway',                   'color' => '#6b6a65'],
+        ])->map(fn($meta, $pw) => [
+            'label' => $meta['label'],
+            'color' => $meta['color'],
+            'total' => $rawCounts[$pw]->total    ?? 0,
+            'pct'   => ($referralKpi->total ?? 0) > 0
+                        ? round((($rawCounts[$pw]->total ?? 0) / $referralKpi->total) * 100)
+                        : 0,
+        ])->sortByDesc('total')->values();
+
+        // Chart data: named partners (right chart) — top orgs referred to
+        $namedPartners = $referralTracker
+            ->groupBy('partner_name')
+            ->map(fn($rows, $name) => ['label' => $name, 'total' => $rows->count()])
+            ->sortByDesc('total')
+            ->take(12)
+            ->values();
+
         return view('referrals.index', compact(
             'partners', 'filteredPartners',
             'totalActive', 'totalCompleted', 'totalFailed',
@@ -270,6 +292,7 @@ class ReferralController extends Controller
             'outgoingCount', 'outgoingActive', 'outgoingClosed',
             'pathwaySummary', 'govtBreakdown', 'ngoBreakdown', 'otherBreakdown',
             'govtCases', 'ngoCases', 'otherCases', 'referralKpi',
+            'pathwayRanking', 'namedPartners',
         ));
     }
 
