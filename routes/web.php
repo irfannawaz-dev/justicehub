@@ -90,6 +90,7 @@ Route::middleware(['auth', 'hub.scope', 'can.write'])->group(function () {
 
     // ── Referrals ────────────────────────────────────────────────────
     Route::get('/referrals', [ReferralController::class, 'index'])->name('referrals.index');
+    Route::get('/referrals/report', [ReferralController::class, 'report'])->name('referrals.report');
     Route::post('/referrals', [ReferralController::class, 'store'])->name('referrals.store');
 
     // ── Outreach ─────────────────────────────────────────────────────

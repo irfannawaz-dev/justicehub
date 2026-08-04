@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Partner;
 use App\Models\CaseRecord;
 use App\Models\ServiceEncounter;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -258,26 +257,123 @@ class ReferralController extends Controller
             ->get(['id', 'case_uid', 'name', 'primary_issue', 'urgency', 'status',
                    'referral_type', 'referral_contact_person', 'pathway_other_details', 'hub_id']);
 
-        // Chart data: pathway ranking (left chart)
-        $pathwayRanking = collect([
-            'Government Department / Public Institution' => ['label' => 'Government / Public Institution', 'color' => '#2f5c3a'],
-            'Civil Society / NGO / CSO / NPO'           => ['label' => 'Civil Society / NGO / CSO',       'color' => '#b87319'],
-            'Other'                                      => ['label' => 'Other Pathway',                   'color' => '#6b6a65'],
-        ])->map(fn($meta, $pw) => [
-            'label' => $meta['label'],
-            'color' => $meta['color'],
-            'total' => $rawCounts[$pw]->total    ?? 0,
-            'pct'   => ($referralKpi->total ?? 0) > 0
-                        ? round((($rawCounts[$pw]->total ?? 0) / $referralKpi->total) * 100)
-                        : 0,
-        ])->sortByDesc('total')->values();
+        // Source → Group map and reverse map
+        $sourceGroupMap = [
+            'Community Outreach / Awareness Session' => 'Community outreach',
+            'Paralegal'                              => 'Paralegal network',
+            'Word of Mouth / Friend / Family'        => 'Word of mouth',
+            'Government Department'                  => 'Government',
+            'NGO / CSO / NPO'                        => 'Civil society',
+            'Court / Judicial Officer'               => 'Legal / Judicial',
+            'Bar Association'                        => 'Legal / Judicial',
+            'Community Leader / Local Representative'=> 'Community outreach',
+            'District / Range Peace Committee'       => 'Civil society',
+            'Shelter / Protection Service'           => 'Social services',
+            'Office Staff'                           => 'Internal',
+            'Phone Call / Helpline'                  => 'Digital / Media',
+            'Website / Social Media'                 => 'Digital / Media',
+            'SMS / WhatsApp Message'                 => 'Digital / Media',
+            'Radio / TV / Newspaper'                 => 'Digital / Media',
+            'Google Search / Google Maps'            => 'Digital / Media',
+            'QR Code / Referral Card'                => 'Digital / Media',
+            'Walk-in / Passing by the Office'        => 'Walk-in',
+            'Friend / Family / Word of Mouth'        => 'Word of mouth',
+            'Other - please specify'                 => 'Other',
+        ];
+        $groupDotColors = [
+            'Community outreach' => '#163029',
+            'Paralegal network'  => '#2f7a4d',
+            'Word of mouth'      => '#6b6a65',
+            'Government'         => '#1d6ea8',
+            'Civil society'      => '#b87319',
+            'Legal / Judicial'   => '#4a4078',
+            'Social services'    => '#8a2e1d',
+            'Digital / Media'    => '#4a7a5c',
+            'Walk-in'            => '#a07830',
+            'Internal'           => '#3d5a52',
+            'Other'              => '#9a9a94',
+        ];
+
+        // All unique channel groups for filter dropdown
+        $channelGroups = collect($sourceGroupMap)->values()->unique()->sort()->values();
+
+        // Reverse: group → [source, source, ...]
+        $groupToSources = collect($sourceGroupMap)
+            ->groupBy(fn($group) => $group)
+            ->map(fn($items) => $items->keys()->toArray());
+
+        // Table/chart filters
+        $filterFrom    = $request->input('from');
+        $filterTo      = $request->input('to');
+        $filterHub     = $request->input('hub', 'all');
+        $filterChannel = $request->input('channel', 'all');
+        $filterPathway = $request->input('pathway', 'all');
+
+        // Pathway scope — narrow to specific external pathway if requested
+        $pathwayLabelMap = [
+            'govt'  => 'Government Department / Public Institution',
+            'ngo'   => 'Civil Society / NGO / CSO / NPO',
+            'other' => 'Other',
+        ];
+        $filteredPathways = $filterPathway !== 'all' && isset($pathwayLabelMap[$filterPathway])
+            ? [$pathwayLabelMap[$filterPathway]]
+            : $externalPathways;
+
+        // Filtered base builder factory (returns a fresh query each time)
+        $filteredBase = fn() => CaseRecord::whereIn('assigned_pathway', $filteredPathways)
+            ->whereNotNull('referral_source')
+            ->when($filterFrom, fn($q) => $q->whereDate('intake_date', '>=', $filterFrom))
+            ->when($filterTo,   fn($q) => $q->whereDate('intake_date', '<=', $filterTo))
+            ->when($filterHub !== 'all', fn($q) => $q->where('hub_id', $filterHub))
+            ->when($filterChannel !== 'all' && $groupToSources->has($filterChannel),
+                fn($q) => $q->whereIn('referral_source', $groupToSources[$filterChannel]));
+
+        // Hubs for filter dropdown
+        $hubs = \App\Models\Hub::where('is_active', true)->orderBy('name')->get(['id', 'name']);
+
+        // Chart data: channel ranking — how referral network clients heard about us (external pathways only)
+        $channelColors = ['#163029','#4a4078','#6b6a65','#1d6ea8','#b87319','#8a2e1d','#b05080','#4a7a5c','#a07830','#2f5c3a','#6a5a3a','#3d5a52'];
+        $channelTotals = $filteredBase()
+            ->selectRaw('referral_source as label, COUNT(*) as total')
+            ->groupBy('referral_source')
+            ->orderByDesc('total')
+            ->get();
+        $referralNetworkTotal = $filteredBase()->count() ?: 1;
+        $pathwayRanking = $channelTotals->values()->map(fn($row, $i) => [
+            'label' => $row->label,
+            'color' => $channelColors[$i % count($channelColors)],
+            'total' => $row->total,
+            'pct'   => round(($row->total / $referralNetworkTotal) * 100),
+        ]);
+
+        // All sources table
+        $allSourcesTable = $filteredBase()
+            ->selectRaw("
+                referral_source,
+                COUNT(*) as total,
+                SUM(CASE WHEN assigned_pathway = 'Government Department / Public Institution' THEN 1 ELSE 0 END) as govt,
+                SUM(CASE WHEN assigned_pathway = 'Civil Society / NGO / CSO / NPO' THEN 1 ELSE 0 END) as ngo,
+                SUM(CASE WHEN assigned_pathway = 'Other' THEN 1 ELSE 0 END) as other_pw
+            ")
+            ->groupBy('referral_source')
+            ->orderByDesc('total')
+            ->get()
+            ->map(fn($r) => [
+                'source'      => $r->referral_source,
+                'group'       => $sourceGroupMap[$r->referral_source] ?? 'Other',
+                'dot'         => $groupDotColors[$sourceGroupMap[$r->referral_source] ?? 'Other'] ?? '#9a9a94',
+                'total'       => $r->total,
+                'share'       => round(($r->total / $referralNetworkTotal) * 100, 1),
+                'govt'        => $r->govt,
+                'ngo'         => $r->ngo,
+                'other_pw'    => $r->other_pw,
+            ]);
 
         // Chart data: named partners (right chart) — top orgs referred to
         $namedPartners = $referralTracker
             ->groupBy('partner_name')
             ->map(fn($rows, $name) => ['label' => $name, 'total' => $rows->count()])
             ->sortByDesc('total')
-            ->take(12)
             ->values();
 
         return view('referrals.index', compact(
@@ -292,7 +388,224 @@ class ReferralController extends Controller
             'outgoingCount', 'outgoingActive', 'outgoingClosed',
             'pathwaySummary', 'govtBreakdown', 'ngoBreakdown', 'otherBreakdown',
             'govtCases', 'ngoCases', 'otherCases', 'referralKpi',
-            'pathwayRanking', 'namedPartners',
+            'pathwayRanking', 'namedPartners', 'allSourcesTable', 'referralNetworkTotal',
+            'hubs', 'channelGroups',
+            'filterFrom', 'filterTo', 'filterHub', 'filterChannel', 'filterPathway',
+        ));
+    }
+
+    public function report(Request $request)
+    {
+        $pathwayLabelMap  = [
+            'govt'  => 'Government Department / Public Institution',
+            'ngo'   => 'Civil Society / NGO / CSO / NPO',
+            'other' => 'Other',
+        ];
+        $sourceGroupMap = [
+            'Community Outreach / Awareness Session' => 'Community outreach',
+            'Paralegal'                              => 'Paralegal network',
+            'Word of Mouth / Friend / Family'        => 'Word of mouth',
+            'Government Department'                  => 'Government',
+            'NGO / CSO / NPO'                        => 'Civil society',
+            'Court / Judicial Officer'               => 'Legal / Judicial',
+            'Bar Association'                        => 'Legal / Judicial',
+            'Community Leader / Local Representative'=> 'Community outreach',
+            'District / Range Peace Committee'       => 'Civil society',
+            'Shelter / Protection Service'           => 'Social services',
+            'Office Staff'                           => 'Internal',
+            'Phone Call / Helpline'                  => 'Digital / Media',
+            'Website / Social Media'                 => 'Digital / Media',
+            'SMS / WhatsApp Message'                 => 'Digital / Media',
+            'Radio / TV / Newspaper'                 => 'Digital / Media',
+            'Google Search / Google Maps'            => 'Digital / Media',
+            'QR Code / Referral Card'                => 'Digital / Media',
+            'Walk-in / Passing by the Office'        => 'Walk-in',
+            'Friend / Family / Word of Mouth'        => 'Word of mouth',
+            'Other - please specify'                 => 'Other',
+        ];
+        $groupToSources = collect($sourceGroupMap)
+            ->groupBy(fn($g) => $g)
+            ->map(fn($items) => $items->keys()->toArray());
+
+        $filterFrom    = $request->input('from');
+        $filterTo      = $request->input('to');
+        $filterHub     = $request->input('hub', 'all');
+        $filterChannel = $request->input('channel', 'all');
+        $filterPathway = $request->input('pathway', 'all');
+
+        // Base query factory — all cases with a referral_source, respecting filters
+        $reportBase = fn() => CaseRecord::whereNotNull('referral_source')
+            ->when($filterFrom, fn($q) => $q->whereDate('intake_date', '>=', $filterFrom))
+            ->when($filterTo,   fn($q) => $q->whereDate('intake_date', '<=', $filterTo))
+            ->when($filterHub !== 'all', fn($q) => $q->where('hub_id', $filterHub))
+            ->when($filterChannel !== 'all' && $groupToSources->has($filterChannel),
+                fn($q) => $q->whereIn('referral_source', $groupToSources[$filterChannel]))
+            ->when($filterPathway !== 'all' && isset($pathwayLabelMap[$filterPathway]),
+                fn($q) => $q->where('assigned_pathway', $pathwayLabelMap[$filterPathway]));
+
+        // Report title
+        $channelLabel = $filterChannel !== 'all' ? "$filterChannel sources" : 'All sources';
+        $pwLabel      = $filterPathway !== 'all' ? ($pathwayLabelMap[$filterPathway] ?? '') : null;
+        $reportTitle  = $pwLabel ? "$channelLabel (routed to: $pwLabel)" : "$channelLabel (combined)";
+
+        // KPIs
+        $total        = $reportBase()->count();
+        $hubsReached  = $reportBase()->whereNotNull('hub_id')->distinct('hub_id')->count('hub_id');
+        $distsReached = $reportBase()->whereNotNull('district')->distinct('district')->count('district');
+
+        // Urgency breakdown (alias avoids enum cast)
+        $urgencyMap = $reportBase()
+            ->selectRaw('urgency as urg, COUNT(*) as cnt')
+            ->groupBy('urgency')
+            ->pluck('cnt', 'urg')
+            ->toArray();
+        $urgencyTotal = array_sum($urgencyMap) ?: 1;
+        $urgencyData  = [
+            ['label' => 'Low',       'val' => $urgencyMap['Low']       ?? 0, 'color' => '#2f7a4d'],
+            ['label' => 'Medium',    'val' => $urgencyMap['Med']       ?? 0, 'color' => '#b87319'],
+            ['label' => 'High',      'val' => $urgencyMap['High']      ?? 0, 'color' => '#8a2e1d'],
+            ['label' => 'Immediate', 'val' => $urgencyMap['Immediate'] ?? 0, 'color' => '#5c0000'],
+        ];
+
+        // Monthly trend
+        $monthlyRaw = $reportBase()
+            ->whereNotNull('intake_date')
+            ->selectRaw("DATE_FORMAT(intake_date,'%Y-%m') as ym, DATE_FORMAT(intake_date,'%b %y') as lbl, COUNT(*) as cnt")
+            ->groupByRaw("DATE_FORMAT(intake_date,'%Y-%m'), DATE_FORMAT(intake_date,'%b %y')")
+            ->orderBy('ym')
+            ->get();
+        $maxMonthly = $monthlyRaw->max('cnt') ?: 1;
+        $n = $monthlyRaw->count();
+        $cW=540; $cH=130; $pL=30; $pR=10; $pT=20; $pB=28;
+        $pW=$cW-$pL-$pR; $pH=$cH-$pT-$pB;
+        $chartPoints = $monthlyRaw->values()->map(fn($row,$i) => [
+            'x'   => round($pL + ($n>1 ? $i/($n-1)*$pW : $pW/2), 1),
+            'y'   => round($pT + $pH - ($row->cnt/$maxMonthly)*$pH, 1),
+            'lbl' => $row->lbl,
+            'val' => $row->cnt,
+        ])->toArray();
+        $polyStr  = implode(' ', array_map(fn($p) => "{$p['x']},{$p['y']}", $chartPoints));
+        $baseY    = $pT + $pH;
+        $areaPath = '';
+        if ($chartPoints) {
+            $areaPath = "M {$chartPoints[0]['x']} {$chartPoints[0]['y']}";
+            foreach (array_slice($chartPoints, 1) as $p) $areaPath .= " L {$p['x']} {$p['y']}";
+            $areaPath .= " L {$chartPoints[count($chartPoints)-1]['x']} $baseY L {$chartPoints[0]['x']} $baseY Z";
+        }
+        $chartMeta = compact('cW','cH','pL','pT','pH','pW','maxMonthly','baseY','polyStr','areaPath');
+
+        // Routing pathway — donut chart data
+        $routingColors = [
+            'Court Representation'                       => '#163029',
+            'Mediation'                                  => '#b87319',
+            'Legal Advice / Consultation'                => '#4a4078',
+            'ADR / Dispute Resolution Support'           => '#2f7a4d',
+            'Government Department / Public Institution' => '#1d6ea8',
+            'Civil Society / NGO / CSO / NPO'            => '#8a2e1d',
+            'Other'                                      => '#9a9a94',
+        ];
+        $routingShort = [
+            'Court Representation'                       => 'Court Representation',
+            'Mediation'                                  => 'Mediation',
+            'Legal Advice / Consultation'                => 'Legal Advice',
+            'ADR / Dispute Resolution Support'           => 'ADR / Dispute Res.',
+            'Government Department / Public Institution' => 'Government Dept',
+            'Civil Society / NGO / CSO / NPO'            => 'NGO / CSO',
+            'Other'                                      => 'Other',
+        ];
+        $routingMap   = $reportBase()
+            ->whereNotNull('assigned_pathway')
+            ->selectRaw('assigned_pathway as pw, COUNT(*) as cnt')
+            ->groupBy('assigned_pathway')
+            ->orderByDesc('cnt')
+            ->pluck('cnt', 'pw')
+            ->toArray();
+        $routingTotal = array_sum($routingMap) ?: 1;
+        $dcx=80; $dcy=80; $dr=62; $di=40;
+        $donutSegs = [];
+        $angle = 0;
+        foreach ($routingMap as $pw => $cnt) {
+            $pct = $cnt / $routingTotal;
+            $sw  = $pct * 360;
+            // Handle full-circle edge case
+            if ($sw >= 360) $sw = 359.9999;
+            $s   = deg2rad($angle - 90);
+            $e   = deg2rad($angle + $sw - 90);
+            $lg  = $sw >= 180 ? 1 : 0;
+            $donutSegs[] = [
+                'path'  => sprintf(
+                    'M %.2f %.2f A %d %d 0 %d 1 %.2f %.2f L %.2f %.2f A %d %d 0 %d 0 %.2f %.2f Z',
+                    $dcx+$dr*cos($s), $dcy+$dr*sin($s),
+                    $dr, $dr, $lg,
+                    $dcx+$dr*cos($e), $dcy+$dr*sin($e),
+                    $dcx+$di*cos($e), $dcy+$di*sin($e),
+                    $di, $di, $lg,
+                    $dcx+$di*cos($s), $dcy+$di*sin($s)
+                ),
+                'color' => $routingColors[$pw] ?? '#9a9a94',
+                'label' => $routingShort[$pw]  ?? $pw,
+                'full'  => $pw,
+                'cnt'   => $cnt,
+                'pct'   => round($pct * 100, 1),
+            ];
+            $angle += $sw;
+        }
+        $topRouting    = array_key_first($routingMap) ?? '—';
+        $topRoutingCnt = reset($routingMap) ?: 0;
+        $topRoutingPct = round($topRoutingCnt / $routingTotal * 100);
+
+        // Case categories
+        $catMap = $reportBase()
+            ->whereNotNull('primary_issue')
+            ->selectRaw('primary_issue as iss, COUNT(*) as cnt')
+            ->groupBy('primary_issue')
+            ->orderByDesc('cnt')
+            ->pluck('cnt', 'iss')
+            ->toArray();
+        $catTotal    = array_sum($catMap) ?: 1;
+        $catTop      = array_slice($catMap, 0, 5, true);
+        $catOther    = array_sum(array_slice($catMap, 5)) ;
+        $catMaxVal   = (int) (reset($catMap) ?: 1);
+
+        // Geographic coverage
+        $geoRows = $reportBase()
+            ->join('hubs', 'cases.hub_id', '=', 'hubs.id')
+            ->selectRaw('hubs.id as hid, hubs.name as hname, hubs.district as hdist, COUNT(*) as cnt')
+            ->groupByRaw('hubs.id, hubs.name, hubs.district')
+            ->orderByDesc('cnt')
+            ->get();
+        $geoTotal   = $geoRows->sum('cnt') ?: 1;
+        $geoHubs    = $geoRows->count();
+        $geoDists   = $geoRows->pluck('hdist')->filter()->unique()->count();
+
+        // Report metadata
+        $topCat      = array_key_first($catMap) ?? '—';
+        $topPathShort = $routingShort[$topRouting] ?? $topRouting;
+        $hubScope    = $filterHub !== 'all' ? (\App\Models\Hub::find($filterHub)?->name ?? $filterHub) : 'All hubs';
+        $hubCode     = $filterHub !== 'all' ? strtoupper(str_replace(' ', '', $filterHub)) : 'ALL';
+        $refCode     = 'JH-' . $hubCode . '-' . now()->format('Ymd');
+        $periodStr   = match(true) {
+            (bool)$filterFrom && (bool)$filterTo => \Carbon\Carbon::parse($filterFrom)->format('j M Y') . ' and ' . \Carbon\Carbon::parse($filterTo)->format('j M Y'),
+            (bool)$filterFrom                    => 'from ' . \Carbon\Carbon::parse($filterFrom)->format('j M Y'),
+            (bool)$filterTo                      => 'until ' . \Carbon\Carbon::parse($filterTo)->format('j M Y'),
+            default                              => 'all recorded intakes',
+        };
+        $preparedBy  = \Illuminate\Support\Facades\Auth::user()?->name ?? '—';
+        $narrative   = "$reportTitle referred $total " . ($total === 1 ? 'person' : 'people') . " to Justice Hub services"
+            . (($filterFrom || $filterTo) ? " between $periodStr" : '')
+            . ($hubsReached > 0 ? ", reaching $hubsReached " . ($hubsReached === 1 ? 'hub' : 'hubs') : '')
+            . ". Those referrals were most commonly recorded under {$topCat}"
+            . " and were routed to {$topPathShort} in {$topRoutingPct}% of cases."
+            . " Figures are counts of recorded intakes over the stated period; they describe how referrals were routed, not what followed.";
+
+        return view('referrals.report', compact(
+            'reportTitle', 'periodStr', 'hubScope', 'refCode', 'preparedBy', 'narrative',
+            'total', 'hubsReached', 'distsReached',
+            'urgencyData', 'urgencyTotal',
+            'chartPoints', 'chartMeta',
+            'donutSegs', 'routingTotal', 'topPathShort', 'topRoutingPct', 'dcx', 'dcy', 'dr',
+            'catMap', 'catTop', 'catOther', 'catTotal', 'catMaxVal',
+            'geoRows', 'geoTotal', 'geoHubs', 'geoDists',
         ));
     }
 
@@ -318,7 +631,7 @@ class ReferralController extends Controller
             'case_id'      => $case->id,
             'date'         => today(),
             'type'         => 'External Referral',
-            'performed_by' => auth()->user()?->name ?? 'System',
+            'performed_by' => \Illuminate\Support\Facades\Auth::user()?->name ?? 'System',
             'note'         => "Referred to {$partner->name} ({$partner->category}). {$data['service_description']}",
             'meta'         => array_filter([
                 'partner_id'          => $partner->id,

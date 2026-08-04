@@ -342,16 +342,16 @@ $sections = [
 
         {{-- ── Charts row ── --}}
         @php
-            $maxPathway = $pathwayRanking->max('total') ?: 1;
-            $maxPartner = $namedPartners->max('total') ?: 1;
+            $maxPathway = $pathwayRanking->max('total') ?: 1;  // for bar width only
+            $maxPartner = $namedPartners->max('total') ?: 1;   // for bar width only
             $partnerColors = ['#2f5c3a','#b87319','#4a7a5c','#6b6a65','#8a2e1d','#163029','#5a6e4a','#a07830','#3d5a52','#7a4a2a','#2a4a3a','#6a5a3a'];
         @endphp
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;">
 
             {{-- Left: Pathway ranking --}}
             <div class="card" style="padding:20px 24px;">
-                <div style="font-size:15px; font-weight:700; color:var(--ink); margin-bottom:4px;">Pathway ranking</div>
-                <div style="font-size:11px; color:var(--ink-4); margin-bottom:18px;">How cases are distributed across external pathways.</div>
+                <div style="font-size:15px; font-weight:700; color:var(--ink); margin-bottom:4px;">Channel ranking</div>
+                <div style="font-size:11px; color:var(--ink-4); margin-bottom:18px;">How the client first reached a hub. Click a channel to filter the page.</div>
                 @foreach($pathwayRanking as $row)
                 @if($row['total'] > 0)
                 <div style="display:grid; grid-template-columns:180px 1fr 52px 32px; align-items:center; gap:10px; margin-bottom:10px;">
@@ -367,6 +367,7 @@ $sections = [
             </div>
 
             {{-- Right: Named partners --}}
+            @php $partnerTotal = $namedPartners->sum('total') ?: 1; @endphp
             <div class="card" style="padding:20px 24px;">
                 <div style="font-size:15px; font-weight:700; color:var(--ink); margin-bottom:4px;">Named partners</div>
                 <div style="font-size:11px; color:var(--ink-4); margin-bottom:18px;">Organisations recorded by name — the relationships you manage.</div>
@@ -378,125 +379,132 @@ $sections = [
                         <div style="width:{{ round(($row['total']/$maxPartner)*100) }}%; height:100%; background:{{ $barColor }}; border-radius:2px; transition:width 0.4s;"></div>
                     </div>
                     <div style="font-size:11px; font-weight:600; color:var(--ink-2); text-align:right;">{{ $row['total'] }}</div>
-                    <div style="font-size:10px; color:var(--ink-4);">{{ $maxPartner > 0 ? round(($row['total']/$maxPartner)*100) : 0 }}%</div>
+                    <div style="font-size:10px; color:var(--ink-4);">{{ round(($row['total']/$partnerTotal)*100) }}%</div>
                 </div>
                 @endforeach
             </div>
         </div>
 
-        {{-- Filter row --}}
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr 2fr auto auto; gap:10px; margin-bottom:14px; align-items:end;">
+        {{-- ── Filter bar ── --}}
+        <form method="GET" action="{{ route('referrals.index') }}" id="refFilterForm"
+              style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:16px; padding:12px 16px; background:var(--paper); border:1px solid var(--rule); border-radius:8px;">
+
+            {{-- From date --}}
+            <div style="position:relative; display:inline-flex; align-items:center;">
+                <span style="position:absolute; left:10px; font-size:10px; color:var(--ink-4); pointer-events:none; font-weight:500;">From</span>
+                <input type="date" name="from" value="{{ $filterFrom }}"
+                    style="padding:7px 10px 7px 46px; border:1px solid var(--rule); border-radius:20px; font-size:12px; color:var(--ink); background:var(--parchment); font-family:inherit; cursor:pointer; outline:none; min-width:160px;"
+                    onfocus="this.style.borderColor='var(--forest)'" onblur="this.style.borderColor='var(--rule)'">
+            </div>
+
+            {{-- To date --}}
+            <div style="position:relative; display:inline-flex; align-items:center;">
+                <span style="position:absolute; left:10px; font-size:10px; color:var(--ink-4); pointer-events:none; font-weight:500;">To</span>
+                <input type="date" name="to" value="{{ $filterTo }}"
+                    style="padding:7px 10px 7px 34px; border:1px solid var(--rule); border-radius:20px; font-size:12px; color:var(--ink); background:var(--parchment); font-family:inherit; cursor:pointer; outline:none; min-width:150px;"
+                    onfocus="this.style.borderColor='var(--forest)'" onblur="this.style.borderColor='var(--rule)'">
+            </div>
+
+            {{-- Hub --}}
+            <select name="hub"
+                style="padding:7px 28px 7px 14px; border:1px solid var(--rule); border-radius:20px; font-size:12px; color:var(--ink); background:var(--parchment); font-family:inherit; cursor:pointer; outline:none; appearance:none; -webkit-appearance:none; background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E\"); background-repeat:no-repeat; background-position:right 10px center;"
+                onfocus="this.style.borderColor='var(--forest)'" onblur="this.style.borderColor='var(--rule)'">
+                <option value="all" {{ $filterHub === 'all' ? 'selected' : '' }}>Hub</option>
+                @foreach($hubs as $hub)
+                <option value="{{ $hub->id }}" {{ $filterHub == $hub->id ? 'selected' : '' }}>{{ $hub->name }}</option>
+                @endforeach
+            </select>
+
+            {{-- Channel (referral source group) --}}
+            <select name="channel"
+                style="padding:7px 28px 7px 14px; border:1px solid var(--rule); border-radius:20px; font-size:12px; color:var(--ink); background:var(--parchment); font-family:inherit; cursor:pointer; outline:none; appearance:none; -webkit-appearance:none; background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E\"); background-repeat:no-repeat; background-position:right 10px center;"
+                onfocus="this.style.borderColor='var(--forest)'" onblur="this.style.borderColor='var(--rule)'">
+                <option value="all" {{ $filterChannel === 'all' ? 'selected' : '' }}>Channel</option>
+                @foreach($channelGroups as $group)
+                <option value="{{ $group }}" {{ $filterChannel === $group ? 'selected' : '' }}>{{ $group }}</option>
+                @endforeach
+            </select>
+
+            {{-- Pathway --}}
+            <select name="pathway"
+                style="padding:7px 28px 7px 14px; border:1px solid var(--rule); border-radius:20px; font-size:12px; color:var(--ink); background:var(--parchment); font-family:inherit; cursor:pointer; outline:none; appearance:none; -webkit-appearance:none; background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E\"); background-repeat:no-repeat; background-position:right 10px center;"
+                onfocus="this.style.borderColor='var(--forest)'" onblur="this.style.borderColor='var(--rule)'">
+                <option value="all"  {{ $filterPathway === 'all'   ? 'selected' : '' }}>Pathway</option>
+                <option value="govt" {{ $filterPathway === 'govt'  ? 'selected' : '' }}>Government</option>
+                <option value="ngo"  {{ $filterPathway === 'ngo'   ? 'selected' : '' }}>NGO / CSO</option>
+                <option value="other"{{ $filterPathway === 'other' ? 'selected' : '' }}>Other</option>
+            </select>
+
+            {{-- Generate report button --}}
+            <button type="button" onclick="jhOpenReport()"
+                style="padding:7px 18px; background:var(--forest); color:var(--cream); border:none; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; transition:opacity .15s; white-space:nowrap;"
+                onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">
+                Generate report
+            </button>
+
+            @if($filterFrom || $filterTo || $filterHub !== 'all' || $filterChannel !== 'all' || $filterPathway !== 'all')
+            <a href="{{ route('referrals.index') }}"
+               style="font-size:11px; color:var(--ink-4); text-decoration:none; padding:7px 4px; white-space:nowrap;"
+               onmouseenter="this.style.color='var(--ink)'" onmouseleave="this.style.color='var(--ink-4)'">
+                Clear
+            </a>
+            @endif
+        </form>
+
+        {{-- All Sources Table --}}
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
             <div>
-                <div style="font-size:9.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-4); margin-bottom:4px;">Status</div>
-                <select id="refFilterStage" onchange="jhFilterRefTable()" class="inp" style="font-size:11px; padding:6px 10px; width:100%;">
-                    <option value="">All Statuses</option>
-                    <option value="In progress">In Progress</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Failed">Failed</option>
-                </select>
+                <div style="font-size:15px; font-weight:700; color:var(--ink);">All sources</div>
+                <div style="font-size:11px; color:var(--ink-4);">{{ $referralNetworkTotal }} referral network cases grouped by how clients heard about us.</div>
             </div>
-            <div>
-                <div style="font-size:9.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-4); margin-bottom:4px;">Hub</div>
-                <select id="refFilterHub" onchange="jhFilterRefTable()" class="inp" style="font-size:11px; padding:6px 10px; width:100%;">
-                    <option value="">All Hubs</option>
-                    @foreach($allRefRecords->pluck('hub_id')->unique()->sort() as $hub)
-                    <option value="{{ $hub }}">{{ $hub }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <div style="font-size:9.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-4); margin-bottom:4px;">Referral Date — From</div>
-                <input type="date" id="refFilterFrom" onchange="jhFilterRefTable()" class="inp" style="font-size:11px; padding:6px 10px; width:100%; box-sizing:border-box;">
-            </div>
-            <div>
-                <div style="font-size:9.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-4); margin-bottom:4px;">Referral Date — To</div>
-                <input type="date" id="refFilterTo" onchange="jhFilterRefTable()" class="inp" style="font-size:11px; padding:6px 10px; width:100%; box-sizing:border-box;">
-            </div>
-            <div>
-                <div style="font-size:9.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-4); margin-bottom:4px;">Search</div>
-                <input type="text" id="refFilterSearch" onkeyup="jhFilterRefTable()" placeholder="Search client or partner..."
-                       class="inp" style="font-size:11px; padding:6px 10px; width:100%; box-sizing:border-box;">
-            </div>
-            <div style="display:flex; align-items:flex-end;">
-                <button onclick="jhExportRefTable()" class="btn-ghost" style="font-size:11px; padding:6px 12px; display:inline-flex; align-items:center; gap:5px; white-space:nowrap;">
-                    <x-lucide-download style="width:12px; height:12px;" /> Export CSV
-                </button>
-            </div>
-            <div style="font-size:11px; color:var(--ink-4); white-space:nowrap; padding-bottom:8px;">
-                Showing <span id="refFilterCount">{{ $totalRef }}</span> of {{ $totalRef }}
-            </div>
+            <button onclick="jhExportSourcesTable()" class="btn-ghost" style="font-size:11px; padding:6px 14px; display:inline-flex; align-items:center; gap:5px;">
+                <x-lucide-download style="width:12px;height:12px;" /> Export CSV
+            </button>
         </div>
 
-        {{-- Data table --}}
-        <div class="card" style="padding:0; overflow:hidden;">
-            <table style="width:100%; border-collapse:collapse; font-size:12px;" id="refRecordsTable">
+        <div style="overflow-x:auto; border:1px solid var(--rule); border-radius:3px;">
+            <table style="width:100%; border-collapse:collapse; font-size:12px; min-width:620px;" id="allSourcesTable">
                 <thead>
-                    <tr style="border-bottom:2px solid var(--rule); background:var(--parchment);">
-                        <th style="padding:10px 14px; text-align:left; font-size:9px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">Ref ID</th>
-                        <th style="padding:10px 14px; text-align:left; font-size:9px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">Date</th>
-                        <th style="padding:10px 14px; text-align:left; font-size:9px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">Client</th>
-                        <th style="padding:10px 14px; text-align:left; font-size:9px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">Referred To</th>
-                        <th style="padding:10px 14px; text-align:center; font-size:9px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">Stage</th>
-                        <th style="padding:10px 14px; text-align:center; font-size:9px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">Days</th>
-                        <th style="padding:10px 14px; text-align:left; font-size:9px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">Hub</th>
-                        <th style="padding:10px 14px; text-align:center; font-size:9px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">Action</th>
+                    <tr style="background:var(--parchment); border-bottom:2px solid var(--rule);">
+                        <th style="padding:10px 14px; text-align:left; font-size:9px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--ink-3); min-width:180px;">Source</th>
+                        <th style="padding:10px 14px; text-align:left; font-size:9px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--ink-3);">Group</th>
+                        <th style="padding:10px 14px; text-align:right; font-size:9px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--ink-3);">Intakes</th>
+                        <th style="padding:10px 14px; text-align:right; font-size:9px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--ink-3);">Share</th>
+                        <th style="padding:10px 14px; text-align:right; font-size:9px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--ink-3);">Govt</th>
+                        <th style="padding:10px 14px; text-align:right; font-size:9px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--ink-3);">NGO / CSO</th>
+                        <th style="padding:10px 14px; text-align:right; font-size:9px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--ink-3);">Other</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($allRefRecords as $r)
-                    @php
-                        $stageColors = [
-                            'Sent'          => ['bg' => 'rgba(107,106,101,0.1)', 'text' => 'var(--ink-3)'],
-                            'Acknowledged'  => ['bg' => 'rgba(184,115,25,0.1)',  'text' => 'var(--ochre)'],
-                            'In progress'   => ['bg' => 'rgba(22,48,41,0.1)',    'text' => 'var(--forest)'],
-                            'Completed'     => ['bg' => 'rgba(47,122,77,0.1)',   'text' => '#2f7a4d'],
-                            'Failed'        => ['bg' => 'rgba(138,46,29,0.1)',   'text' => 'var(--burgundy)'],
-                        ];
-                        $sc = $stageColors[$r['stage']] ?? $stageColors['Sent'];
-                    @endphp
-                    <tr class="ref-record-row" data-stage="{{ $r['stage'] }}" data-hub="{{ $r['hub_id'] }}" data-date="{{ $r['date'] ? \Carbon\Carbon::parse($r['date'])->format('Y-m-d') : '' }}" data-search="{{ strtolower($r['client_name'] . ' ' . $r['partner_name'] . ' ' . $r['case_uid']) }}"
-                        style="border-bottom:1px solid var(--rule-2); transition:background 100ms;"
+                    @forelse($allSourcesTable as $r)
+                    <tr style="border-bottom:1px solid var(--rule-2); transition:background 80ms;"
                         onmouseenter="this.style.background='var(--parchment)'" onmouseleave="this.style.background=''">
+                        <td style="padding:10px 14px; font-size:12px; font-weight:500; color:var(--ink);">{{ $r['source'] }}</td>
                         <td style="padding:10px 14px;">
-                            <span class="mono" style="font-size:11px; font-weight:600; color:var(--forest);">{{ $r['ref'] }}</span>
-                        </td>
-                        <td style="padding:10px 14px;">
-                            <span style="font-size:11px; color:var(--ink-2);">{{ $r['date'] ? \Carbon\Carbon::parse($r['date'])->format('d M Y') : '—' }}</span>
-                        </td>
-                        <td style="padding:10px 14px;">
-                            <div style="font-size:12px; font-weight:600; color:var(--ink);">{{ $r['client_name'] }}</div>
-                            <div class="mono" style="font-size:10px; color:var(--ink-4);">{{ $r['case_uid'] }}</div>
-                        </td>
-                        <td style="padding:10px 14px;">
-                            <div style="font-size:11px; color:var(--ink-2); max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ $r['partner_name'] }}</div>
-                        </td>
-                        <td style="padding:10px 14px; text-align:center;">
-                            <span style="font-size:10px; padding:2px 8px; font-weight:600; background:{{ $sc['bg'] }}; color:{{ $sc['text'] }};">
-                                {{ $r['stage'] }}
+                            <span style="display:inline-flex; align-items:center; gap:5px; font-size:11px; color:var(--ink-3);">
+                                <span style="width:7px; height:7px; border-radius:50%; background:{{ $r['dot'] }}; flex-shrink:0; display:inline-block;"></span>
+                                {{ $r['group'] }}
                             </span>
                         </td>
-                        <td style="padding:10px 14px; text-align:center;">
-                            <span style="font-size:11px; font-weight:600; color:{{ $r['days_open'] > 30 ? 'var(--burgundy)' : ($r['days_open'] > 14 ? 'var(--ochre)' : 'var(--ink-3)') }};">
-                                {{ $r['days_open'] }}d
-                            </span>
-                        </td>
-                        <td style="padding:10px 14px;">
-                            <span class="mono" style="font-size:10px; color:var(--ink-3);">{{ $r['hub_id'] }}</span>
-                        </td>
-                        <td style="padding:10px 14px; text-align:center;">
-                            <a href="{{ route('cases.show', $r['case_id']) }}"
-                               style="color:var(--forest); text-decoration:none; font-size:11px; font-weight:600;">
-                                View
-                            </a>
-                        </td>
+                        <td style="padding:10px 14px; text-align:right; font-weight:700; color:var(--ink);">{{ number_format($r['total']) }}</td>
+                        <td style="padding:10px 14px; text-align:right; color:var(--ink-3); font-size:11px;">{{ $r['share'] }}%</td>
+                        <td style="padding:10px 14px; text-align:right; color:{{ $r['govt'] ? 'var(--ink-2)' : 'var(--ink-4)' }};">{{ $r['govt'] ?: '0' }}</td>
+                        <td style="padding:10px 14px; text-align:right; color:{{ $r['ngo'] ? 'var(--ink-2)' : 'var(--ink-4)' }};">{{ $r['ngo'] ?: '0' }}</td>
+                        <td style="padding:10px 14px; text-align:right; color:{{ $r['other_pw'] ? 'var(--ink-2)' : 'var(--ink-4)' }};">{{ $r['other_pw'] ?: '0' }}</td>
                     </tr>
                     @empty
-                    <tr>
-                        <td colspan="8" style="padding:40px; text-align:center; color:var(--ink-4); font-size:13px;">
-                            No referral records found.
-                        </td>
-                    </tr>
+                    <tr><td colspan="7" style="padding:40px; text-align:center; color:var(--ink-4);">No data found.</td></tr>
                     @endforelse
+                    {{-- Totals row --}}
+                    <tr style="background:var(--parchment); border-top:2px solid var(--rule); font-weight:700;">
+                        <td style="padding:10px 14px; font-size:12px; color:var(--ink);">Total</td>
+                        <td style="padding:10px 14px;"></td>
+                        <td style="padding:10px 14px; text-align:right; color:var(--ink);">{{ number_format($referralNetworkTotal) }}</td>
+                        <td style="padding:10px 14px; text-align:right; color:var(--ink-3);">100%</td>
+                        <td style="padding:10px 14px; text-align:right;">{{ $allSourcesTable->sum('govt') }}</td>
+                        <td style="padding:10px 14px; text-align:right;">{{ $allSourcesTable->sum('ngo') }}</td>
+                        <td style="padding:10px 14px; text-align:right;">{{ $allSourcesTable->sum('other_pw') }}</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -505,53 +513,31 @@ $sections = [
 </div>
 
 <script>
-function jhFilterRefTable() {
-    var stage  = document.getElementById('refFilterStage').value.toLowerCase();
-    var hub    = document.getElementById('refFilterHub').value;
-    var from   = document.getElementById('refFilterFrom').value;
-    var to     = document.getElementById('refFilterTo').value;
-    var search = document.getElementById('refFilterSearch').value.toLowerCase();
-    var rows   = document.querySelectorAll('.ref-record-row');
-    var count  = 0;
+function jhExportSourcesTable() {
+    var rows = document.querySelectorAll('#allSourcesTable tbody tr');
+    var csv  = 'Source,Group,Intakes,Share,Govt,NGO/CSO,Other\n';
     rows.forEach(function(row) {
-        var s = row.dataset.stage.toLowerCase();
-        var h = row.dataset.hub;
-        var d = row.dataset.date;
-        var t = row.dataset.search;
-        var dateOk = true;
-        if (from && d) dateOk = dateOk && (d >= from);
-        if (to   && d) dateOk = dateOk && (d <= to);
-        var show = (!stage || s === stage)
-                && (!hub || h === hub)
-                && dateOk
-                && (!search || t.indexOf(search) !== -1);
-        row.style.display = show ? '' : 'none';
-        if (show) count++;
-    });
-    document.getElementById('refFilterCount').textContent = count;
-}
-
-function jhExportRefTable() {
-    var rows = document.querySelectorAll('.ref-record-row');
-    var csv = 'Ref ID,Date,Client,Case UID,Referred To,Stage,Days Open,Hub\n';
-    rows.forEach(function(row) {
-        if (row.style.display === 'none') return;
         var cells = row.querySelectorAll('td');
-        var ref   = cells[0].textContent.trim();
-        var date  = cells[1].textContent.trim();
-        var name  = cells[2].querySelector('div').textContent.trim();
-        var uid   = cells[2].querySelectorAll('div')[1].textContent.trim();
-        var to    = cells[3].textContent.trim();
-        var stage = cells[4].textContent.trim();
-        var days  = cells[5].textContent.trim();
-        var hub   = cells[6].textContent.trim();
-        csv += '"' + ref + '","' + date + '","' + name + '","' + uid + '","' + to + '","' + stage + '","' + days + '","' + hub + '"\n';
+        if (cells.length < 7) return;
+        var rowData = [];
+        for (var i = 0; i < 7; i++) {
+            rowData.push('"' + cells[i].textContent.trim().replace(/"/g, '""') + '"');
+        }
+        csv += rowData.join(',') + '\n';
     });
     var blob = new Blob([csv], { type: 'text/csv' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'Referral_Records_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.download = 'All_Sources_' + new Date().toISOString().slice(0,10) + '.csv';
     a.click();
+}
+
+function jhOpenReport() {
+    var form = document.getElementById('refFilterForm');
+    var data = new FormData(form);
+    var params = new URLSearchParams();
+    data.forEach(function(v, k){ if(v) params.append(k, v); });
+    window.open('{{ route("referrals.report") }}?' + params.toString(), '_blank');
 }
 
 function jhToggleReferralPanel(id) {
