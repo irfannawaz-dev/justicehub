@@ -394,7 +394,8 @@ $sections = [
                 <span style="position:absolute; left:10px; font-size:10px; color:var(--ink-4); pointer-events:none; font-weight:500;">From</span>
                 <input type="date" name="from" value="{{ $filterFrom }}"
                     style="padding:7px 10px 7px 46px; border:1px solid var(--rule); border-radius:20px; font-size:12px; color:var(--ink); background:var(--parchment); font-family:inherit; cursor:pointer; outline:none; min-width:160px;"
-                    onfocus="this.style.borderColor='var(--forest)'" onblur="this.style.borderColor='var(--rule)'">
+                    onfocus="this.style.borderColor='var(--forest)'" onblur="this.style.borderColor='var(--rule)'; this.form.submit();"
+                    onchange="this.form.submit()">
             </div>
 
             {{-- To date --}}
@@ -402,11 +403,12 @@ $sections = [
                 <span style="position:absolute; left:10px; font-size:10px; color:var(--ink-4); pointer-events:none; font-weight:500;">To</span>
                 <input type="date" name="to" value="{{ $filterTo }}"
                     style="padding:7px 10px 7px 34px; border:1px solid var(--rule); border-radius:20px; font-size:12px; color:var(--ink); background:var(--parchment); font-family:inherit; cursor:pointer; outline:none; min-width:150px;"
-                    onfocus="this.style.borderColor='var(--forest)'" onblur="this.style.borderColor='var(--rule)'">
+                    onfocus="this.style.borderColor='var(--forest)'" onblur="this.style.borderColor='var(--rule)'; this.form.submit();"
+                    onchange="this.form.submit()">
             </div>
 
             {{-- Hub --}}
-            <select name="hub"
+            <select name="hub" onchange="this.form.submit()"
                 style="padding:7px 28px 7px 14px; border:1px solid var(--rule); border-radius:20px; font-size:12px; color:var(--ink); background:var(--parchment); font-family:inherit; cursor:pointer; outline:none; appearance:none; -webkit-appearance:none; background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E\"); background-repeat:no-repeat; background-position:right 10px center;"
                 onfocus="this.style.borderColor='var(--forest)'" onblur="this.style.borderColor='var(--rule)'">
                 <option value="all" {{ $filterHub === 'all' ? 'selected' : '' }}>Hub</option>
@@ -416,7 +418,7 @@ $sections = [
             </select>
 
             {{-- Channel (referral source group) --}}
-            <select name="channel"
+            <select name="channel" onchange="this.form.submit()"
                 style="padding:7px 28px 7px 14px; border:1px solid var(--rule); border-radius:20px; font-size:12px; color:var(--ink); background:var(--parchment); font-family:inherit; cursor:pointer; outline:none; appearance:none; -webkit-appearance:none; background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E\"); background-repeat:no-repeat; background-position:right 10px center;"
                 onfocus="this.style.borderColor='var(--forest)'" onblur="this.style.borderColor='var(--rule)'">
                 <option value="all" {{ $filterChannel === 'all' ? 'selected' : '' }}>Channel</option>
@@ -426,7 +428,7 @@ $sections = [
             </select>
 
             {{-- Pathway --}}
-            <select name="pathway"
+            <select name="pathway" onchange="this.form.submit()"
                 style="padding:7px 28px 7px 14px; border:1px solid var(--rule); border-radius:20px; font-size:12px; color:var(--ink); background:var(--parchment); font-family:inherit; cursor:pointer; outline:none; appearance:none; -webkit-appearance:none; background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E\"); background-repeat:no-repeat; background-position:right 10px center;"
                 onfocus="this.style.borderColor='var(--forest)'" onblur="this.style.borderColor='var(--rule)'">
                 <option value="all"  {{ $filterPathway === 'all'   ? 'selected' : '' }}>Pathway</option>
