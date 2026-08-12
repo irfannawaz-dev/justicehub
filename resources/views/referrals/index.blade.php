@@ -475,6 +475,7 @@ $sections = [
                         <th style="padding:10px 14px; text-align:right; font-size:9px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--ink-3);">Govt</th>
                         <th style="padding:10px 14px; text-align:right; font-size:9px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--ink-3);">NGO / CSO</th>
                         <th style="padding:10px 14px; text-align:right; font-size:9px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--ink-3);">Other</th>
+                        <th style="padding:10px 14px; width:50px;"></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -493,9 +494,16 @@ $sections = [
                         <td style="padding:10px 14px; text-align:right; color:{{ $r['govt'] ? 'var(--ink-2)' : 'var(--ink-4)' }};">{{ $r['govt'] ?: '0' }}</td>
                         <td style="padding:10px 14px; text-align:right; color:{{ $r['ngo'] ? 'var(--ink-2)' : 'var(--ink-4)' }};">{{ $r['ngo'] ?: '0' }}</td>
                         <td style="padding:10px 14px; text-align:right; color:{{ $r['other_pw'] ? 'var(--ink-2)' : 'var(--ink-4)' }};">{{ $r['other_pw'] ?: '0' }}</td>
+                        <td style="padding:10px 8px; text-align:center;">
+                            <button onclick="jhExportRow('all-sources','{{ addslashes($r['source']) }}','{{ $r['group'] }}','{{ $r['total'] }}','{{ $r['share'] }}','{{ $r['govt'] }}','{{ $r['ngo'] }}','{{ $r['other_pw'] }}')"
+                                title="Export row" style="background:none; border:1px solid var(--rule); padding:4px 7px; cursor:pointer; color:var(--ink-3); border-radius:2px; line-height:1; display:inline-flex; align-items:center;"
+                                onmouseenter="this.style.borderColor='var(--ink-2)';this.style.color='var(--ink)'" onmouseleave="this.style.borderColor='var(--rule)';this.style.color='var(--ink-3)'">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            </button>
+                        </td>
                     </tr>
                     @empty
-                    <tr><td colspan="7" style="padding:40px; text-align:center; color:var(--ink-4);">No data found.</td></tr>
+                    <tr><td colspan="8" style="padding:40px; text-align:center; color:var(--ink-4);">No data found.</td></tr>
                     @endforelse
                     {{-- Totals row --}}
                     <tr style="background:var(--parchment); border-top:2px solid var(--rule); font-weight:700;">
@@ -506,10 +514,77 @@ $sections = [
                         <td style="padding:10px 14px; text-align:right;">{{ $allSourcesTable->sum('govt') }}</td>
                         <td style="padding:10px 14px; text-align:right;">{{ $allSourcesTable->sum('ngo') }}</td>
                         <td style="padding:10px 14px; text-align:right;">{{ $allSourcesTable->sum('other_pw') }}</td>
+                        <td></td>
                     </tr>
                 </tbody>
             </table>
         </div>
+
+        {{-- Named Partners Table --}}
+        <div style="margin-top:32px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                <div>
+                    <div style="font-size:15px; font-weight:700; color:var(--ink);">Named partners</div>
+                    <div style="font-size:11px; color:var(--ink-4);">{{ $outgoingTotal }} outgoing referrals grouped by partner organisation.</div>
+                </div>
+            </div>
+
+            <div style="overflow-x:auto; border:1px solid var(--rule); border-radius:3px;">
+                <table style="width:100%; border-collapse:collapse; font-size:12px; min-width:620px;" id="namedPartnersTable">
+                    <thead>
+                        <tr style="background:var(--parchment); border-bottom:2px solid var(--rule);">
+                            <th style="padding:10px 14px; text-align:left; font-size:9px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--ink-3); min-width:200px;">Partner</th>
+                            <th style="padding:10px 14px; text-align:left; font-size:9px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--ink-3);">Category</th>
+                            <th style="padding:10px 14px; text-align:right; font-size:9px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--ink-3);">Referrals</th>
+                            <th style="padding:10px 14px; text-align:right; font-size:9px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--ink-3);">Share</th>
+                            <th style="padding:10px 14px; text-align:right; font-size:9px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--ink-3);">Govt</th>
+                            <th style="padding:10px 14px; text-align:right; font-size:9px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--ink-3);">NGO / CSO</th>
+                            <th style="padding:10px 14px; text-align:right; font-size:9px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--ink-3);">Other</th>
+                            <th style="padding:10px 14px; width:50px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($namedPartnersTable as $r)
+                        <tr style="border-bottom:1px solid var(--rule-2); transition:background 80ms;"
+                            onmouseenter="this.style.background='var(--parchment)'" onmouseleave="this.style.background=''">
+                            <td style="padding:10px 14px; font-size:12px; font-weight:500; color:var(--ink);">
+                                <span style="display:inline-flex; align-items:center; gap:6px;">
+                                    <span style="width:7px; height:7px; border-radius:50%; background:#2f5c3a; flex-shrink:0; display:inline-block;"></span>
+                                    {{ $r['source'] }}
+                                </span>
+                            </td>
+                            <td style="padding:10px 14px; font-size:11px; color:var(--ink-3);">{{ $r['group'] }}</td>
+                            <td style="padding:10px 14px; text-align:right; font-weight:700; color:var(--ink);">{{ number_format($r['total']) }}</td>
+                            <td style="padding:10px 14px; text-align:right; color:var(--ink-3); font-size:11px;">{{ $r['share'] }}%</td>
+                            <td style="padding:10px 14px; text-align:right; color:{{ $r['govt'] ? 'var(--ink-2)' : 'var(--ink-4)' }};">{{ $r['govt'] ?: '0' }}</td>
+                            <td style="padding:10px 14px; text-align:right; color:{{ $r['ngo'] ? 'var(--ink-2)' : 'var(--ink-4)' }};">{{ $r['ngo'] ?: '0' }}</td>
+                            <td style="padding:10px 14px; text-align:right; color:{{ $r['other_pw'] ? 'var(--ink-2)' : 'var(--ink-4)' }};">{{ $r['other_pw'] ?: '0' }}</td>
+                            <td style="padding:10px 8px; text-align:center;">
+                                <button onclick="jhExportRow('named-partners','{{ addslashes($r['source']) }}','{{ addslashes($r['group']) }}','{{ $r['total'] }}','{{ $r['share'] }}','{{ $r['govt'] }}','{{ $r['ngo'] }}','{{ $r['other_pw'] }}')"
+                                    title="Export row" style="background:none; border:1px solid var(--rule); padding:4px 7px; cursor:pointer; color:var(--ink-3); border-radius:2px; line-height:1; display:inline-flex; align-items:center;"
+                                    onmouseenter="this.style.borderColor='var(--ink-2)';this.style.color='var(--ink)'" onmouseleave="this.style.borderColor='var(--rule)';this.style.color='var(--ink-3)'">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                </button>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr><td colspan="8" style="padding:40px; text-align:center; color:var(--ink-4);">No partner referrals found.</td></tr>
+                        @endforelse
+                        <tr style="background:var(--parchment); border-top:2px solid var(--rule); font-weight:700;">
+                            <td style="padding:10px 14px; font-size:12px; color:var(--ink);">Total</td>
+                            <td style="padding:10px 14px;"></td>
+                            <td style="padding:10px 14px; text-align:right; color:var(--ink);">{{ number_format($outgoingTotal) }}</td>
+                            <td style="padding:10px 14px; text-align:right; color:var(--ink-3);">100%</td>
+                            <td style="padding:10px 14px; text-align:right;">{{ $namedPartnersTable->sum('govt') }}</td>
+                            <td style="padding:10px 14px; text-align:right;">{{ $namedPartnersTable->sum('ngo') }}</td>
+                            <td style="padding:10px 14px; text-align:right;">{{ $namedPartnersTable->sum('other_pw') }}</td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
 
 </div>
@@ -531,6 +606,21 @@ function jhExportSourcesTable() {
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'All_Sources_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+}
+
+function jhExportRow(tableType, source, group, total, share, govt, ngo, other) {
+    var headers = tableType === 'named-partners'
+        ? 'Partner,Category,Referrals,Share,Govt,NGO/CSO,Other\n'
+        : 'Source,Group,Intakes,Share,Govt,NGO/CSO,Other\n';
+    var csv = headers + [source, group, total, share+'%', govt, ngo, other]
+        .map(function(v){ return '"' + String(v).replace(/"/g,'""') + '"'; })
+        .join(',') + '\n';
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    var safeName = source.replace(/[^a-z0-9]/gi, '_').substring(0, 40);
+    a.download = safeName + '_' + new Date().toISOString().slice(0,10) + '.csv';
     a.click();
 }
 
