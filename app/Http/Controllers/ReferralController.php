@@ -376,6 +376,23 @@ class ReferralController extends Controller
             ->sortByDesc('total')
             ->values();
 
+        // Named partners table (same structure as allSourcesTable)
+        $outgoingTotal = $referralTracker->count() ?: 1;
+        $namedPartnersTable = $referralTracker
+            ->groupBy('partner_name')
+            ->map(fn($rows, $name) => [
+                'source'   => $name,
+                'group'    => $rows->first()['partner_cat'] ?? 'Partner',
+                'dot'      => '#2f5c3a',
+                'total'    => $rows->count(),
+                'share'    => round(($rows->count() / $outgoingTotal) * 100, 1),
+                'govt'     => $rows->where('partner_cat', 'Government Department / Public Institution')->count(),
+                'ngo'      => $rows->where('partner_cat', 'Civil Society / NGO / CSO / NPO')->count(),
+                'other_pw' => $rows->whereNotIn('partner_cat', ['Government Department / Public Institution', 'Civil Society / NGO / CSO / NPO'])->count(),
+            ])
+            ->sortByDesc('total')
+            ->values();
+
         return view('referrals.index', compact(
             'partners', 'filteredPartners',
             'totalActive', 'totalCompleted', 'totalFailed',
@@ -389,6 +406,7 @@ class ReferralController extends Controller
             'pathwaySummary', 'govtBreakdown', 'ngoBreakdown', 'otherBreakdown',
             'govtCases', 'ngoCases', 'otherCases', 'referralKpi',
             'pathwayRanking', 'namedPartners', 'allSourcesTable', 'referralNetworkTotal',
+            'namedPartnersTable', 'outgoingTotal',
             'hubs', 'channelGroups',
             'filterFrom', 'filterTo', 'filterHub', 'filterChannel', 'filterPathway',
         ));

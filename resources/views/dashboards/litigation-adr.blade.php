@@ -268,6 +268,8 @@
                         <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">{{ __('dashboard.staff') }}</th>
                         <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">{{ __('dashboard.role') }}</th>
                         <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">{{ __('dashboard.hub') }}</th>
+                        <th style="text-align: right; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Court Rep.</th>
+                        <th style="text-align: right; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">Mediation</th>
                         <th style="text-align: right; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">{{ __('dashboard.active') }}</th>
                         <th style="text-align: right; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">{{ __('dashboard.capacity') }}</th>
                         <th style="text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);">{{ __('dashboard.utilisation') }}</th>
@@ -288,6 +290,12 @@
                             <x-pill>{{ $s['designation'] ?: $s['role'] }}</x-pill>
                         </td>
                         <td style="padding: 12px 14px; font-size: 12px; color: var(--ink-3);">{{ $s['hub'] }}</td>
+                        <td style="padding: 12px 14px; text-align: right;" class="mono">
+                            <span style="color: {{ $s['court'] ? 'var(--burgundy)' : 'var(--ink-4)' }}; font-weight: {{ $s['court'] ? '600' : '400' }};">{{ $s['court'] ?: '—' }}</span>
+                        </td>
+                        <td style="padding: 12px 14px; text-align: right;" class="mono">
+                            <span style="color: {{ $s['mediation'] ? 'var(--moss)' : 'var(--ink-4)' }}; font-weight: {{ $s['mediation'] ? '600' : '400' }};">{{ $s['mediation'] ?: '—' }}</span>
+                        </td>
                         <td style="padding: 12px 14px; text-align: right;" class="mono">{{ $s['active'] }}</td>
                         <td style="padding: 12px 14px; text-align: right; color: var(--ink-3);" class="mono">{{ $s['capacity'] }}</td>
                         <td style="padding: 12px 14px; width: 180px;">
@@ -300,7 +308,7 @@
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="6"><x-empty-state icon="user-check" :message="__('dashboard.no_staff_records')" /></td></tr>
+                    <tr><td colspan="8"><x-empty-state icon="user-check" :message="__('dashboard.no_staff_records')" /></td></tr>
                     @endforelse
                 </tbody>
             </table>

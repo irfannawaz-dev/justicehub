@@ -163,26 +163,46 @@ class DashboardController extends Controller
             $c->intake_date && ($c->last_update ?? $c->created_at) ? $c->intake_date->diffInDays($c->last_update ?? $c->created_at) : 0
         )) : 0;
 
-        // Staff workload — scoped by role
-        $staffQ = \App\Models\Staff::with(['hub', 'user'])->where('status', 'active');
-        if ($user->isLawyer()) {
-            // Lawyer sees only themselves
-            $staffQ->where('name', $user->name);
-        } elseif (! $user->canSeeAllHubs()) {
-            // Hub-scoped users see only their hub's staff
-            $staffQ->where('hub_id', $user->hub_id);
-        }
-        $staff = $staffQ->get()->map(function($s) {
-            $load = \App\Models\CaseRecord::where('assigned_to', $s->name)->where('status', 'Active')->count();
-            $capacity = $s->role === 'Lawyer' ? 25 : 35;
-            $utilization = $capacity > 0 ? round(($load / $capacity) * 100) : 0;
+        // Staff workload — anyone with active Court Representation or Mediation cases
+        $courtPathways    = ['Court Representation', 'Representation in Court'];
+        $mediationPathway = 'Mediation';
+
+        // Get names that actually appear on these cases
+        $activeNames = \App\Models\CaseRecord::where('status', 'Active')
+            ->where(function($q) use ($courtPathways, $mediationPathway) {
+                $q->whereIn('assigned_pathway', $courtPathways)
+                  ->orWhere('assigned_pathway', $mediationPathway);
+            })
+            ->when(! $user->canSeeAllHubs(), fn($q) => $q->where('hub_id', $user->hub_id))
+            ->when($user->isLawyer(), fn($q) => $q->where('assigned_to', $user->name))
+            ->whereNotNull('assigned_to')
+            ->pluck('assigned_to')
+            ->unique();
+
+        $staff = $activeNames->map(function($name) use ($courtPathways, $mediationPathway) {
+            $s    = \App\Models\Staff::where('name', $name)->first();
+            $base = \App\Models\CaseRecord::where('assigned_to', $name)->where('status', 'Active');
+            $court     = (clone $base)->whereIn('assigned_pathway', $courtPathways)->count();
+            $mediation = (clone $base)->where('assigned_pathway', $mediationPathway)->count();
+            $load      = $court + $mediation;
+
+            $initials = collect(explode(' ', $name))->map(fn($w) => strtoupper($w[0] ?? ''))->take(2)->join('');
+            $role     = $s?->role ?? 'Staff';
+            $capacity = str_contains(strtolower($role), 'lawyer') ? 25 : 35;
+
             return [
-                'name' => $s->name, 'initials' => $s->initials, 'role' => $s->role,
-                'designation' => $s->user?->designation ?: $s->role,
-                'hub' => $s->hub?->name ?? $s->hub_id, 'active' => $load,
-                'capacity' => $capacity, 'utilization' => min($utilization, 100),
+                'name'        => $name,
+                'initials'    => $s?->initials ?? $initials,
+                'role'        => $role,
+                'designation' => $s?->user?->designation ?: $role,
+                'hub'         => $s?->hub?->name ?? ($s?->hub_id ?? '—'),
+                'court'       => $court,
+                'mediation'   => $mediation,
+                'active'      => $load,
+                'capacity'    => $capacity,
+                'utilization' => min($capacity > 0 ? round(($load / $capacity) * 100) : 0, 100),
             ];
-        });
+        })->sortByDesc('active')->values();
 
         return view('dashboards.litigation-adr', compact(
             'adrTotal', 'adrSettled', 'adrActive', 'adrGbv', 'adrRate', 'adrAvgDays',
