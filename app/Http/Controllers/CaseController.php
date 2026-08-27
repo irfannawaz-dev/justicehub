@@ -18,8 +18,7 @@ class CaseController extends Controller
 
         // Role-based case filtering
         if ($user->isLawyer()) {
-            $base->where('assigned_to', $user->name)
-                 ->whereNotIn('assigned_pathway', [
+            $base->whereNotIn('assigned_pathway', [
                      'Mediation',
                      'ADR / Dispute Resolution Support',
                  ]);
@@ -77,7 +76,7 @@ class CaseController extends Controller
         // ── Unfiltered base (only hub scope) for pathway + disposition counts ──
         $hubBase = CaseRecord::query()->forHub($hubId);
         if ($user->isLawyer()) {
-            $hubBase->where('assigned_to', $user->name);
+            $hubBase->whereNotIn('assigned_pathway', ['Mediation', 'ADR / Dispute Resolution Support']);
         }
         if ($user->isLitigationManager()) {
             $hubBase->whereIn('assigned_pathway', ['Representation in Court', 'Court Representation']);
