@@ -14,6 +14,10 @@ class ReferralController extends Controller
     {
         $partners = Partner::with('hubs')->orderBy('name')->get();
 
+        // Active hub scope
+        $hubId = $request->input('_active_hub');
+        $hubScope = fn($q) => $q->when($hubId && $hubId !== 'all', fn($q) => $q->where('hub_id', $hubId));
+
         // KPI stats now come from CaseReferral — calculated after tracker is built below
         $totalActive = $totalCompleted = $totalFailed = $closureRate = $avgResponseHrs = 0;
 
@@ -40,7 +44,7 @@ class ReferralController extends Controller
         $externalPathways = ['Government Department / Public Institution', 'Civil Society / NGO / CSO / NPO', 'Other'];
 
         // Load all CaseReferrals grouped by referred_to — external pathways only
-        $allReferrals = \App\Models\CaseReferral::whereHas('caseRecord', fn($q) => $q->whereIn('assigned_pathway', $externalPathways))->get();
+        $allReferrals = \App\Models\CaseReferral::whereHas('caseRecord', fn($q) => $q->whereIn('assigned_pathway', $externalPathways)->tap($hubScope))->get();
 
         // Per-partner stats keyed by partner name (referred_to field)
         $partnerStats = $allReferrals->groupBy('referred_to')->map(function ($refs) {
@@ -95,11 +99,13 @@ class ReferralController extends Controller
         // Active cases for referral modal
         $activeCases = CaseRecord::query()
             ->whereNotIn('status', ['Closed', 'Settlement', 'Rejected'])
+            ->tap($hubScope)
             ->orderBy('name')
             ->get(['id', 'case_uid', 'name', 'primary_issue', 'hub_id']);
 
         // Referral tracker — built from CaseRecord (external pathways only)
         $trackerCases = CaseRecord::whereIn('assigned_pathway', $externalPathways)
+            ->tap($hubScope)
             ->orderByDesc('intake_date')
             ->get(['id', 'case_uid', 'name', 'hub_id', 'assigned_pathway', 'pathway_govt_dept',
                    'pathway_ngo_name', 'pathway_other_details', 'status', 'intake_date',
@@ -158,6 +164,7 @@ class ReferralController extends Controller
 
         // Incoming referrals — cases registered with referral_type = 'Incoming'
         $incomingCases = CaseRecord::where('referral_type', 'Incoming')
+            ->tap($hubScope)
             ->orderByDesc('intake_date')
             ->get(['id', 'case_uid', 'name', 'primary_issue', 'hub_id', 'intake_date',
                    'referral_source', 'referral_contact_person', 'status']);
@@ -170,7 +177,7 @@ class ReferralController extends Controller
 
         // Referral Network KPI summary (Govt + NGO + Other pathways only)
         $referralPathways = $externalPathways;
-        $referralKpi = \App\Models\CaseRecord::whereIn('assigned_pathway', $referralPathways)
+        $referralKpi = \App\Models\CaseRecord::whereIn('assigned_pathway', $referralPathways)->tap($hubScope)
             ->selectRaw('
                 COUNT(*) as total,
                 SUM(CASE WHEN status IN ("Closed","Settlement") THEN 1 ELSE 0 END) as resolved,
@@ -194,7 +201,7 @@ class ReferralController extends Controller
             'Civil Society / NGO / CSO / NPO'             => 'users',
             'Other'                                       => 'circle-dot',
         ];
-        $rawCounts = CaseRecord::whereNotNull('assigned_pathway')
+        $rawCounts = CaseRecord::whereNotNull('assigned_pathway')->tap($hubScope)
             ->selectRaw('assigned_pathway, COUNT(*) as total,
                 SUM(CASE WHEN referral_type = "Incoming" THEN 1 ELSE 0 END) as incoming,
                 SUM(CASE WHEN referral_type = "Outgoing" THEN 1 ELSE 0 END) as outgoing')
@@ -212,6 +219,7 @@ class ReferralController extends Controller
 
         // Specific breakdown per pathway
         $govtBreakdown = CaseRecord::where('assigned_pathway', 'Government Department / Public Institution')
+            ->tap($hubScope)
             ->whereNotNull('pathway_govt_dept')
             ->selectRaw('pathway_govt_dept as name,
                 COUNT(*) as total,
@@ -222,6 +230,7 @@ class ReferralController extends Controller
             ->get();
 
         $ngoBreakdown = CaseRecord::where('assigned_pathway', 'Civil Society / NGO / CSO / NPO')
+            ->tap($hubScope)
             ->whereNotNull('pathway_ngo_name')
             ->selectRaw('pathway_ngo_name as name,
                 COUNT(*) as total,
@@ -231,7 +240,7 @@ class ReferralController extends Controller
             ->orderByDesc('total')
             ->get();
 
-        $otherBreakdown = CaseRecord::where('assigned_pathway', 'Other')
+        $otherBreakdown = CaseRecord::where('assigned_pathway', 'Other')->tap($hubScope)
             ->selectRaw('COUNT(*) as total,
                 SUM(CASE WHEN referral_type = "Incoming" THEN 1 ELSE 0 END) as incoming,
                 SUM(CASE WHEN referral_type = "Outgoing" THEN 1 ELSE 0 END) as outgoing')
@@ -239,6 +248,7 @@ class ReferralController extends Controller
 
         // Cases grouped for expandable lists
         $govtCases = CaseRecord::where('assigned_pathway', 'Government Department / Public Institution')
+            ->tap($hubScope)
             ->whereNotNull('pathway_govt_dept')
             ->orderBy('intake_date', 'desc')
             ->get(['id', 'case_uid', 'name', 'primary_issue', 'urgency', 'status',
@@ -246,6 +256,7 @@ class ReferralController extends Controller
             ->groupBy('pathway_govt_dept');
 
         $ngoCases = CaseRecord::where('assigned_pathway', 'Civil Society / NGO / CSO / NPO')
+            ->tap($hubScope)
             ->whereNotNull('pathway_ngo_name')
             ->orderBy('intake_date', 'desc')
             ->get(['id', 'case_uid', 'name', 'primary_issue', 'urgency', 'status',
@@ -253,6 +264,7 @@ class ReferralController extends Controller
             ->groupBy('pathway_ngo_name');
 
         $otherCases = CaseRecord::where('assigned_pathway', 'Other')
+            ->tap($hubScope)
             ->orderBy('intake_date', 'desc')
             ->get(['id', 'case_uid', 'name', 'primary_issue', 'urgency', 'status',
                    'referral_type', 'referral_contact_person', 'pathway_other_details', 'hub_id']);
