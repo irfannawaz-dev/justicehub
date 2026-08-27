@@ -34,9 +34,11 @@ class AppServiceProvider extends ServiceProvider
                 abort(403, 'You do not have access to this case.');
             }
 
-            // Lawyer: can only access cases assigned to them
-            if ($user->role === UserRole::Lawyer && $case->assigned_to !== $user->name) {
-                abort(403, 'This case is not assigned to you.');
+            // Lawyer: cannot access mediation or ADR cases
+            if ($user->role === UserRole::Lawyer && in_array($case->assigned_pathway, [
+                'Mediation', 'ADR / Dispute Resolution Support',
+            ])) {
+                abort(403, 'Lawyers are not permitted to view mediation or ADR cases.');
             }
 
             // Court Clerk: can only access litigation cases
