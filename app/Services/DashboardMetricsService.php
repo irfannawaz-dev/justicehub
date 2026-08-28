@@ -254,11 +254,9 @@ class DashboardMetricsService
     public function dailyActivityTrend(int $days = 30): array
     {
         $startDate = now()->subDays($days)->startOfDay();
-        $caseIds = $this->caseQuery()->pluck('id');
-        $query = ServiceEncounter::where('date', '>=', $startDate)
-            ->whereIn('case_id', $caseIds);
-        $counts = $query
-            ->select(DB::raw('DATE(date) as d'), DB::raw('COUNT(*) as cnt'))
+        $counts = $this->caseQuery()
+            ->where('intake_date', '>=', $startDate->toDateString())
+            ->select(DB::raw('DATE(intake_date) as d'), DB::raw('COUNT(*) as cnt'))
             ->groupBy('d')
             ->orderBy('d')
             ->pluck('cnt', 'd')
