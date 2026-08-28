@@ -35,4 +35,11 @@ for sheet_name in SHEETS:
             mapping[case_uid] = assigned_to
 
 wb.close()
-print(json.dumps(mapping, ensure_ascii=False))
+
+# Write directly to file if output path given, otherwise stdout
+if len(sys.argv) > 2:
+    with open(sys.argv[2], 'w', encoding='utf-8') as f:
+        json.dump(mapping, f, ensure_ascii=False)
+    print(f"Written {len(mapping)} records to {sys.argv[2]}", file=sys.stderr)
+else:
+    print(json.dumps(mapping, ensure_ascii=False))
