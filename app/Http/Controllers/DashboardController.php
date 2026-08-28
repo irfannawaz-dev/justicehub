@@ -124,9 +124,10 @@ class DashboardController extends Controller
         };
 
         // ADR metrics
-        $adrCases = (clone $caseQ())->whereHas('serviceEncounters', fn($q) => $q) // all cases
+        $adrCases = (clone $caseQ())
             ->where(function($q) {
                 $q->where('disposition', 'adr')
+                  ->orWhereIn('assigned_pathway', ['Mediation', 'ADR / Dispute Resolution Support'])
                   ->orWhereExists(function($sq) {
                       $sq->select(DB::raw(1))->from('case_pathway')
                          ->whereColumn('case_pathway.case_id', 'cases.id')
@@ -146,6 +147,7 @@ class DashboardController extends Controller
         // Litigation metrics
         $litCases = (clone $caseQ())->where(function($q) {
             $q->where('disposition', 'litigation')
+              ->orWhereIn('assigned_pathway', ['Court Representation', 'Representation in Court'])
               ->orWhereExists(function($sq) {
                   $sq->select(DB::raw(1))->from('case_pathway')
                      ->whereColumn('case_pathway.case_id', 'cases.id')
