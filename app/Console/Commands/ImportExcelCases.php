@@ -45,11 +45,29 @@ class ImportExcelCases extends Command
             $this->info('  Done.');
         }
 
+        // Map Excel "source" values → system referral_source values
+        $sourceMap = [
+            'Referred by Paralegals'            => 'Paralegal',
+            'Community Outreach'                => 'Community Outreach / Awareness Session',
+            'Word of Mouth'                     => 'Word of Mouth / Friend / Family',
+            'Referred by Govt Dept.'            => 'Government Department',
+            'District Peace Committee'          => 'District / Range Peace Committee',
+            'Web/ Social Media'                 => 'Website / Social Media',
+            'Referred by Civil Society/NGO/NPO' => 'NGO / CSO / NPO',
+            'SMS'                               => 'SMS / WhatsApp Message',
+            'Radio/ TV/ Newspaper'              => 'Radio / TV / Newspaper',
+        ];
+
         // Group by hub for display
         $perHub = [];
         $now    = now()->toDateTimeString();
 
-        $records = array_map(function ($r) use ($now) {
+        $records = array_map(function ($r) use ($now, $sourceMap) {
+            // Rename 'source' → 'referral_source' with mapped values
+            if (array_key_exists('source', $r)) {
+                $r['referral_source'] = $sourceMap[$r['source']] ?? $r['source'];
+                unset($r['source']);
+            }
             $r['created_at'] = $now;
             $r['updated_at'] = $now;
             return $r;
