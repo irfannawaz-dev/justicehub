@@ -123,11 +123,11 @@ class DashboardController extends Controller
             return $q;
         };
 
-        // ADR metrics
+        // ADR metrics (Mediation pathway only — ADR Complaints tracked separately)
         $adrCases = (clone $caseQ())
             ->where(function($q) {
                 $q->where('disposition', 'adr')
-                  ->orWhereIn('assigned_pathway', ['Mediation', 'ADR / Dispute Resolution Support'])
+                  ->orWhere('assigned_pathway', 'Mediation')
                   ->orWhereExists(function($sq) {
                       $sq->select(DB::raw(1))->from('case_pathway')
                          ->whereColumn('case_pathway.case_id', 'cases.id')
