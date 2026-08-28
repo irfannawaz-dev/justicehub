@@ -315,9 +315,7 @@ class ServiceController extends Controller
             return compact('pipeline', 'total', 'closedInFavour', 'closedAgainst', 'totalClosed', 'successRate', 'filed', 'notFiled', 'intake');
         };
 
-        $data = DashboardMetricsService::cacheEnabled()
-            ? Cache::remember($scKey, DashboardMetricsService::cacheTtl(), $computeComplaints)
-            : $computeComplaints();
+        $data = $computeComplaints();
 
         return view('services.adr-complaints', $data);
     }
