@@ -4,147 +4,134 @@ namespace App\Services;
 
 use App\Models\CaseRecord;
 use App\Models\ServiceEncounter;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class LasCmsSyncService
 {
-    protected \Illuminate\Database\Connection $db;
+    protected string $baseUrl;
+    protected string $apiKey;
 
     public function __construct()
     {
-        $this->db = DB::connection('las_cms');
+        $this->baseUrl = rtrim(config('services.las_cms.url'), '/');
+        $this->apiKey  = config('services.las_cms.key');
+    }
+
+    protected function http(): \Illuminate\Http\Client\PendingRequest
+    {
+        return Http::withHeaders([
+            'X-JusticeHub-Key' => $this->apiKey,
+            'Accept'           => 'application/json',
+            'Content-Type'     => 'application/json',
+        ])->timeout(15);
     }
 
     /**
-     * Push a JusticeHub case to LAS CMS programs table.
+     * Push a JusticeHub case to LAS CMS via API.
      * Returns the external programs.id on success.
      */
     public function pushCase(CaseRecord $case): ?int
     {
-        // Don't push if already linked
         if ($case->external_case_id) {
             return $case->external_case_id;
         }
 
-        // Build UniqueNumber: YYYY-JusticeHub-{id}-{district}
         $uniqueNumber = now()->year . '-JusticeHub-' . $case->id . '-' . ($case->district ?: 'Unknown');
 
+        $payload = [
+            'programName'         => 'JusticeHub',
+            'caseReferred'        => 'Justicehub',
+            'districtName'        => $case->district ?: 'Unknown',
+            'interviewDate'       => $case->intake_date?->format('Y-m-d'),
+            'interviewerName'     => $case->staff_receiving ?: $case->assigned_to ?: 'JusticeHub',
+            'clientName'          => $case->name,
+            'fatherHusbandName'   => $case->father_husband_name ?: '-',
+            'contactNumber'       => $case->primary_contact ?: '-',
+            'cnic'                => $case->cnic,
+            'gender'              => $case->gender ?: 'Not specified',
+            'age'                 => $case->age,
+            'religion'            => $case->religion ?: 'Not specified',
+            'relationShip'        => 'Self',
+            'caseFacts'           => $case->issue_description,
+            'caseSubmittedFAppro' => 'Yes',
+            'caseApprovalStatus'  => 'Pending',
+            'lawyer1'             => $case->assigned_to,
+            'natureOfCase'        => $case->primary_issue,
+            'currentCaseStatus'   => $this->mapStatus($case->status),
+            'UniqueNumber'        => $uniqueNumber,
+            'uniqueYear'          => (string) now()->year,
+            'username'            => 'JusticeHub-API',
+        ];
+
         try {
-            $sharedData = [
-                'programName'           => 'JusticeHub',
-                'caseReferred'          => 'Justicehub',
-                'districtName'          => $case->district ?: 'Unknown',
-                'interviewDate'         => $case->intake_date?->format('Y-m-d'),
-                'interviewerName'       => $case->staff_receiving ?: $case->assigned_to ?: 'JusticeHub',
-                'clientName'            => $case->name,
-                'fatherHusbandName'     => $case->father_husband_name ?: '-',
-                'contactNumber'         => $case->primary_contact ?: '-',
-                'cnic'                  => $case->cnic,
-                'gender'                => $case->gender ?: 'Not specified',
-                'age'                   => $case->age,
-                'religion'              => $case->religion ?: 'Not specified',
-                'relationShip'          => 'Self',
-                'caseFacts'             => $case->issue_description,
-                'caseSubmittedFAppro'   => 'Yes',
-                'caseApprovalStatus'    => 'Pending',
-                'lawyer1'               => $case->assigned_to,
-                'natureOfCase'          => $case->primary_issue,
-                'currentCaseStatus'     => $this->mapStatus($case->status),
-                'UniqueNumber'          => $uniqueNumber,
-                'uniqueYear'            => (string) now()->year,
-                'username'              => 'JusticeHub-API',
-                'created_at'            => now(),
-                'updated_at'            => now(),
-            ];
+            $response = $this->http()->post("{$this->baseUrl}/cases", $payload);
 
-            $externalId = $this->db->table('programs')->insertGetId($sharedData);
+            if ($response->successful()) {
+                $externalId = $response->json('id') ?? $response->json('data.id');
 
-            // Insert into programs_detail only if no create record exists yet
-            $alreadyHasCreate = $this->db->table('programs_detail')
-                ->where('programsid', $externalId)
-                ->where('change_type', 'create')
-                ->exists();
+                if (!$externalId) {
+                    Log::error("LasCMS pushCase: API returned success but no id for {$case->case_uid}. Response: " . $response->body());
+                    return null;
+                }
 
-            if (!$alreadyHasCreate) {
-                $this->db->table('programs_detail')->insert(array_merge($sharedData, [
-                    'programsid'  => $externalId,
-                    'change_type' => 'create',
-                ]));
+                $case->update([
+                    'external_case_id'   => $externalId,
+                    'external_synced_at' => now(),
+                ]);
+
+                Log::info("LasCMS: Pushed case {$case->case_uid} → programs.id={$externalId}");
+                return $externalId;
             }
 
-            // Update JusticeHub case with external reference
-            $case->update([
-                'external_case_id'  => $externalId,
-                'external_synced_at' => now(),
-            ]);
-
-            Log::info("LasCMS: Pushed case {$case->case_uid} → programs.id={$externalId}");
-            return $externalId;
+            Log::error("LasCMS pushCase failed for {$case->case_uid}: HTTP {$response->status()} — " . $response->body());
+            return null;
 
         } catch (\Exception $e) {
-            Log::error("LasCMS push failed for {$case->case_uid}: " . $e->getMessage());
+            Log::error("LasCMS pushCase exception for {$case->case_uid}: " . $e->getMessage());
             return null;
         }
     }
 
     /**
-     * Update the status of an already-pushed case in LAS CMS.
+     * Update the status of an already-pushed case via API.
      */
     public function updateStatus(CaseRecord $case): bool
     {
         if (!$case->external_case_id) {
-            Log::warning("LasCMS: updateStatus called on {$case->case_uid} but no external_case_id set — skipping.");
+            Log::warning("LasCMS: updateStatus called on {$case->case_uid} but no external_case_id — skipping.");
             return false;
         }
 
-        $newCmsStatus    = $this->mapStatus($case->status);
-        $approvalStatus  = $this->mapApprovalStatus($case->status);
+        $payload = [
+            'currentCaseStatus'  => $this->mapStatus($case->status),
+            'caseApprovalStatus' => $this->mapApprovalStatus($case->status),
+        ];
 
         try {
-            $updated = $this->db->table('programs')
-                ->where('id', $case->external_case_id)
-                ->update([
-                    'currentCaseStatus'  => $newCmsStatus,
-                    'caseApprovalStatus' => $approvalStatus,
-                    'updated_at'         => now(),
+            $response = $this->http()->put("{$this->baseUrl}/cases/{$case->external_case_id}/status", $payload);
+
+            if ($response->successful()) {
+                $case->update([
+                    'meta'               => array_merge($case->meta ?? [], ['cms_approval_status' => $payload['caseApprovalStatus']]),
+                    'external_synced_at' => now(),
                 ]);
 
-            if ($updated) {
-                Log::info("LasCMS: status updated for {$case->case_uid} (programs.id={$case->external_case_id}) → currentCaseStatus={$newCmsStatus}, caseApprovalStatus={$approvalStatus}");
-            } else {
-                Log::warning("LasCMS: updateStatus for {$case->case_uid} matched 0 rows in programs (id={$case->external_case_id})");
+                Log::info("LasCMS: Status updated for {$case->case_uid} → {$payload['currentCaseStatus']}");
+                return true;
             }
 
-            // Cache approval status locally in case meta so it can be displayed in JusticeHub
-            $case->update([
-                'meta'               => array_merge($case->meta ?? [], ['cms_approval_status' => $approvalStatus]),
-                'external_synced_at' => now(),
-            ]);
-
-            return (bool) $updated;
+            Log::error("LasCMS updateStatus failed for {$case->case_uid}: HTTP {$response->status()} — " . $response->body());
+            return false;
 
         } catch (\Exception $e) {
-            Log::error("LasCMS: updateStatus failed for {$case->case_uid}: {$e->getMessage()}");
+            Log::error("LasCMS updateStatus exception for {$case->case_uid}: " . $e->getMessage());
             return false;
         }
     }
 
     /**
-     * Map JusticeHub status to LAS CMS caseApprovalStatus value.
-     */
-    protected function mapApprovalStatus(mixed $status): string
-    {
-        $val = $status instanceof \BackedEnum ? $status->value : (string) $status;
-        return match ($val) {
-            'Active'   => 'Approved',
-            'Rejected' => 'Rejected',
-            default    => 'Pending',
-        };
-    }
-
-    /**
-     * Pull hearings from LAS CMS for a specific case and create ServiceEncounters.
+     * Pull hearings from LAS CMS API for a specific case.
      */
     public function pullHearings(CaseRecord $case): int
     {
@@ -152,65 +139,92 @@ class LasCmsSyncService
             return 0;
         }
 
-        $externalHearings = $this->db->table('hearings')
-            ->where('programsID', $case->external_case_id)
-            ->orderBy('date')
-            ->get();
+        try {
+            $response = $this->http()->get("{$this->baseUrl}/cases/{$case->external_case_id}/hearings");
 
-        $imported = 0;
-        foreach ($externalHearings as $h) {
-            // Check if already imported (by matching external hearing id in meta)
-            $exists = ServiceEncounter::where('case_id', $case->id)
-                ->where('type', 'Court Hearing')
-                ->whereJsonContains('meta->external_hearing_id', $h->id)
-                ->exists();
+            if (!$response->successful()) {
+                Log::error("LasCMS pullHearings failed for {$case->case_uid}: HTTP {$response->status()}");
+                return 0;
+            }
 
-            if ($exists) continue;
+            $hearings = $response->json('data') ?? $response->json() ?? [];
+            $imported = 0;
 
-            ServiceEncounter::create([
-                'case_id'      => $case->id,
-                'date'         => $h->date ?: now()->toDateString(),
-                'type'         => 'Court Hearing',
-                'performed_by' => 'LAS CMS Sync',
-                'note'         => $h->hearingUpdate,
-                'meta'         => [
-                    'external_hearing_id' => $h->id,
-                    'case_number'         => $h->caseNumber,
-                    'next_hearing'        => $h->nextHearing,
-                    'source'              => 'las_cms',
-                ],
-            ]);
-            $imported++;
+            foreach ($hearings as $h) {
+                $hId = $h['id'] ?? null;
+                if (!$hId) continue;
+
+                $exists = ServiceEncounter::where('case_id', $case->id)
+                    ->where('type', 'Court Hearing')
+                    ->whereJsonContains('meta->external_hearing_id', $hId)
+                    ->exists();
+
+                if ($exists) continue;
+
+                ServiceEncounter::create([
+                    'case_id'      => $case->id,
+                    'date'         => $h['date'] ?? now()->toDateString(),
+                    'type'         => 'Court Hearing',
+                    'performed_by' => 'LAS CMS Sync',
+                    'note'         => $h['hearingUpdate'] ?? null,
+                    'meta'         => [
+                        'external_hearing_id' => $hId,
+                        'case_number'         => $h['caseNumber'] ?? null,
+                        'next_hearing'        => $h['nextHearing'] ?? null,
+                        'source'              => 'las_cms',
+                    ],
+                ]);
+                $imported++;
+            }
+
+            // Also sync latest status from GET /cases/{id}
+            $this->syncCaseInfo($case);
+
+            if ($imported > 0) {
+                Log::info("LasCMS: Pulled {$imported} hearings for {$case->case_uid}");
+            }
+
+            return $imported;
+
+        } catch (\Exception $e) {
+            Log::error("LasCMS pullHearings exception for {$case->case_uid}: " . $e->getMessage());
+            return 0;
         }
+    }
 
-        // Also pull latest status from programs table
-        $extProgram = $this->db->table('programs')
-            ->where('id', $case->external_case_id)
-            ->first();
+    /**
+     * Sync case info (status, next hearing, court details) from GET /cases/{id}.
+     */
+    public function syncCaseInfo(CaseRecord $case): void
+    {
+        if (!$case->external_case_id) return;
 
-        if ($extProgram) {
-            $updates = ['external_synced_at' => now()];
+        try {
+            $response = $this->http()->get("{$this->baseUrl}/cases/{$case->external_case_id}");
 
-            // Sync next hearing date
-            if ($extProgram->nextHearing) {
-                $updates['meta'] = array_merge($case->meta ?? [], [
-                    'next_hearing'     => $extProgram->nextHearing,
-                    'court_name'       => $extProgram->courtName,
-                    'case_number'      => $extProgram->caseNumber,
-                    'case_stage'       => $extProgram->caseStage,
-                    'case_decision'    => $extProgram->caseDecision,
-                    'external_status'  => $extProgram->currentCaseStatus,
+            if (!$response->successful()) return;
+
+            $data = $response->json('data') ?? $response->json();
+            if (!$data) return;
+
+            $metaUpdates = [];
+            if (!empty($data['nextHearing']))      $metaUpdates['next_hearing']   = $data['nextHearing'];
+            if (!empty($data['courtName']))         $metaUpdates['court_name']     = $data['courtName'];
+            if (!empty($data['caseNumber']))        $metaUpdates['case_number']    = $data['caseNumber'];
+            if (!empty($data['caseStage']))         $metaUpdates['case_stage']     = $data['caseStage'];
+            if (!empty($data['caseDecision']))      $metaUpdates['case_decision']  = $data['caseDecision'];
+            if (!empty($data['currentCaseStatus'])) $metaUpdates['external_status'] = $data['currentCaseStatus'];
+
+            if ($metaUpdates) {
+                $case->update([
+                    'meta'               => array_merge($case->meta ?? [], $metaUpdates),
+                    'external_synced_at' => now(),
                 ]);
             }
 
-            $case->update($updates);
+        } catch (\Exception $e) {
+            Log::warning("LasCMS syncCaseInfo exception for {$case->case_uid}: " . $e->getMessage());
         }
-
-        if ($imported > 0) {
-            Log::info("LasCMS: Pulled {$imported} hearings for case {$case->case_uid}");
-        }
-
-        return $imported;
     }
 
     /**
@@ -220,7 +234,7 @@ class LasCmsSyncService
     {
         $cases = CaseRecord::whereNotNull('external_case_id')->get();
         $totalImported = 0;
-        $casesUpdated = 0;
+        $casesUpdated  = 0;
 
         foreach ($cases as $case) {
             $count = $this->pullHearings($case);
@@ -231,19 +245,26 @@ class LasCmsSyncService
         return ['hearings' => $totalImported, 'cases' => $casesUpdated];
     }
 
-    /**
-     * Map JusticeHub status to LAS CMS status.
-     */
     protected function mapStatus(mixed $status): string
     {
         $val = $status instanceof \BackedEnum ? $status->value : (string) $status;
         return match ($val) {
-            'Active'            => 'Running',
-            'Pending Approval'  => 'Pending',
-            'Closed'            => 'Decided',
-            'Settlement'        => 'Settled/Compromise',
-            'Rejected'          => 'Not Filed',
-            default             => 'Running',
+            'Active'           => 'Running',
+            'Pending Approval' => 'Pending',
+            'Closed'           => 'Decided',
+            'Settlement'       => 'Settled/Compromise',
+            'Rejected'         => 'Not Filed',
+            default            => 'Running',
+        };
+    }
+
+    protected function mapApprovalStatus(mixed $status): string
+    {
+        $val = $status instanceof \BackedEnum ? $status->value : (string) $status;
+        return match ($val) {
+            'Active'   => 'Approved',
+            'Rejected' => 'Rejected',
+            default    => 'Pending',
         };
     }
 }

@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'las_cms' => [
+        'url' => env('LAS_CMS_API_URL', 'https://app.las.org.pk/api/justice-hub'),
+        'key' => env('LAS_CMS_API_KEY', ''),
+    ],
+
 ];
