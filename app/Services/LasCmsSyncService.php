@@ -57,7 +57,7 @@ class LasCmsSyncService
             'caseSubmittedFAppro' => 'Yes',
             'caseApprovalStatus'  => 'Pending',
             'lawyer1'             => $case->assigned_to,
-            'natureOfCase'        => $case->primary_issue,
+            'natureOfCase'        => [$case->primary_issue],
             'currentCaseStatus'   => $this->mapStatus($case->status),
             'UniqueNumber'        => $uniqueNumber,
             'uniqueYear'          => (string) now()->year,
