@@ -97,7 +97,7 @@ class ServiceEncounterController extends Controller
 
         // Advance case status on terminal outcomes
         $outcome = $validated['outcome'] ?? '';
-        if (!in_array($case->status->value, ['Closed', 'Settlement'])) {
+        if (!in_array($case->status?->value, ['Closed', 'Settlement'])) {
             if ($outcome === 'Resolved' || $outcome === 'Won' || $outcome === 'Partial') {
                 $case->update(['status' => 'Settlement']);
             } elseif ($outcome === 'Lost') {

@@ -65,9 +65,9 @@ class ServiceController extends Controller
             $manualStage = $c->adr_stage ?? null;
             if ($manualStage && array_key_exists($manualStage, $pipeline)) {
                 $pipeline[$manualStage][] = $c;
-            } elseif ($c->status->value === 'Rejected' || str_contains($lastType, 'litigation') || str_contains($lastType, 'court')) {
+            } elseif (($c->status?->value === 'Rejected') || str_contains($lastType, 'litigation') || str_contains($lastType, 'court')) {
                 $pipeline['Escalated'][] = $c;
-            } elseif (in_array($c->status->value, ['Closed', 'Settlement'])) {
+            } elseif (in_array($c->status?->value, ['Closed', 'Settlement'])) {
                 $pipeline['Resolved'][] = $c;
             } elseif (str_contains($lastType, 'agreement') || str_contains($lastType, 'draft') || str_contains($lastType, 'settlement')) {
                 $pipeline['Agreement Draft'][] = $c;
@@ -101,8 +101,8 @@ class ServiceController extends Controller
             $slaBreach   = CaseRecord::where('assigned_to', $u->name)->where('sla_met', false)->count();
             $initials    = collect(explode(' ', $u->name))->map(fn($w) => strtoupper($w[0] ?? ''))->take(2)->join('');
             return [
-                'name' => $u->name, 'initials' => $initials, 'role' => $u->role->value,
-                'designation' => $u->designation ?: $u->role->label(),
+                'name' => $u->name, 'initials' => $initials, 'role' => $u->role?->value ?? '',
+                'designation' => $u->designation ?: ($u->role?->label() ?? ''),
                 'hub' => $u->hub_id, 'hub_id' => $u->hub_id,
                 'active' => $totalActive, 'adr' => $adrCount, 'court' => $courtCount,
                 'capacity' => $capacity, 'utilization' => min($utilization, 100),
@@ -505,7 +505,7 @@ class ServiceController extends Controller
                 $pipeline['Not Filed'][] = $c;
             } elseif ($effectiveStage && array_key_exists($effectiveStage, $pipeline)) {
                 $pipeline[$effectiveStage][] = $c;
-            } elseif (in_array($c->status->value, ['Closed', 'Settlement'])) {
+            } elseif (in_array($c->status?->value, ['Closed', 'Settlement'])) {
                 $pipeline['Resolved'][] = $c;
             } elseif (
                 str_contains($lastType, 'judgment') || str_contains($lastType, 'verdict') ||
@@ -528,7 +528,7 @@ class ServiceController extends Controller
             $lastEnc = $c->serviceEncounters->last();
             $outcome = strtolower($lastEnc?->meta['outcome'] ?? '');
             if (str_contains($outcome, 'won') || str_contains($outcome, 'favour') ||
-                ($outcome === '' && $c->status->value === 'Settlement')) {
+                ($outcome === '' && $c->status?->value === 'Settlement')) {
                 $won++;
             } elseif (str_contains($outcome, 'partial')) {
                 $partial++;
@@ -568,8 +568,8 @@ class ServiceController extends Controller
             $slaBreach   = CaseRecord::where('assigned_to', $u->name)->where('sla_met', false)->count();
             $initials    = collect(explode(' ', $u->name))->map(fn($w) => strtoupper($w[0] ?? ''))->take(2)->join('');
             return [
-                'name' => $u->name, 'initials' => $initials, 'role' => $u->role->value,
-                'designation' => $u->designation ?: $u->role->label(),
+                'name' => $u->name, 'initials' => $initials, 'role' => $u->role?->value ?? '',
+                'designation' => $u->designation ?: ($u->role?->label() ?? ''),
                 'hub' => $u->hub_id, 'hub_id' => $u->hub_id,
                 'active' => $totalActive, 'adr' => $adrCount, 'court' => $courtCount,
                 'capacity' => $capacity, 'utilization' => min($utilization, 100),

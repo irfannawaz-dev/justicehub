@@ -83,10 +83,24 @@ class CaseRecord extends Model
             'is_disability' => 'boolean',
             'is_underserved' => 'boolean',
             'meta' => 'array',
-            // PII — encrypted at rest using APP_KEY (AES-256-CBC via Laravel's encrypter)
-            // NOTE: re-seed or run php artisan db:seed --class=CaseSeeder after adding this cast
-            'cnic' => 'encrypted',
+            // cnic handled via getCnicAttribute / setCnicAttribute below
         ];
+    }
+
+    // Custom CNIC accessor — handles both legacy plain-text and new encrypted values
+    public function getCnicAttribute(?string $value): ?string
+    {
+        if ($value === null) return null;
+        try {
+            return decrypt($value);
+        } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
+            return $value; // return as-is if not encrypted (old records)
+        }
+    }
+
+    public function setCnicAttribute(?string $value): void
+    {
+        $this->attributes['cnic'] = $value ? encrypt($value) : null;
     }
 
     public function hub(): BelongsTo
@@ -157,7 +171,7 @@ class CaseRecord extends Model
     {
         $dbSla     = json_decode(\DB::table('settings')->where('key', 'sla_urgency_hours')->value('value') ?? '{}', true);
         $allHours  = array_merge(config('justice_hub.sla.urgency_hours'), $dbSla);
-        $hours     = $allHours[$this->urgency->value] ?? 168;
+        $hours     = $allHours[$this->urgency?->value ?? 'Standard'] ?? 168;
         $intakeDt  = \Carbon\Carbon::parse(
             $this->intake_date->toDateString() . ' ' . ($this->intake_time ?? '00:00')
         );
