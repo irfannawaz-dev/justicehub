@@ -241,10 +241,11 @@ class CaseController extends Controller
 
         $pendingTransfer = $case->transfers->where('status', 'pending')->first();
 
-        // ── LAS CMS Program Data (via API — DB connection removed as LAS CMS moved to Hetzner) ──
-        $cmsData     = null;
-        $cmsHistory  = collect();
-        $cmsHearings = collect();
+        // ── LAS CMS Program Data (via API) ──
+        $cmsData        = null;
+        $cmsHistory     = collect();
+        $cmsHearings    = collect();
+        $cmsTimeline    = [];
 
         if ($case->external_case_id) {
             try {
@@ -252,33 +253,46 @@ class CaseController extends Controller
                 $apiData = $sync->fetchCaseWithHearings($case->external_case_id);
 
                 if ($apiData) {
-                    // Build a stdClass to mimic the old $cmsData shape used in the view
                     $cmsData = (object) [
-                        'courtName'           => $apiData['courtName']          ?? null,
-                        'levelOfCourt'        => $apiData['levelOfCourt']       ?? null,
-                        'caseNumber'          => $apiData['caseNumber']         ?? null,
-                        'caseStage'           => $apiData['caseStage']          ?? null,
-                        'caseDecision'        => $apiData['caseDecision']       ?? null,
-                        'currentCaseStatus'   => $apiData['currentCaseStatus']  ?? null,
-                        'nextHearing'         => $apiData['nextHearing']        ?? null,
-                        'lawyer1'             => $apiData['lawyer1']            ?? null,
-                        'caseApprovalStatus'  => $apiData['caseApprovalStatus'] ?? null,
-                        'natureOfCase'        => $apiData['natureOfCase']       ?? null,
-                        'additionalComment'   => $apiData['additionalComment']  ?? null,
+                        'courtName'                  => $apiData['courtName']                 ?? null,
+                        'levelOfCourt'               => $apiData['levelOfCourt']              ?? null,
+                        'caseNumber'                 => $apiData['caseNumber']                ?? null,
+                        'firNumber'                  => $apiData['firNumber']                 ?? null,
+                        'policeStation'              => $apiData['policeStation']              ?? null,
+                        'caseStage'                  => $apiData['caseStage']                 ?? null,
+                        'caseDecision'               => $apiData['caseDecision']              ?? null,
+                        'caseDisposalDate'           => $apiData['caseDisposalDate']          ?? null,
+                        'currentCaseStatus'          => $apiData['currentCaseStatus']         ?? null,
+                        'nextHearing'                => $apiData['nextHearing']               ?? null,
+                        'lawyer1'                    => $apiData['lawyer1']                   ?? null,
+                        'caseApprovalStatus'         => $apiData['caseApprovalStatus']        ?? null,
+                        'approvalDate'               => $apiData['approvalDate']              ?? null,
+                        'vakalatnamaSubmissionDate'  => $apiData['vakalatnamaSubmissionDate'] ?? null,
+                        'caseFileDate'               => $apiData['caseFileDate']              ?? null,
+                        'natureOfCase'               => $apiData['natureOfCase']              ?? null,
+                        'typeOfCase'                 => $apiData['typeOfCase']                ?? null,
+                        'mainCaseCategory'           => $apiData['mainCaseCategory']          ?? null,
+                        'caseFiledUnderAct'          => $apiData['caseFiledUnderAct']         ?? null,
+                        'ctcStatus'                  => $apiData['ctcStatus']                 ?? null,
+                        'additionalComment'          => $apiData['additionalComment']         ?? null,
+                        'UniqueNumber2'              => $apiData['UniqueNumber2']             ?? null,
                     ];
 
-                    // Build $cmsHearings from API hearings array
                     foreach ($apiData['hearings'] ?? [] as $h) {
                         $cmsHearings->push((object) [
-                            'id'            => $h['id']             ?? null,
-                            'date'          => $h['date']           ?? null,
-                            'nextHearing'   => $h['nextHearing']    ?? null,
-                            'hearingUpdate' => $h['hearingUpdate']  ?? null,
-                            'caseNumber'    => $h['caseNumber']     ?? null,
-                            'created_at'    => $h['date']           ?? now(),
+                            'id'            => $h['id']            ?? null,
+                            'date'          => $h['date']          ?? null,
+                            'nextHearing'   => $h['nextHearing']   ?? null,
+                            'hearingUpdate' => $h['hearingUpdate'] ?? null,
+                            'caseNumber'    => $h['caseNumber']    ?? null,
+                            'created_at'    => $h['date']          ?? now(),
                         ]);
                     }
                 }
+
+                // ── Pull full audit timeline from LAS CMS ──
+                $cmsTimeline = $sync->fetchTimeline($case->external_case_id);
+
             } catch (\Exception $e) {
                 \Log::warning('LAS CMS API data fetch failed for ' . $case->case_uid . ': ' . $e->getMessage());
             }
@@ -300,14 +314,16 @@ class CaseController extends Controller
 
         // 2. Service encounters (skip "Intake" type — already shown from case fields above)
         foreach ($case->serviceEncounters->reject(fn($e) => strtolower($e->type) === 'intake') as $enc) {
+            $isCmsUpdate    = $enc->type === 'LAS CMS Update';
+            $isCourtHearing = $enc->type === 'Court Hearing';
             $timeline->push([
-                'type'  => 'encounter',
-                'icon'  => 'message-square',
+                'type'  => $isCmsUpdate ? 'cms_update' : ($isCourtHearing ? 'cms_hearing' : 'encounter'),
+                'icon'  => $isCmsUpdate ? 'refresh-cw' : ($isCourtHearing ? 'scale' : 'message-square'),
                 'label' => $enc->type,
                 'text'  => $enc->note,
                 'by'    => $enc->performed_by,
                 'at'    => $enc->date->startOfDay(),
-                'color' => 'var(--forest)',
+                'color' => $isCmsUpdate ? 'var(--ink-3)' : ($isCourtHearing ? 'var(--burgundy)' : 'var(--forest)'),
             ]);
         }
 
@@ -436,59 +452,65 @@ class CaseController extends Controller
             ]);
         }
 
-        // 12. LAS CMS — programs_detail change history
-        $cmsCreateSeen = false;
-        foreach ($cmsHistory as $h) {
-            $rawCreate = ($h->change_type ?? '') === 'create';
-            $isCreate  = $rawCreate && !$cmsCreateSeen;
-            if ($rawCreate) $cmsCreateSeen = true;
-            $by       = $h->edited_by ?: $h->username ?: 'LAS CMS';
-            $parts    = [];
-            if ($h->currentCaseStatus)         $parts[] = "Status: {$h->currentCaseStatus}";
-            if ($h->caseApprovalStatus)        $parts[] = "Approval: {$h->caseApprovalStatus}";
-            if ($h->caseStage)                 $parts[] = "Stage: {$h->caseStage}";
-            if ($h->caseDecision)              $parts[] = "Decision: {$h->caseDecision}";
-            if ($h->nextHearing)               $parts[] = "Next hearing: {$h->nextHearing}";
-            if ($h->lawyer1)                   $parts[] = "Lawyer: {$h->lawyer1}";
-            if ($h->courtName)                 $parts[] = "Court: {$h->courtName}";
-            if ($h->levelOfCourt)              $parts[] = "Level: {$h->levelOfCourt}";
-            if ($h->caseNumber)                $parts[] = "Case no: {$h->caseNumber}";
-            if ($h->firNumber)                 $parts[] = "FIR: {$h->firNumber}";
-            if ($h->policeStation)             $parts[] = "Police station: {$h->policeStation}";
-            if ($h->natureOfCase)              $parts[] = "Nature: {$h->natureOfCase}";
-            if ($h->mainCaseCategory)          $parts[] = "Category: {$h->mainCaseCategory}";
-            if ($h->typeOfCase)                $parts[] = "Type: {$h->typeOfCase}";
-            if ($h->caseFiledUnderAct)         $parts[] = "Filed under: {$h->caseFiledUnderAct}";
-            if ($h->ctcStatus)                 $parts[] = "CTC: {$h->ctcStatus}";
-            if ($h->approvalDate)              $parts[] = "Approved: {$h->approvalDate}";
-            if ($h->vakalatnamaSubmissionDate) $parts[] = "Vakalatnama: {$h->vakalatnamaSubmissionDate}";
-            if ($h->caseFileDate)              $parts[] = "Case filed: {$h->caseFileDate}";
-            if ($h->caseDisposalDate)          $parts[] = "Disposed: {$h->caseDisposalDate}";
-            if ($h->additionalComment)         $parts[] = $h->additionalComment;
+        // 12. LAS CMS — full audit timeline from /timeline API
+        foreach ($cmsTimeline as $event) {
+            $type    = $event['type'] ?? 'edit';
+            $changes = $event['data']['changes'] ?? [];
+            $data    = $event['data'] ?? [];
+
+            // Build description text
+            if ($type === 'edit' && $changes) {
+                $parts = [];
+                foreach ($changes as $field => $diff) {
+                    $from = $diff['from'] ?? null;
+                    $to   = $diff['to']   ?? null;
+                    if ($from && $to) {
+                        $parts[] = "{$field}: {$from} → {$to}";
+                    } elseif ($to) {
+                        $parts[] = "{$field}: {$to}";
+                    }
+                }
+                $text = implode(' · ', $parts) ?: ($event['description'] ?? 'Case updated.');
+            } elseif ($type === 'hearing') {
+                $text = $event['description'] ?? '';
+                if (!empty($data['next_hearing'])) $text .= ($text ? ' · ' : '') . "Next hearing: {$data['next_hearing']}";
+            } elseif ($type === 'case_created') {
+                $parts = [];
+                if (!empty($data['lawyer']))   $parts[] = "Lawyer: {$data['lawyer']}";
+                if (!empty($data['district'])) $parts[] = "District: {$data['district']}";
+                if (!empty($data['status']))   $parts[] = "Status: {$data['status']}";
+                $text = ($event['description'] ?? 'Case registered.') . ($parts ? ' · ' . implode(' · ', $parts) : '');
+            } else {
+                $text = $event['description'] ?? '';
+            }
+
+            $icon  = match($type) {
+                'case_created'  => 'database',
+                'hearing'       => 'scale',
+                'case_status'   => 'check-circle-2',
+                default         => 'refresh-cw',
+            };
+            $color = match($type) {
+                'case_created'  => 'var(--forest)',
+                'hearing'       => 'var(--burgundy)',
+                'case_status'   => 'var(--moss)',
+                default         => 'var(--ink-3)',
+            };
+            $label = match($type) {
+                'case_created'  => 'LAS CMS — Case Created',
+                'hearing'       => 'LAS CMS — Court Hearing',
+                'case_status'   => 'LAS CMS — Status Change',
+                default         => 'LAS CMS — Case Updated',
+            };
 
             $timeline->push([
-                'type'  => $isCreate ? 'cms_create' : 'cms_update',
-                'icon'  => $isCreate ? 'database' : 'refresh-cw',
-                'label' => $isCreate ? 'LAS CMS — Case Created' : 'LAS CMS — Case Updated',
-                'text'  => implode(' · ', $parts) ?: 'Record saved in LAS CMS.',
-                'by'    => $by,
-                'at'    => \Carbon\Carbon::parse($h->created_at),
-                'color' => 'var(--ink-3)',
-            ]);
-        }
-
-        // 13. LAS CMS — court hearings
-        foreach ($cmsHearings as $h) {
-            $text = $h->hearingUpdate ?? '';
-            if ($h->nextHearing) $text .= ($text ? ' · ' : '') . "Next hearing: {$h->nextHearing}";
-            $timeline->push([
-                'type'  => 'cms_hearing',
-                'icon'  => 'scale',
-                'label' => 'LAS CMS — Court Hearing',
-                'text'  => $text ?: 'Hearing logged in LAS CMS.',
-                'by'    => 'LAS CMS',
-                'at'    => \Carbon\Carbon::parse($h->date ?: $h->created_at),
-                'color' => 'var(--burgundy)',
+                'type'  => 'cms_' . $type,
+                'icon'  => $icon,
+                'label' => $label,
+                'text'  => $text,
+                'by'    => $data['created_by'] ?? (isset($event['description']) && str_starts_with($event['description'], 'Edited by ') ? substr($event['description'], 10) : 'LAS CMS'),
+                'at'    => \Carbon\Carbon::parse($event['date']),
+                'color' => $color,
             ]);
         }
 

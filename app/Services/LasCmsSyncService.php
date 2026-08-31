@@ -68,7 +68,7 @@ class LasCmsSyncService
             $response = $this->http()->post("{$this->baseUrl}/cases", $payload);
 
             if ($response->successful()) {
-                $externalId = $response->json('id') ?? $response->json('data.id');
+                $externalId = $response->json('program_id') ?? $response->json('id') ?? $response->json('data.id');
 
                 if (!$externalId) {
                     Log::error("LasCMS pushCase: API returned success but no id for {$case->case_uid}. Response: " . $response->body());
@@ -134,6 +134,28 @@ class LasCmsSyncService
      * Fetch full case data + hearings in one go from the API.
      * Returns merged array or null on failure.
      */
+    /**
+     * Fetch the full audit timeline from LAS CMS for a case.
+     * Returns array of timeline events or empty array on failure.
+     */
+    public function fetchTimeline(int $externalId): array
+    {
+        try {
+            $response = $this->http()->get("{$this->baseUrl}/cases/{$externalId}/timeline");
+
+            if (!$response->successful()) {
+                Log::warning("LasCMS fetchTimeline: HTTP {$response->status()} for id={$externalId}");
+                return [];
+            }
+
+            return $response->json('timeline') ?? [];
+
+        } catch (\Exception $e) {
+            Log::warning("LasCMS fetchTimeline exception for id={$externalId}: " . $e->getMessage());
+            return [];
+        }
+    }
+
     public function fetchCaseWithHearings(int $externalId): ?array
     {
         try {
@@ -175,7 +197,7 @@ class LasCmsSyncService
                 return 0;
             }
 
-            $hearings = $response->json('data') ?? $response->json() ?? [];
+            $hearings = $response->json('hearings') ?? $response->json('data') ?? $response->json() ?? [];
             $imported = 0;
 
             foreach ($hearings as $h) {
