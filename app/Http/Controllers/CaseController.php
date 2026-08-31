@@ -241,60 +241,46 @@ class CaseController extends Controller
 
         $pendingTransfer = $case->transfers->where('status', 'pending')->first();
 
-        // ── LAS CMS Program Data ─────────────────────────────────────────────
+        // ── LAS CMS Program Data (via API — DB connection removed as LAS CMS moved to Hetzner) ──
         $cmsData     = null;
         $cmsHistory  = collect();
         $cmsHearings = collect();
 
         if ($case->external_case_id) {
             try {
-                $cmsDb = \Illuminate\Support\Facades\DB::connection('las_cms');
+                $sync    = new \App\Services\LasCmsSyncService();
+                $apiData = $sync->fetchCaseWithHearings($case->external_case_id);
 
-                // Current record
-                $cmsData = $cmsDb->table('programs')
-                    ->where('id', $case->external_case_id)
-                    ->select([
-                        'programName', 'caseReferred', 'caseReferredSubCategory',
-                        'interviewEligibleForZakat', 'complainantName', 'partyName',
-                        'caseApprovalStatus', 'approvalDate',
-                        'vakalatnamaSubmissionDate', 'caseFileDate',
-                        'lawyer1',
-                        'courtName', 'levelOfCourt', 'caseNumber',
-                        'firNumber', 'policeStation', 'natureOfCase', 'typeOfCase',
-                        'mainCaseCategory', 'caseFiledUnderAct', 'caseFiledOther',
-                        'nextHearing', 'currentCaseStatus',
-                        'caseDecision', 'caseDisposalDate', 'ctcStatus',
-                        'caseStage', 'caseStageOther', 'additionalComment',
-                        'UniqueNumber2',
-                    ])
-                    ->first();
+                if ($apiData) {
+                    // Build a stdClass to mimic the old $cmsData shape used in the view
+                    $cmsData = (object) [
+                        'courtName'           => $apiData['courtName']          ?? null,
+                        'levelOfCourt'        => $apiData['levelOfCourt']       ?? null,
+                        'caseNumber'          => $apiData['caseNumber']         ?? null,
+                        'caseStage'           => $apiData['caseStage']          ?? null,
+                        'caseDecision'        => $apiData['caseDecision']       ?? null,
+                        'currentCaseStatus'   => $apiData['currentCaseStatus']  ?? null,
+                        'nextHearing'         => $apiData['nextHearing']        ?? null,
+                        'lawyer1'             => $apiData['lawyer1']            ?? null,
+                        'caseApprovalStatus'  => $apiData['caseApprovalStatus'] ?? null,
+                        'natureOfCase'        => $apiData['natureOfCase']       ?? null,
+                        'additionalComment'   => $apiData['additionalComment']  ?? null,
+                    ];
 
-                // Change history from programs_detail
-                $cmsHistory = $cmsDb->table('programs_detail')
-                    ->where('programsid', $case->external_case_id)
-                    ->orderBy('created_at')
-                    ->get([
-                        'change_type', 'created_at', 'edited_by', 'username',
-                        'currentCaseStatus', 'caseStage', 'nextHearing',
-                        'lawyer1', 'courtName', 'levelOfCourt',
-                        'caseNumber', 'firNumber', 'policeStation',
-                        'natureOfCase', 'mainCaseCategory', 'typeOfCase',
-                        'caseFiledUnderAct', 'caseDecision', 'caseDisposalDate',
-                        'ctcStatus', 'approvalDate', 'caseApprovalStatus',
-                        'vakalatnamaSubmissionDate', 'caseFileDate',
-                        'additionalComment',
-                    ]);
-
-                // Hearings from hearings table
-                $cmsHearings = $cmsDb->table('hearings')
-                    ->where('programsID', $case->external_case_id)
-                    ->orderBy('created_at')
-                    ->get([
-                        'id', 'date', 'nextHearing', 'hearingUpdate', 'caseNumber', 'created_at',
-                    ]);
-
+                    // Build $cmsHearings from API hearings array
+                    foreach ($apiData['hearings'] ?? [] as $h) {
+                        $cmsHearings->push((object) [
+                            'id'            => $h['id']             ?? null,
+                            'date'          => $h['date']           ?? null,
+                            'nextHearing'   => $h['nextHearing']    ?? null,
+                            'hearingUpdate' => $h['hearingUpdate']  ?? null,
+                            'caseNumber'    => $h['caseNumber']     ?? null,
+                            'created_at'    => $h['date']           ?? now(),
+                        ]);
+                    }
+                }
             } catch (\Exception $e) {
-                \Log::warning('LAS CMS data fetch failed for ' . $case->case_uid . ': ' . $e->getMessage());
+                \Log::warning('LAS CMS API data fetch failed for ' . $case->case_uid . ': ' . $e->getMessage());
             }
         }
 
