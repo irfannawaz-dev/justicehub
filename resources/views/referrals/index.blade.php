@@ -527,6 +527,9 @@ $sections = [
                     <div style="font-size:15px; font-weight:700; color:var(--ink);">Named partners</div>
                     <div style="font-size:11px; color:var(--ink-4);">{{ $outgoingTotal }} outgoing referrals grouped by partner organisation.</div>
                 </div>
+                <button onclick="jhExportPartnersTable()" class="btn-ghost" style="font-size:11px; padding:6px 14px; display:inline-flex; align-items:center; gap:5px;">
+                    <x-lucide-download style="width:12px;height:12px;" /> Export CSV
+                </button>
             </div>
 
             <div style="overflow-x:auto; border:1px solid var(--rule); border-radius:3px;">
@@ -606,6 +609,25 @@ function jhExportSourcesTable() {
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'All_Sources_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+}
+
+function jhExportPartnersTable() {
+    var rows = document.querySelectorAll('#namedPartnersTable tbody tr');
+    var csv  = 'Partner,Category,Referrals,Share,Govt,NGO/CSO,Other\n';
+    rows.forEach(function(row) {
+        var cells = row.querySelectorAll('td');
+        if (cells.length < 7) return;
+        var rowData = [];
+        for (var i = 0; i < 7; i++) {
+            rowData.push('"' + cells[i].textContent.trim().replace(/"/g, '""') + '"');
+        }
+        csv += rowData.join(',') + '\n';
+    });
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'Named_Partners_' + new Date().toISOString().slice(0,10) + '.csv';
     a.click();
 }
 
