@@ -131,6 +131,34 @@ class LasCmsSyncService
     }
 
     /**
+     * Fetch full case data + hearings in one go from the API.
+     * Returns merged array or null on failure.
+     */
+    public function fetchCaseWithHearings(int $externalId): ?array
+    {
+        try {
+            $caseResp    = $this->http()->get("{$this->baseUrl}/cases/{$externalId}");
+            $hearingResp = $this->http()->get("{$this->baseUrl}/cases/{$externalId}/hearings");
+
+            if (!$caseResp->successful()) {
+                Log::warning("LasCMS fetchCaseWithHearings: case endpoint returned {$caseResp->status()} for id={$externalId}");
+                return null;
+            }
+
+            $data     = $caseResp->json('data') ?? $caseResp->json() ?? [];
+            $hearings = $hearingResp->successful()
+                ? ($hearingResp->json('hearings') ?? $hearingResp->json('data') ?? [])
+                : [];
+
+            return array_merge($data, ['hearings' => $hearings]);
+
+        } catch (\Exception $e) {
+            Log::warning("LasCMS fetchCaseWithHearings exception for id={$externalId}: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Pull hearings from LAS CMS API for a specific case.
      */
     public function pullHearings(CaseRecord $case): int
