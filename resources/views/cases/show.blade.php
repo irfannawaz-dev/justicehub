@@ -184,39 +184,9 @@
     @endif
 
     {{-- ═══════════════════════════════════════════════════════════
-         2. SLA + KEY STATS STRIP (kept)
+         2. KEY STATS STRIP
          ═══════════════════════════════════════════════════════════ --}}
-    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px;">
-        @php
-            $slaColor  = $sla['status'] === 'met' ? 'var(--moss)' : ($sla['status'] === 'pending' ? 'var(--ochre)' : 'var(--burgundy)');
-            $slaLabel  = $sla['status'] === 'met' ? 'Met' : ($sla['status'] === 'pending' ? 'Pending' : 'Breach');
-            $slaHours  = $sla['hours_limit'];
-            $slaDetail = match($sla['status']) {
-                'met'     => 'First action ' . $sla['hours_taken'] . 'h after intake',
-                'breach'  => $sla['first_encounter']
-                                ? 'Overdue by ' . $sla['hours_overdue'] . 'h'
-                                : 'No action — ' . $sla['hours_overdue'] . 'h overdue',
-                'pending' => $sla['hours_remaining'] . 'h remaining',
-                default   => '',
-            };
-        @endphp
-        <div class="card-accent jh-anim-card" style="padding: 16px 18px; border-left-color: {{ $slaColor }};">
-            <div class="label-cap" style="font-size: 9px;">{{ __('cases.sla_hour_label', ['hours' => $slaHours]) }} · {{ $case->urgency->value }}</div>
-            <div style="display: flex; align-items: baseline; gap: 8px; margin-top: 6px;">
-                @if($sla['status'] === 'met')
-                    <x-lucide-check-circle-2 style="width:18px;height:18px;color:var(--moss);" />
-                @elseif($sla['status'] === 'pending')
-                    <x-lucide-clock style="width:18px;height:18px;color:var(--ochre);" />
-                @else
-                    <x-lucide-x-circle style="width:18px;height:18px;color:var(--burgundy);" />
-                @endif
-                <span class="serif jh-anim-num" style="font-size: 22px; color: {{ $slaColor }};">{{ $slaLabel }}</span>
-            </div>
-            <div style="font-size: 11px; color: var(--ink-3); margin-top: 4px;">{{ $slaDetail }}</div>
-            <div style="font-size: 10px; color: var(--ink-4); margin-top: 2px;">
-                {{ __('cases.deadline') }}: {{ $sla['deadline']->format('M d, Y H:i') }}
-            </div>
-        </div>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px;">
         <div class="card jh-anim-card" style="padding: 16px 18px;">
             <div class="label-cap" style="font-size: 9px;">{{ __('cases.service_encounters') }}</div>
             <div class="serif jh-anim-num" style="font-size: 22px; margin-top: 6px;">{{ $encounterCount }}</div>
@@ -235,9 +205,9 @@
     </div>
 
     {{-- ═══════════════════════════════════════════════════════════
-         3. END-TO-END USER JOURNEY PROGRESS BAR (NEW)
+         3. END-TO-END USER JOURNEY — HIDDEN
          ═══════════════════════════════════════════════════════════ --}}
-    <div class="card jh-anim-section" style="padding: 22px 26px; margin-bottom: 20px; animation-delay: 0.2s;">
+    {{-- <div class="card jh-anim-section" style="padding: 22px 26px; margin-bottom: 20px; animation-delay: 0.2s;">
         <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px;">
             <div>
                 <div class="label-cap" style="font-size: 9.5px; margin-bottom: 4px;">{{ __('cases.end_to_end_journey') }}</div>
@@ -332,7 +302,7 @@
                 <span style="width: 10px; height: 10px; background: var(--rule-2); border: 1px solid var(--rule); display: inline-block;"></span> {{ __('cases.not_applicable') }}
             </span>
         </div>
-    </div>
+    </div> --}}
 
     {{-- ═══ Approval Panel (kept) ═══ --}}
     @if($isPending && $canApprove)
