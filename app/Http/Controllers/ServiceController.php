@@ -13,6 +13,7 @@ class ServiceController extends Controller
 {
     public function adrScorecard(Request $request)
     {
+        abort_if(auth()->user()->isLitigationManager(), 403, 'Litigation Managers cannot access the Mediation Scorecard.');
         $hubId = $request->input('_active_hub', 'all');
 
         // ── Cached KPI metrics (10 COUNT queries → 1 cache lookup after first load) ──
@@ -188,6 +189,7 @@ class ServiceController extends Controller
 
     public function adrCalendar(Request $request)
     {
+        abort_if(auth()->user()->isLitigationManager(), 403, 'Litigation Managers cannot access the Mediation Calendar.');
         $hubId = $request->input('_active_hub', 'all');
 
         // Mediation cases only
@@ -322,6 +324,7 @@ class ServiceController extends Controller
 
     public function litigationScorecard(Request $request)
     {
+        abort_if(auth()->user()->isMediationManager(), 403, 'Mediation Managers cannot access the Litigation Scorecard.');
         $hubId   = $request->input('_active_hub', 'all');
         $version = (int) Cache::get('jh.cache.version', 0);
         $litKey  = "scorecard.litigation.v{$version}.{$hubId}";
@@ -602,6 +605,7 @@ class ServiceController extends Controller
 
     public function litigationCalendar(Request $request)
     {
+        abort_if(auth()->user()->isMediationManager(), 403, 'Mediation Managers cannot access the Litigation Calendar.');
         $hubId = $request->input('_active_hub', 'all');
 
         $litQ = CaseRecord::query()->where(function ($sq) {

@@ -10,15 +10,20 @@ class CaseController extends Controller
 {
     public function index(Request $request)
     {
-        $hubId = $request->input('_active_hub');
-
         // ── Base query with ALL active filters applied ──
         $user = $request->user();
+
+        // For non-global roles, always enforce their own hub_id — never trust request param
+        $hubId = $user->canSeeAllHubs()
+            ? $request->input('_active_hub')
+            : $user->hub_id;
+
         $base = CaseRecord::query()->forHub($hubId);
 
         // Role-based case filtering
         if ($user->isLawyer()) {
-            $base->whereNotIn('assigned_pathway', [
+            $base->where('assigned_to', $user->name)
+                 ->whereNotIn('assigned_pathway', [
                      'Mediation',
                      'ADR / Dispute Resolution Support',
                  ]);
@@ -74,9 +79,10 @@ class CaseController extends Controller
         }
 
         // ── Unfiltered base (only hub scope) for pathway + disposition counts ──
-        $hubBase = CaseRecord::query()->forHub($hubId);
+        $hubBase = CaseRecord::query()->forHub($hubId); // $hubId already role-enforced above
         if ($user->isLawyer()) {
-            $hubBase->whereNotIn('assigned_pathway', ['Mediation', 'ADR / Dispute Resolution Support']);
+            $hubBase->where('assigned_to', $user->name)
+                    ->whereNotIn('assigned_pathway', ['Mediation', 'ADR / Dispute Resolution Support']);
         }
         if ($user->isLitigationManager()) {
             $hubBase->whereIn('assigned_pathway', ['Representation in Court', 'Court Representation']);
@@ -192,12 +198,21 @@ class CaseController extends Controller
     {
         $viewer = auth()->user();
 
-        // Lawyers cannot access mediation / ADR cases
-        if ($viewer->isLawyer() && in_array($case->assigned_pathway, [
-            'Mediation',
-            'ADR / Dispute Resolution Support',
-        ])) {
-            abort(403, 'Lawyers are not permitted to view mediation cases.');
+        // Lawyers: only their own assigned cases, no mediation/ADR
+        if ($viewer->isLawyer()) {
+            if ($case->assigned_to !== $viewer->name) {
+                abort(403, 'You can only view cases assigned to you.');
+            }
+            if (in_array($case->assigned_pathway, ['Mediation', 'ADR / Dispute Resolution Support'])) {
+                abort(403, 'Lawyers are not permitted to view mediation cases.');
+            }
+        }
+
+        // Court Clerk: only litigation / court representation cases
+        if ($viewer->isCourtClerk() && !in_array($case->assigned_pathway, [
+            'Representation in Court', 'Court Representation',
+        ]) && $case->disposition !== 'litigation') {
+            abort(403, 'Court Clerks can only view litigation cases.');
         }
 
         // Litigation Manager: only Representation in Court cases

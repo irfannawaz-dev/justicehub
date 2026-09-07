@@ -22,27 +22,46 @@
    ───────────────────────────────────────────────────────────── */
 
 :root {
-  --ink: #181714;
-  --ink-2: #3a3832;
-  --ink-3: #6b6a65;
-  --ink-4: #9a9892;
-  --parchment: #f7f3eb;     /* body/page background */
-  --parchment-2: #ede7d9;
-  --paper: #fdfcf7;         /* card surfaces */
-  --cream: #f7f3eb;         /* always-cream — for text on dark surfaces */
-  --forest: #163029;
-  --forest-2: #1e433a;
-  --forest-3: #2d5a4e;
-  --moss: #4a7a5c;
-  --ochre: #b87319;
-  --ochre-2: #d9a05b;
-  --ochre-tint: rgba(184, 115, 25, 0.10);
-  --burgundy: #8a2e1d;
-  --burgundy-tint: rgba(138, 46, 29, 0.08);
-  --rule: #d9d2c1;
-  --rule-2: #ebe4d2;
-  --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.04);
-  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.05);
+  /* Text */
+  --ink:   #1a2638;
+  --ink-2: #2d3f55;
+  --ink-3: #607080;
+  --ink-4: #9aadb8;
+
+  /* Backgrounds */
+  --parchment:   #ffffff;     /* main panel background */
+  --parchment-2: #eef4f8;
+  --paper:       #f4f8fb;     /* card surfaces */
+  --cream:       #f0f6fa;     /* for text on dark surfaces */
+  --surface:     #f8fbfd;
+  --surface-2:   #eef4f8;
+
+  /* Brand — sidebar & buttons */
+  --forest:   #1A4F70;
+  --forest-2: #1e5c85;
+  --forest-3: #236899;
+  --moss:     #2b87b8;
+
+  /* Topbar */
+  --topbar-bg:         #0EA1E3;
+  --topbar-ink:        #ffffff;
+  --topbar-ink-muted:  rgba(255,255,255,0.75);
+  --topbar-rule:       rgba(255,255,255,0.22);
+  --topbar-hover:      rgba(255,255,255,0.15);
+
+  /* Accents — keep semantic meaning */
+  --ochre:          #b87319;
+  --ochre-2:        #d9a05b;
+  --ochre-tint:     rgba(184, 115, 25, 0.10);
+  --burgundy:       #8a2e1d;
+  --burgundy-tint:  rgba(138, 46, 29, 0.08);
+
+  /* Borders */
+  --rule:   #d6e2ec;
+  --rule-2: #e8f0f6;
+
+  --shadow-soft: 0 2px 8px rgba(26, 79, 112, 0.06);
+  --shadow-card: 0 4px 16px rgba(26, 79, 112, 0.08);
 }
 
 /* ─────────────────────────────────────────────────────────────

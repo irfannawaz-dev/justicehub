@@ -12,11 +12,11 @@
             ['route' => 'intake.create','label' => __('nav.nav_new_intake'),  'icon' => 'file-plus', 'permission' => 'cases.create'],
         ],
         __('nav.group_service_delivery') => [
-            ['route' => 'services.adr',              'label' => __('nav.nav_mediation_scorecard'),  'icon' => 'heart-handshake', 'permission' => 'cases.view'],
-            ['route' => 'services.adr-calendar',     'label' => __('nav.nav_mediation_calendar'),   'icon' => 'calendar',        'permission' => 'cases.view'],
-            ['route' => 'services.adr-complaints',   'label' => __('nav.nav_adr_complaints'),        'icon' => 'file-search',     'permission' => 'cases.view'],
-            ['route' => 'services.litigation',       'label' => __('nav.nav_litigation_scorecard'),  'icon' => 'gavel',           'permission' => 'cases.view'],
-            ['route' => 'services.litigation-calendar','label' => __('nav.nav_litigation_calendar'), 'icon' => 'calendar',        'permission' => 'cases.view'],
+            ['route' => 'services.adr',              'label' => __('nav.nav_mediation_scorecard'),  'icon' => 'heart-handshake', 'permission' => 'cases.view', 'except_roles' => ['litigation-manager']],
+            ['route' => 'services.adr-calendar',     'label' => __('nav.nav_mediation_calendar'),   'icon' => 'calendar',        'permission' => 'cases.view', 'except_roles' => ['litigation-manager']],
+            ['route' => 'services.adr-complaints',   'label' => __('nav.nav_adr_complaints'),        'icon' => 'file-search',     'permission' => 'cases.view', 'except_roles' => ['litigation-manager']],
+            ['route' => 'services.litigation',       'label' => __('nav.nav_litigation_scorecard'),  'icon' => 'gavel',           'permission' => 'cases.view', 'except_roles' => ['mediation-manager']],
+            ['route' => 'services.litigation-calendar','label' => __('nav.nav_litigation_calendar'), 'icon' => 'calendar',        'permission' => 'cases.view', 'except_roles' => ['mediation-manager']],
             ['route' => 'referrals.index',           'label' => __('nav.nav_referrals'),            'icon' => 'share-2',         'permission' => 'cases.view'],
             ['route' => 'outreach.index',            'label' => __('nav.nav_outreach'),             'icon' => 'megaphone',       'permission' => 'outreach.view'],
             ['route' => 'complaints.index',          'label' => __('nav.nav_complaints'),           'icon' => 'alert-triangle',  'permission' => 'complaints.view'],
@@ -152,6 +152,7 @@
                     if (!$user->can($item['permission'])) return false;
                     $modKey = $routeModuleMap[$item['route']] ?? null;
                     if ($modKey && $moduleOff($modKey)) return false;
+                    if (!empty($item['except_roles']) && in_array($user->role->value, $item['except_roles'])) return false;
                     return true;
                 });
             @endphp
