@@ -204,10 +204,8 @@
         </div>
     </div>
 
-    {{-- ═══════════════════════════════════════════════════════════
-         3. END-TO-END USER JOURNEY — HIDDEN
-         ═══════════════════════════════════════════════════════════ --}}
-    {{-- <div class="card jh-anim-section" style="padding: 22px 26px; margin-bottom: 20px; animation-delay: 0.2s;">
+    @if(false) {{-- END-TO-END USER JOURNEY — HIDDEN --}}
+    <div class="card jh-anim-section" style="padding: 22px 26px; margin-bottom: 20px; animation-delay: 0.2s;">
         <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px;">
             <div>
                 <div class="label-cap" style="font-size: 9.5px; margin-bottom: 4px;">{{ __('cases.end_to_end_journey') }}</div>
@@ -302,7 +300,8 @@
                 <span style="width: 10px; height: 10px; background: var(--rule-2); border: 1px solid var(--rule); display: inline-block;"></span> {{ __('cases.not_applicable') }}
             </span>
         </div>
-    </div> --}}
+    </div>
+    @endif
 
     {{-- ═══ Approval Panel (kept) ═══ --}}
     @if($isPending && $canApprove)
