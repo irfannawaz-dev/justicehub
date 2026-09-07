@@ -200,9 +200,17 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px;">
                     <div>
                         <label style="display:block; margin-bottom:6px; font-size:10px; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">{{ __('intake.district') }} <span style="color:var(--burgundy);">*</span></label>
-                        <select name="district" id="intakeDistrict" required class="inp" onchange="intakeLocationCascade('district')">
-                            <option value="">{{ __('intake.select_district') }}</option>
-                        </select>
+                        @if(auth()->user()->canSeeAllHubs())
+                            <select name="district" id="intakeDistrict" required class="inp" onchange="intakeLocationCascade('district')">
+                                <option value="">{{ __('intake.select_district') }}</option>
+                            </select>
+                        @else
+                            {{-- Hub-scoped users: district locked to their hub's district --}}
+                            @php $hubDistrict = \App\Models\Hub::find(auth()->user()->hub_id)?->district ?? ''; @endphp
+                            <input type="hidden" name="district" value="{{ $hubDistrict }}">
+                            <input type="text" id="intakeDistrict" value="{{ $hubDistrict }}" class="inp" readonly
+                                style="background: var(--parchment-2); color: var(--ink-3); cursor: not-allowed;">
+                        @endif
                     </div>
                     <div>
                         <label style="display:block; margin-bottom:6px; font-size:10px; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">{{ __('intake.tehsil') }} <span style="color:var(--burgundy);">*</span></label>
@@ -432,28 +440,33 @@ document.getElementById('jh-intake-form').addEventListener('submit', function() 
     var districtSel = document.getElementById('intakeDistrict');
     if (!districtSel) return;
 
-    // Fill all districts
-    var districts = Object.keys(_locData).sort();
-    districts.forEach(function(d) {
-        var o = document.createElement('option');
-        o.value = d; o.textContent = d;
-        districtSel.appendChild(o);
-    });
+    var isLocked = districtSel.tagName === 'INPUT'; // readonly input = hub-scoped user
 
-    // Wire hub → district auto-select
-    var hubSel = document.querySelector('[name="hubLocation"]');
-    if (hubSel) {
-        hubSel.addEventListener('change', function() {
-            var district = _locHubDistricts[this.value] || '';
-            districtSel.value = district;
-            intakeLocationCascade('district');
+    if (!isLocked) {
+        // Global users: fill full district dropdown
+        var districts = Object.keys(_locData).sort();
+        districts.forEach(function(d) {
+            var o = document.createElement('option');
+            o.value = d; o.textContent = d;
+            districtSel.appendChild(o);
         });
 
-        // Auto-select district if hub already has a value
-        if (hubSel.value && _locHubDistricts[hubSel.value]) {
-            districtSel.value = _locHubDistricts[hubSel.value];
-            intakeLocationCascade('district');
+        // Wire hub → district auto-select (global only)
+        var hubSel = document.querySelector('[name="hubLocation"]');
+        if (hubSel) {
+            hubSel.addEventListener('change', function() {
+                var district = _locHubDistricts[this.value] || '';
+                districtSel.value = district;
+                intakeLocationCascade('district');
+            });
+            if (hubSel.value && _locHubDistricts[hubSel.value]) {
+                districtSel.value = _locHubDistricts[hubSel.value];
+                intakeLocationCascade('district');
+            }
         }
+    } else {
+        // Hub-scoped users: district is pre-set, just trigger taluka cascade
+        intakeLocationCascade('district');
     }
 })();
 
