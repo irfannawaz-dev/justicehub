@@ -26,23 +26,23 @@
     $isDark       = session('theme', 'light') === 'dark';
 @endphp
 
-<header style="background: var(--paper); border-bottom: 1px solid var(--rule); padding: 0 20px 0 16px; height: 56px; display: flex; align-items: center; gap: 14px; flex-shrink: 0;">
+<header style="background: var(--topbar-bg); border-bottom: 1px solid var(--topbar-rule); padding: 0 20px 0 16px; height: 56px; display: flex; align-items: center; gap: 14px; flex-shrink: 0;">
 
     {{-- Sidebar toggle --}}
     <button id="jh-sidebar-toggle" onclick="jhToggleSidebar()"
         title="Toggle sidebar"
-        style="background: none; border: 1px solid var(--rule); padding: 6px 8px; cursor: pointer; color: var(--ink-3); display: flex; align-items: center; flex-shrink: 0; border-radius: 3px;"
-        onmouseenter="this.style.background='var(--parchment-2)';this.style.color='var(--ink)'"
-        onmouseleave="this.style.background='none';this.style.color='var(--ink-3)'">
+        style="background: none; border: 1px solid var(--topbar-rule); padding: 6px 8px; cursor: pointer; color: var(--topbar-ink); display: flex; align-items: center; flex-shrink: 0; border-radius: 3px;"
+        onmouseenter="this.style.background='var(--topbar-hover)'"
+        onmouseleave="this.style.background='none'">
         <x-lucide-panel-left style="width: 15px; height: 15px;" />
     </button>
 
     {{-- Breadcrumb / Page title --}}
     <div style="flex: 1; min-width: 0;">
         <div style="display: flex; align-items: center; gap: 8px;">
-            <div class="label-cap" style="font-size: 9px; white-space: nowrap;">{{ __('nav.topbar_breadcrumb_hub') }}</div>
-            <x-lucide-chevron-right style="width: 10px; height: 10px; color: var(--ink-4);" />
-            <div style="font-size: 14px; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            <div class="label-cap" style="font-size: 9px; white-space: nowrap; color: var(--topbar-ink-muted);">{{ __('nav.topbar_breadcrumb_hub') }}</div>
+            <x-lucide-chevron-right style="width: 10px; height: 10px; color: var(--topbar-ink-muted);" />
+            <div style="font-size: 14px; font-weight: 500; color: var(--topbar-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                 {{ $pageTitle }}
             </div>
         </div>
@@ -51,7 +51,7 @@
     {{-- Global search --}}
     <div data-jh-search style="position: relative; width: 280px;">
         <div style="position: relative;">
-            <x-lucide-search style="width: 14px; height: 14px; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--ink-4);" />
+            <x-lucide-search style="width: 14px; height: 14px; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--ink-3);" />
             <input
                 id="jh-search-input"
                 type="text"
@@ -75,7 +75,8 @@
     @php $themeUrl = route('settings.theme'); $csrf = csrf_token(); @endphp
     <button
         onclick="jhSetTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark', '{{ $csrf }}', '{{ $themeUrl }}')"
-        style="background: none; border: 1px solid var(--rule); padding: 7px 9px; cursor: pointer; color: var(--ink-2); display: flex; align-items: center;"
+        style="background: none; border: 1px solid var(--topbar-rule); padding: 7px 9px; cursor: pointer; color: var(--topbar-ink); display: flex; align-items: center;"
+        onmouseenter="this.style.background='var(--topbar-hover)'" onmouseleave="this.style.background='none'"
         title="Toggle theme"
     >
         <span id="jh-icon-sun"  style="{{ $isDark ? 'display:none' : '' }}">
@@ -96,7 +97,8 @@
     <form method="POST" action="{{ route('settings.locale') }}" style="margin:0;">
         @csrf
         <button type="submit" name="locale" value="{{ $nextLocale }}"
-            style="background: none; border: 1px solid var(--rule); padding: 5px 10px; cursor: pointer; color: var(--ink-2); font-size: 11px; font-weight: 600; font-family: inherit; letter-spacing: 0.02em;{{ in_array($currentLocale, ['sd', 'ur']) ? ' font-family:\"Noto Nastaliq Urdu\", Tahoma, sans-serif;' : '' }}"
+            style="background: none; border: 1px solid var(--topbar-rule); padding: 5px 10px; cursor: pointer; color: var(--topbar-ink); font-size: 11px; font-weight: 600; font-family: inherit; letter-spacing: 0.02em;{{ in_array($currentLocale, ['sd', 'ur']) ? ' font-family:\"Noto Nastaliq Urdu\", Tahoma, sans-serif;' : '' }}"
+            onmouseenter="this.style.background='var(--topbar-hover)'" onmouseleave="this.style.background='none'"
             title="Switch language">
             {{ $localeLabels[$currentLocale] ?? 'EN' }}
         </button>
@@ -105,7 +107,7 @@
     {{-- Notification bell --}}
     <div style="position: relative;" id="jh-notif-wrap">
         <button id="jh-notif-btn" onclick="jhToggleNotifications()"
-            style="background: none; border: none; cursor: pointer; color: var(--ink-3); position: relative; padding: 4px; display:flex; align-items:center;">
+            style="background: none; border: none; cursor: pointer; color: var(--topbar-ink); position: relative; padding: 4px; display:flex; align-items:center;">
             <x-lucide-bell style="width: 17px; height: 17px;" />
             <span id="jh-notif-badge"
                 style="display:none; position:absolute; top:-3px; right:-3px; min-width:16px; height:16px; background:var(--burgundy); color:#fff; border-radius:99px; font-size:9px; font-weight:700; line-height:16px; text-align:center; padding:0 3px;">
@@ -134,10 +136,10 @@
     <div class="dropdown" style="position: relative;">
         <button class="dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"
             style="background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; padding: 4px;">
-            <div style="width: 28px; height: 28px; background: var(--forest); color: var(--cream); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500;">
+            <div style="width: 28px; height: 28px; background: rgba(255,255,255,0.2); color: var(--topbar-ink); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500;">
                 {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
             </div>
-            <x-lucide-chevron-down style="width: 11px; height: 11px; color: var(--ink-4);" />
+            <x-lucide-chevron-down style="width: 11px; height: 11px; color: var(--topbar-ink-muted);" />
         </button>
 
         <ul class="dropdown-menu dropdown-menu-end" style="min-width: 180px; padding: 0; border: 1px solid var(--rule); border-radius: 4px; background: var(--paper); box-shadow: 0 6px 20px rgba(0,0,0,.12); margin-top: 8px;">
