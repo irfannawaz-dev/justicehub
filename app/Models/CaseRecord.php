@@ -93,8 +93,9 @@ class CaseRecord extends Model
         if ($value === null) return null;
         try {
             return decrypt($value);
-        } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
-            return $value; // return as-is if not encrypted (old records)
+        } catch (\Throwable $e) {
+            // DecryptException = plain-text legacy value; ErrorException (unserialize) = wrong key
+            return $value;
         }
     }
 
