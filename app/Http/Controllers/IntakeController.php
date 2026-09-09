@@ -177,11 +177,11 @@ class IntakeController extends Controller
                 'pathway_ngo_name'   => $request->pathwayNgoName,
                 'pathway_other_details' => $request->pathwayOtherDetails,
                 'complaint_department' => $request->complaintDepartment,
-                'is_gbv'             => str_contains(strtolower($request->category ?? ''), 'gbv'),
+                'is_gbv'             => str_contains(strtolower($request->category ?? ''), 'gbv') || str_contains(strtolower($request->category ?? ''), 'family'),
                 'is_child'           => str_contains(strtolower($request->category ?? ''), 'juvenile') || str_contains(strtolower($request->category ?? ''), 'child'),
-                'is_minority'        => false,
-                'is_disability'      => false,
-                'is_underserved'     => false,
+                'is_minority'        => !empty($request->religion) && !in_array($request->religion, ['Muslim', 'Prefer not to say', '']),
+                'is_disability'      => $request->disabilityStatus === 'Yes',
+                'is_underserved'     => in_array($request->monthlyIncome, ['Less than 30,000', '30,000 - 60,000']),
                 'assigned_to'        => $this->resolveAssignedTo($request),
                 'assigned_staff_id'  => (in_array($request->assignedPathway, ['Court Representation', 'Legal Advice / Consultation']) && $request->pathwaySpecific === 'Justice Hub Lawyer' && $request->assignedLawyer)
                                         ? \App\Models\Staff::where('user_id', $request->assignedLawyer)->value('id')
