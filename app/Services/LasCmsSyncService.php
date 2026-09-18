@@ -28,6 +28,16 @@ class LasCmsSyncService
     }
 
     /**
+     * Normalize CNIC: strip all non-digits then format as XXXXX-XXXXXXX-X
+     */
+    public function formatCnic(string $cnic): string
+    {
+        $digits = preg_replace('/\D/', '', $cnic); // strip dashes/spaces → 13 digits
+        if (strlen($digits) !== 13) return $cnic;  // return as-is if unexpected length
+        return substr($digits, 0, 5) . '-' . substr($digits, 5, 7) . '-' . substr($digits, 12, 1);
+    }
+
+    /**
      * Look up an existing programs record by CNIC and link it to the JusticeHub case.
      * Does NOT create a new record — only matches an existing one.
      * Returns the programs.id if matched, null otherwise.
@@ -37,9 +47,11 @@ class LasCmsSyncService
         if (!$case->cnic) return null;
         if ($case->external_case_id) return $case->external_case_id;
 
+        $formattedCnic = $this->formatCnic($case->cnic);
+
         try {
             $response = $this->http()->get("{$this->baseUrl}/cases/lookup", [
-                'cnic' => $case->cnic,
+                'cnic' => $formattedCnic,  // send formatted: 42201-1234567-1
             ]);
 
             if (!$response->successful()) {
@@ -92,7 +104,7 @@ class LasCmsSyncService
             'clientName'          => $case->name,
             'fatherHusbandName'   => $case->father_husband_name ?: '-',
             'contactNumber'       => $case->primary_contact ?: '-',
-            'cnic'                => $case->cnic,
+            'cnic'                => $this->formatCnic($case->cnic ?? ''),
             'gender'              => $case->gender ?: 'Not specified',
             'age'                 => $case->age,
             'religion'            => $case->religion ?: 'Not specified',
