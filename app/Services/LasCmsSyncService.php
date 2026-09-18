@@ -28,8 +28,52 @@ class LasCmsSyncService
     }
 
     /**
+     * Look up an existing programs record by CNIC and link it to the JusticeHub case.
+     * Does NOT create a new record — only matches an existing one.
+     * Returns the programs.id if matched, null otherwise.
+     */
+    public function linkByCnic(CaseRecord $case): ?int
+    {
+        if (!$case->cnic) return null;
+        if ($case->external_case_id) return $case->external_case_id;
+
+        try {
+            $response = $this->http()->get("{$this->baseUrl}/cases/lookup", [
+                'cnic' => $case->cnic,
+            ]);
+
+            if (!$response->successful()) {
+                Log::info("LasCMS linkByCnic: no match for CNIC {$case->cnic} ({$case->case_uid}) — HTTP {$response->status()}");
+                return null;
+            }
+
+            $externalId = $response->json('program_id')
+                ?? $response->json('id')
+                ?? $response->json('data.id');
+
+            if (!$externalId) {
+                Log::info("LasCMS linkByCnic: response OK but no id for CNIC {$case->cnic} ({$case->case_uid})");
+                return null;
+            }
+
+            $case->update([
+                'external_case_id'   => $externalId,
+                'external_synced_at' => now(),
+            ]);
+
+            Log::info("LasCMS: Linked {$case->case_uid} → programs.id={$externalId} via CNIC match");
+            return $externalId;
+
+        } catch (\Exception $e) {
+            Log::warning("LasCMS linkByCnic exception for {$case->case_uid}: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Push a JusticeHub case to LAS CMS via API.
      * Returns the external programs.id on success.
+     * @deprecated Use linkByCnic() instead — cases should be matched, not created.
      */
     public function pushCase(CaseRecord $case): ?int
     {
