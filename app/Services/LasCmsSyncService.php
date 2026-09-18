@@ -321,11 +321,28 @@ class LasCmsSyncService
             if (!empty($data['caseDecision']))      $metaUpdates['case_decision']  = $data['caseDecision'];
             if (!empty($data['currentCaseStatus'])) $metaUpdates['external_status'] = $data['currentCaseStatus'];
 
-            if ($metaUpdates) {
-                $case->update([
-                    'meta'               => array_merge($case->meta ?? [], $metaUpdates),
-                    'external_synced_at' => now(),
-                ]);
+            // Sync LAS CMS status → JusticeHub status column
+            $externalStatus = $data['currentCaseStatus'] ?? null;
+            $newStatus = match(strtolower((string) $externalStatus)) {
+                'decided', 'disposed', 'closed'      => \App\Enums\CaseStatus::Closed,
+                'settled/compromise', 'settled'      => \App\Enums\CaseStatus::Settlement,
+                'running', 'pending', 'active', ''   => null,  // don't change
+                default                              => null,
+            };
+
+            $updatePayload = [
+                'meta'               => array_merge($case->meta ?? [], $metaUpdates),
+                'external_synced_at' => now(),
+            ];
+
+            // Only close — never reopen a case from LAS CMS
+            if ($newStatus && $case->status === \App\Enums\CaseStatus::Active) {
+                $updatePayload['status'] = $newStatus;
+                Log::info("LasCMS: Synced status for {$case->case_uid} → {$newStatus->value} (from LAS: {$externalStatus})");
+            }
+
+            if ($metaUpdates || $newStatus) {
+                $case->update($updatePayload);
             }
 
         } catch (\Exception $e) {
