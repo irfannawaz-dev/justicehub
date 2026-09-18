@@ -197,6 +197,17 @@
                     <tr class="tr-hover" onclick="window.location='{{ route('cases.show', $case) }}'" style="border-bottom: 1px solid var(--rule-2);">
                         <td style="padding: 12px 14px;">
                             <span class="mono" style="font-size: 12px; color: var(--forest); font-weight: 500;">{{ $case->case_uid }}</span>
+                            @if($case->external_case_id)
+                            <div style="display:inline-flex; align-items:center; gap:3px; margin-left:6px; padding:1px 6px; background:rgba(22,48,41,0.08); border:1px solid rgba(22,48,41,0.25); vertical-align:middle;" title="Linked to LAS CMS · programs.id={{ $case->external_case_id }}">
+                                <x-lucide-gavel style="width:9px; height:9px; color:var(--forest);" />
+                                <span style="font-size:9px; font-weight:700; letter-spacing:0.06em; color:var(--forest);">LAS</span>
+                            </div>
+                            @elseif($case->assigned_pathway === 'Court Representation')
+                            <div style="display:inline-flex; align-items:center; gap:3px; margin-left:6px; padding:1px 6px; background:rgba(184,115,25,0.06); border:1px dashed rgba(184,115,25,0.4); vertical-align:middle;" title="Court Representation — not yet matched in LAS CMS">
+                                <x-lucide-link-2-off style="width:9px; height:9px; color:var(--ochre);" />
+                                <span style="font-size:9px; font-weight:600; letter-spacing:0.06em; color:var(--ochre);">LAS?</span>
+                            </div>
+                            @endif
                         </td>
                         <td style="padding: 12px 14px;">
                             <div style="display: flex; align-items: center; gap: 8px;">
@@ -264,7 +275,20 @@
         <a href="{{ route('cases.show', $case) }}" class="card" style="padding: 18px 20px; text-decoration: none; color: inherit; display: flex; flex-direction: column; gap: 12px; transition: all 120ms;" onmouseenter="this.style.borderColor='var(--forest)'" onmouseleave="this.style.borderColor='var(--rule)'">
             {{-- Header --}}
             <div style="display: flex; align-items: center; justify-content: space-between;">
-                <span class="mono" style="font-size: 11px; color: var(--forest); font-weight: 500;">{{ $case->case_uid }}</span>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <span class="mono" style="font-size: 11px; color: var(--forest); font-weight: 500;">{{ $case->case_uid }}</span>
+                    @if($case->external_case_id)
+                    <span style="display:inline-flex; align-items:center; gap:2px; padding:1px 5px; background:rgba(22,48,41,0.08); border:1px solid rgba(22,48,41,0.25);" title="Linked to LAS CMS">
+                        <x-lucide-gavel style="width:8px; height:8px; color:var(--forest);" />
+                        <span style="font-size:8px; font-weight:700; color:var(--forest);">LAS</span>
+                    </span>
+                    @elseif($case->assigned_pathway === 'Court Representation')
+                    <span style="display:inline-flex; align-items:center; gap:2px; padding:1px 5px; background:rgba(184,115,25,0.06); border:1px dashed rgba(184,115,25,0.4);" title="Court case — not yet in LAS CMS">
+                        <x-lucide-link-2-off style="width:8px; height:8px; color:var(--ochre);" />
+                        <span style="font-size:8px; font-weight:600; color:var(--ochre);">LAS?</span>
+                    </span>
+                    @endif
+                </div>
                 <x-pill :color="$case->status->color()" :bg="$case->status->color() . '15'" :border-color="$case->status->color() . '40'">
                     {{ $case->status->value }}
                 </x-pill>
