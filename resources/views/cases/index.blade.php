@@ -68,6 +68,12 @@
             <div class="serif" style="font-size: 28px; font-weight: 500; line-height: 1; margin-bottom: 6px; color: var(--ink);">{{ $pwCount }}</div>
             <div style="font-size: 12px; font-weight: 600; color: var(--ink); margin-bottom: 2px;">{{ $pw['label'] }}</div>
             <div style="font-size: 10.5px; color: var(--ink-3);">{{ $pw['sub'] }}</div>
+            @if($pw['key'] === 'court')
+            <div style="display:flex; gap:8px; margin-top:6px; font-size:10px; font-weight:600;">
+                <span style="color:#2f7a4d;">{{ $pathwayCounts['court_in_cms'] ?? 0 }} in LAS</span>
+                <span style="color:var(--burgundy);">{{ $pathwayCounts['court_not_cms'] ?? 0 }} not in LAS</span>
+            </div>
+            @endif
         </a>
         @endforeach
     </div>
