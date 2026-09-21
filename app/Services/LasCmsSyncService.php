@@ -32,9 +32,14 @@ class LasCmsSyncService
      */
     public function formatCnic(string $cnic): string
     {
-        $digits = preg_replace('/\D/', '', $cnic); // strip dashes/spaces → 13 digits
+        $digits = $this->normalizeCnic($cnic);
         if (strlen($digits) !== 13) return $cnic;  // return as-is if unexpected length
         return substr($digits, 0, 5) . '-' . substr($digits, 5, 7) . '-' . substr($digits, 12, 1);
+    }
+
+    public function normalizeCnic(?string $cnic): string
+    {
+        return preg_replace('/\D/', '', (string) $cnic);
     }
 
     /**
@@ -45,7 +50,12 @@ class LasCmsSyncService
     public function linkByCnic(CaseRecord $case): ?int
     {
         if (!$case->cnic) return null;
-        if ($case->external_case_id) return $case->external_case_id;
+
+        $localCnic = $this->normalizeCnic($case->cnic);
+        if (strlen($localCnic) !== 13) {
+            $this->setLinkStatus($case, 'invalid_cnic', [], false, true);
+            return null;
+        }
 
         $formattedCnic = $this->formatCnic($case->cnic);
 
@@ -55,7 +65,23 @@ class LasCmsSyncService
             ]);
 
             if (!$response->successful()) {
+                $status = match ($response->status()) {
+                    404 => 'not_found',
+                    409 => 'ambiguous',
+                    default => 'lookup_failed',
+                };
+                $this->setLinkStatus($case, $status, [
+                    'match_count' => $response->json('match_count'),
+                    'candidates'  => $response->json('candidates', []),
+                ], false, in_array($response->status(), [404, 409], true));
                 Log::info("LasCMS linkByCnic: no match for CNIC {$case->cnic} ({$case->case_uid}) — HTTP {$response->status()}");
+                return null;
+            }
+
+            $matchedCnic = $this->normalizeCnic($response->json('cnic'));
+            if (!hash_equals($localCnic, $matchedCnic)) {
+                $this->setLinkStatus($case, 'cnic_mismatch', [], false, true);
+                Log::warning("LasCMS linkByCnic: returned CNIC mismatch for {$case->case_uid}");
                 return null;
             }
 
@@ -71,6 +97,10 @@ class LasCmsSyncService
             $case->update([
                 'external_case_id'   => $externalId,
                 'external_synced_at' => now(),
+                'meta'               => array_merge($case->meta ?? [], [
+                    'las_link_status'      => 'verified',
+                    'las_link_verified_at' => now()->toIso8601String(),
+                ]),
             ]);
 
             Log::info("LasCMS: Linked {$case->case_uid} → programs.id={$externalId} via CNIC match");
@@ -80,6 +110,34 @@ class LasCmsSyncService
             Log::warning("LasCMS linkByCnic exception for {$case->case_uid}: " . $e->getMessage());
             return null;
         }
+    }
+
+    protected function setLinkStatus(
+        CaseRecord $case,
+        string $status,
+        array $details = [],
+        bool $touchSyncTime = false,
+        bool $clearLink = false,
+    ): void
+    {
+        $meta = array_merge($case->meta ?? [], ['las_link_status' => $status]);
+
+        foreach ($details as $key => $value) {
+            if ($value !== null && $value !== []) {
+                $meta['las_link_' . $key] = $value;
+            }
+        }
+
+        $payload = ['meta' => $meta];
+        if ($touchSyncTime) {
+            $payload['external_synced_at'] = now();
+        }
+        if ($clearLink) {
+            $payload['external_case_id'] = null;
+            $payload['external_synced_at'] = null;
+        }
+
+        $case->update($payload);
     }
 
     /**
