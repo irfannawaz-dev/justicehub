@@ -471,6 +471,23 @@
                                 <div class="jh-intake-label">{{ __('cases.date_time_intake') }}</div>
                                 <div class="jh-intake-value">{{ $case->intake_date->format('M d, Y') }} {{ $case->intake_time ?? '' }}</div>
                             </div>
+                            @if($case->cnic)
+                            <div class="jh-intake-row">
+                                <div class="jh-intake-label">CNIC</div>
+                                <div class="jh-intake-value" style="font-family: monospace; letter-spacing: 0.04em;">
+                                    {{ $case->cnic }}
+                                    @if($case->external_case_id)
+                                    <span style="margin-left:8px; display:inline-flex; align-items:center; gap:4px; background:var(--forest); color:#fff; font-size:9px; font-weight:700; letter-spacing:0.05em; padding:2px 7px; font-family:inherit;">
+                                        <x-lucide-gavel style="width:9px;height:9px;" /> LAS #{{ $case->external_case_id }}
+                                    </span>
+                                    @elseif($case->assigned_pathway === 'Court Representation')
+                                    <span style="margin-left:8px; display:inline-flex; align-items:center; gap:4px; border:1px dashed var(--ochre); color:var(--ochre); font-size:9px; font-weight:700; letter-spacing:0.05em; padding:2px 7px; font-family:inherit;">
+                                        <x-lucide-link-2-off style="width:9px;height:9px;" /> Not linked to LAS
+                                    </span>
+                                    @endif
+                                </div>
+                            </div>
+                            @endif
                             <div class="jh-intake-row">
                                 <div class="jh-intake-label">{{ __('cases.intake_mode') }}</div>
                                 <div class="jh-intake-value">{{ $case->mode ?? '---' }}</div>
