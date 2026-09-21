@@ -32,7 +32,7 @@ class ImportJsonMerge extends Command
         $errors   = 0;
         $perHub   = [];
 
-        foreach ($records as $i => $r) {
+        foreach ($records as $r) {
             $uid = $r['case_uid'] ?? null;
             if (! $uid) continue;
 
@@ -43,10 +43,7 @@ class ImportJsonMerge extends Command
 
             if (! $dryRun) {
                 try {
-                    // Encode meta as JSON string if it's an array
-                    if (isset($r['meta']) && is_array($r['meta'])) {
-                        $r['meta'] = json_encode($r['meta']);
-                    }
+                    // meta stays as array — the model's 'array' cast handles encoding
                     CaseRecord::create($r);
                 } catch (\Throwable $e) {
                     $errors++;
