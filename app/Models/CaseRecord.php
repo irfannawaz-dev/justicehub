@@ -87,21 +87,36 @@ class CaseRecord extends Model
         ];
     }
 
-    // Custom CNIC accessor — handles both legacy plain-text and new encrypted values
+    // Handles legacy plaintext plus both serialized and string-only Laravel encryption.
     public function getCnicAttribute(?string $value): ?string
     {
         if ($value === null) return null;
+
         try {
-            return decrypt($value);
+            $decrypted = decrypt($value, false);
+            $unserialized = @unserialize($decrypted, ['allowed_classes' => false]);
+
+            return is_string($unserialized) ? $unserialized : $decrypted;
         } catch (\Throwable $e) {
-            // DecryptException = plain-text legacy value; ErrorException (unserialize) = wrong key
-            return $value;
+            // Preserve legacy plaintext, but never expose an unreadable encrypted payload.
+            return $this->looksLikeEncryptedPayload($value) ? null : $value;
         }
     }
 
     public function setCnicAttribute(?string $value): void
     {
-        $this->attributes['cnic'] = $value ? encrypt($value) : null;
+        $this->attributes['cnic'] = $value ? encrypt($value, false) : null;
+    }
+
+    private function looksLikeEncryptedPayload(string $value): bool
+    {
+        $decoded = base64_decode($value, true);
+        if ($decoded === false) return false;
+
+        $payload = json_decode($decoded, true);
+
+        return is_array($payload)
+            && isset($payload['iv'], $payload['value'], $payload['mac']);
     }
 
     public function hub(): BelongsTo
