@@ -101,6 +101,52 @@ class FilterTest extends TestCase
             ->assertSee('CL-ALL02');
     }
 
+    public function test_cases_filter_by_verified_las_connection(): void
+    {
+        $hub = Hub::first();
+        $this->makeCase($hub->id, [
+            'case_uid' => 'CL-LAS-CONNECTED',
+            'external_case_id' => 3327,
+            'meta' => ['las_link_status' => 'verified'],
+        ]);
+        $this->makeCase($hub->id, [
+            'case_uid' => 'CL-LAS-NOT-CONNECTED',
+            'external_case_id' => 3963,
+            'meta' => ['las_link_status' => 'ambiguous'],
+        ]);
+
+        $this->get(route('cases.index', ['cms_link' => 'connected']))
+            ->assertOk()
+            ->assertSee('CL-LAS-CONNECTED')
+            ->assertDontSee('CL-LAS-NOT-CONNECTED');
+    }
+
+    public function test_cases_filter_by_missing_or_unverified_las_connection(): void
+    {
+        $hub = Hub::first();
+        $this->makeCase($hub->id, [
+            'case_uid' => 'CL-LAS-VERIFIED',
+            'external_case_id' => 3327,
+            'meta' => ['las_link_status' => 'verified'],
+        ]);
+        $this->makeCase($hub->id, [
+            'case_uid' => 'CL-LAS-AMBIGUOUS',
+            'external_case_id' => 3963,
+            'meta' => ['las_link_status' => 'ambiguous'],
+        ]);
+        $this->makeCase($hub->id, [
+            'case_uid' => 'CL-LAS-MISSING',
+            'external_case_id' => null,
+            'meta' => ['las_link_status' => 'not_found'],
+        ]);
+
+        $this->get(route('cases.index', ['cms_link' => 'not_connected']))
+            ->assertOk()
+            ->assertDontSee('CL-LAS-VERIFIED')
+            ->assertSee('CL-LAS-AMBIGUOUS')
+            ->assertSee('CL-LAS-MISSING');
+    }
+
     // ─── Evidence ────────────────────────────────────────────────
 
     public function test_evidence_filter_by_type_recognition(): void

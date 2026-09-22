@@ -84,6 +84,8 @@ return [
     'high_risk'              => 'وڌيڪ خطرو',
     'sla_breach'             => 'SLA ڀڃڪڙي',
     'underserved'            => 'نظرانداز ٿيل',
+    'cms_connected'          => 'LAS CMS سان ڏنڍيل',
+    'cms_not_connected'      => 'LAS CMS سان ڏنڍيل ناهي',
 
     // انڊيڪس صفحو – ٽيبل هيڊرز
     'issue'           => 'مسئلو',

@@ -84,6 +84,8 @@ return [
     'high_risk'              => 'زیادہ خطرہ',
     'sla_breach'             => 'SLA خلاف ورزی',
     'underserved'            => 'نظرانداز',
+    'cms_connected'          => 'LAS CMS سے منسلک',
+    'cms_not_connected'      => 'LAS CMS سے منسلک نہیں',
 
     // انڈیکس صفحہ – ٹیبل ہیڈرز
     'issue'           => 'مسئلہ',

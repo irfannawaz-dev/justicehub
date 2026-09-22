@@ -119,19 +119,30 @@ class CaseController extends Controller
 
         // Service pathway counts — matching actual lookup values stored in DB
         $hubCaseIds = (clone $hubBase)->pluck('id');
+        $courtCases = (clone $hubBase)->whereIn('assigned_pathway', ['Court Representation', 'Representation in Court']);
+        $courtConnectedCount = (clone $courtCases)
+            ->whereNotNull('external_case_id')
+            ->where('meta->las_link_status', 'verified')
+            ->count();
+
         $pathwayCounts = [
             'legal_advice'  => (clone $hubBase)->where('assigned_pathway', 'Legal Advice / Consultation')->count(),
             'mediation'     => (clone $hubBase)->where('assigned_pathway', 'Mediation')->count(),
             'adr'           => (clone $hubBase)->where('assigned_pathway', 'ADR / Dispute Resolution Support')->count(),
             'court'         => (clone $hubBase)->whereIn('assigned_pathway', ['Court Representation', 'Representation in Court'])->count(),
-            'court_in_cms'  => (clone $hubBase)->whereIn('assigned_pathway', ['Court Representation', 'Representation in Court'])->whereNotNull('external_case_id')->count(),
-            'court_not_cms' => (clone $hubBase)->whereIn('assigned_pathway', ['Court Representation', 'Representation in Court'])->whereNull('external_case_id')->count(),
+            'court_in_cms'  => $courtConnectedCount,
+            'court_not_cms' => (clone $courtCases)->count() - $courtConnectedCount,
             'referred'      => (clone $hubBase)->whereIn('assigned_pathway', ['Government Department / Public Institution', 'Civil Society / NGO / CSO / NPO', 'Referral', 'Other'])->count(),
             'info_awareness'=> (clone $hubBase)->where('assigned_pathway', 'Information & Awareness')->count(),
         ];
 
         // ── Cohort & status counts from filtered base ──
         $totalFiltered = (clone $base)->count();
+        $cmsConnectedCount = (clone $base)
+            ->whereNotNull('external_case_id')
+            ->where('meta->las_link_status', 'verified')
+            ->count();
+
         $counts = [
             'total'      => $totalFiltered,
             'pending'    => (clone $base)->where('status', 'Pending Approval')->count(),
@@ -144,6 +155,8 @@ class CaseController extends Controller
             'high_risk'  => (clone $base)->whereIn('urgency', ['High', 'Immediate'])->count(),
             'sla_breach' => (clone $base)->where('sla_met', false)->count(),
             'underserved'=> (clone $base)->where('is_underserved', true)->count(),
+            'cms_connected' => $cmsConnectedCount,
+            'cms_not_connected' => $totalFiltered - $cmsConnectedCount,
             'active'     => (clone $base)->where('status', 'Active')->count(),
             'closed'     => (clone $base)->whereIn('status', ['Closed', 'Settlement'])->count(),
             'safeguarding' => (clone $base)->where(function($q) {
@@ -174,6 +187,18 @@ class CaseController extends Controller
             elseif ($request->status === 'closed') $query->whereIn('status', ['Closed', 'Settlement']);
             elseif ($request->status === 'safeguarding') $query->where(fn($q) => $q->where('is_gbv', true)->orWhere('is_child', true));
             elseif ($request->status === 'sla') $query->where('sla_met', false);
+        }
+        if ($request->filled('cms_link') && $request->cms_link !== 'all') {
+            if ($request->cms_link === 'connected') {
+                $query->whereNotNull('external_case_id')
+                    ->where('meta->las_link_status', 'verified');
+            } elseif ($request->cms_link === 'not_connected') {
+                $query->where(function ($q) {
+                    $q->whereNull('external_case_id')
+                        ->orWhereNull('meta->las_link_status')
+                        ->orWhere('meta->las_link_status', '!=', 'verified');
+                });
+            }
         }
 
         $cases = $query->orderByDesc('id')->paginate(config('justice_hub.per_page.cases', 25));

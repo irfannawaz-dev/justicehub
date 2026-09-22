@@ -6,8 +6,9 @@
     $currentDistrict = request('district', 'all');
     $currentSearch = request('search', '');
     $currentPathway = request('pathway', '');
+    $currentCmsLink = request('cms_link', 'all');
     $viewMode = request('view', 'list');
-    $hasFilters = $currentDisposition !== 'all' || $currentStatus !== 'all' || $currentHub !== 'all' || $currentDistrict !== 'all' || $currentSearch || $currentPathway;
+    $hasFilters = $currentDisposition !== 'all' || $currentStatus !== 'all' || $currentHub !== 'all' || $currentDistrict !== 'all' || $currentSearch || $currentPathway || $currentCmsLink !== 'all';
 @endphp
 
 <div style="padding: 24px 34px 64px; max-width: 1600px; margin: 0 auto;">
@@ -102,12 +103,38 @@
             <div style="font-size: 9.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-3); font-weight: 500;">{{ $k['label'] }}</div>
         </div>
         @endforeach
+        @foreach([
+            ['filter' => 'connected',     'label' => __('cases.cms_connected'),     'icon' => 'link-2',     'value' => $counts['cms_connected'],     'hue' => 'var(--moss)'],
+            ['filter' => 'not_connected', 'label' => __('cases.cms_not_connected'), 'icon' => 'link-2-off', 'value' => $counts['cms_not_connected'], 'hue' => 'var(--burgundy)'],
+        ] as $cmsTile)
+            @php
+                $isActiveCmsTile = $currentCmsLink === $cmsTile['filter'];
+            @endphp
+            <a href="{{ route('cases.index', array_merge(request()->query(), ['cms_link' => $isActiveCmsTile ? 'all' : $cmsTile['filter'], 'page' => 1])) }}"
+               class="card"
+               aria-current="{{ $isActiveCmsTile ? 'true' : 'false' }}"
+               style="padding: 12px 12px 10px; border-radius: 4px; text-align: left; text-decoration: none; transition: border-color 150ms, transform 150ms; {{ $isActiveCmsTile ? 'border-color:' . $cmsTile['hue'] . ';border-width:2px;' : '' }}"
+               onmouseenter="this.style.borderColor='{{ $cmsTile['hue'] }}';this.style.transform='translateY(-1px)'"
+               onmouseleave="this.style.borderColor='{{ $isActiveCmsTile ? $cmsTile['hue'] : 'var(--rule)' }}';this.style.transform='none'">
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px;">
+                    <x-dynamic-component :component="'lucide-' . $cmsTile['icon']" style="width: 13px; height: 13px; color: {{ $cmsTile['hue'] }};" />
+                </div>
+                <div class="serif" style="font-size: 22px; font-weight: 500; line-height: 1; margin-bottom: 4px; color: var(--ink);">{{ $cmsTile['value'] }}</div>
+                <div style="font-size: 9.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-3); font-weight: 500;">{{ $cmsTile['label'] }}</div>
+            </a>
+        @endforeach
     </div>
 
     {{-- ═══ Filter Bar ═══ --}}
     <form method="GET" action="{{ route('cases.index') }}" style="display: flex; align-items: center; gap: 12px; margin-bottom: 18px; flex-wrap: wrap;">
         {{-- Preserve existing filters --}}
         <input type="hidden" name="disposition" value="{{ $currentDisposition }}">
+        @if($currentPathway)
+            <input type="hidden" name="pathway" value="{{ $currentPathway }}">
+        @endif
+        @if($currentCmsLink !== 'all')
+            <input type="hidden" name="cms_link" value="{{ $currentCmsLink }}">
+        @endif
 
         <div class="label-cap" style="font-size: 9.5px;">{{ __('common.status') }}</div>
         <div style="display: flex; gap: 1px; background: var(--rule); padding: 1px;">
