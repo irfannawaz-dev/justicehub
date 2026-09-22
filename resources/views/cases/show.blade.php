@@ -541,6 +541,31 @@
                                     @endif
                                 </div>
                             </div>
+                            @if($case->primary_contact)
+                            <div class="jh-intake-row">
+                                <div class="jh-intake-label">Phone Number</div>
+                                <div class="jh-intake-value" style="font-family:monospace; letter-spacing:0.04em;">
+                                    {{ $case->primary_contact }}
+                                    @if($case->alternative_contact)
+                                    <span style="color:var(--ink-4); font-size:11px; margin-left:8px;">(Alt: {{ $case->alternative_contact }})</span>
+                                    @endif
+                                </div>
+                            </div>
+                            @endif
+                            <div class="jh-intake-row">
+                                <div class="jh-intake-label">Address</div>
+                                <div class="jh-intake-value">
+                                    @php
+                                        $parts = array_filter([
+                                            $case->full_address,
+                                            $case->union_council ? 'UC: ' . $case->union_council : null,
+                                            $case->tehsil,
+                                            $case->district,
+                                        ]);
+                                    @endphp
+                                    {{ $parts ? implode(', ', $parts) : '---' }}
+                                </div>
+                            </div>
                         </div>
 
                         {{-- Issue Description --}}
