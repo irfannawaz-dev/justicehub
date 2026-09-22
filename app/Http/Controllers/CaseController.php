@@ -1205,14 +1205,10 @@ class CaseController extends Controller
     {
         abort_unless($request->user()->can('reports.export'), 403);
 
-        $hubId   = $request->input('hub', 'all');
-        $status  = $request->input('status', 'all');
-        $pathway = $request->input('pathway', 'all');
-
         $filename = 'justice-hub-cases-' . now()->format('Y-m-d') . '.xlsx';
 
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Exports\CasesExport($hubId, $status, $pathway),
+            new \App\Exports\CasesExport($request->all()),
             $filename
         );
     }

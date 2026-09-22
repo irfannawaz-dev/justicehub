@@ -187,7 +187,7 @@
 
         {{-- Export Excel --}}
         @can('reports.export')
-        <a href="{{ route('cases.export', ['hub' => $currentHub, 'status' => $currentStatus, 'pathway' => $currentPathway]) }}"
+        <a href="{{ route('cases.export', array_filter(['hub' => $currentHub, 'status' => $currentStatus, 'pathway' => $currentPathway, 'disposition' => $currentDisposition, 'district' => $currentDistrict, 'search' => $currentSearch, 'cms_link' => $currentCmsLink], fn($v) => $v && $v !== 'all')) }}"
            style="display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border:1px solid var(--moss); color:var(--moss); font-size:12px; font-weight:500; text-decoration:none; font-family:inherit; transition:all 120ms;"
            onmouseenter="this.style.background='var(--moss)';this.style.color='#fff'"
            onmouseleave="this.style.background='transparent';this.style.color='var(--moss)'">
