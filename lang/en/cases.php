@@ -84,6 +84,8 @@ return [
     'high_risk'              => 'High Risk',
     'sla_breach'             => 'SLA Breach',
     'underserved'            => 'Underserved',
+    'cms_connected'          => 'Connected to LAS CMS',
+    'cms_not_connected'      => 'Not connected to LAS CMS',
 
     // Index page – table headers
     'issue'           => 'Issue',
