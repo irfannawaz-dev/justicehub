@@ -108,12 +108,19 @@ class CaseController extends Controller
         $referredPathways   = ['Government Department / Public Institution', 'Civil Society / NGO / CSO / NPO', 'Referral', 'Other'];
         $advicePathways     = ['Legal Advice / Consultation', 'Information & Awareness'];
 
+        // Count ombudsman cases (Govt pathway but functionally ADR)
+        $ombudsmanDispoCount = (clone $hubBase)
+            ->where('assigned_pathway', 'Government Department / Public Institution')
+            ->where('pathway_specific', 'like', '%Ombudsman%')
+            ->where(fn($q) => $q->whereNull('disposition')->orWhere('disposition', ''))
+            ->count();
+
         $dispositionCounts = [
             'all'         => $totalAll,
             'advice-only' => (clone $hubBase)->where(fn($q) => $q->where('disposition', 'advice-only')->orWhere(fn($q2) => $q2->whereNull('disposition')->whereIn('assigned_pathway', $advicePathways)))->count(),
             'litigation'  => (clone $hubBase)->where(fn($q) => $q->where('disposition', 'litigation')->orWhere(fn($q2) => $q2->whereNull('disposition')->whereIn('assigned_pathway', $litigationPathways)))->count(),
-            'adr'         => (clone $hubBase)->where(fn($q) => $q->where('disposition', 'adr')->orWhere(fn($q2) => $q2->whereNull('disposition')->whereIn('assigned_pathway', $adrPathways)))->count(),
-            'referred'    => (clone $hubBase)->where(fn($q) => $q->where('disposition', 'referred')->orWhere(fn($q2) => $q2->whereNull('disposition')->whereIn('assigned_pathway', $referredPathways)))->count(),
+            'adr'         => (clone $hubBase)->where(fn($q) => $q->where('disposition', 'adr')->orWhere(fn($q2) => $q2->whereNull('disposition')->whereIn('assigned_pathway', $adrPathways)))->count() + $ombudsmanDispoCount,
+            'referred'    => (clone $hubBase)->where(fn($q) => $q->where('disposition', 'referred')->orWhere(fn($q2) => $q2->whereNull('disposition')->whereIn('assigned_pathway', $referredPathways)))->count() - $ombudsmanDispoCount,
             'pending'     => (clone $hubBase)->where(fn($q) => $q->whereNull('disposition')->orWhere('disposition', ''))->whereNotIn('assigned_pathway', array_merge($litigationPathways, $adrPathways, $referredPathways, $advicePathways))->count(),
         ];
 
@@ -125,14 +132,20 @@ class CaseController extends Controller
             ->where('meta->las_link_status', 'verified')
             ->count();
 
+        // Ombudsman cases (under Govt pathway) count as ADR, not Referred
+        $ombudsmanCount = (clone $hubBase)
+            ->where('assigned_pathway', 'Government Department / Public Institution')
+            ->where('pathway_specific', 'like', '%Ombudsman%')
+            ->count();
+
         $pathwayCounts = [
             'legal_advice'  => (clone $hubBase)->where('assigned_pathway', 'Legal Advice / Consultation')->count(),
             'mediation'     => (clone $hubBase)->where('assigned_pathway', 'Mediation')->count(),
-            'adr'           => (clone $hubBase)->where('assigned_pathway', 'ADR / Dispute Resolution Support')->count(),
+            'adr'           => (clone $hubBase)->where('assigned_pathway', 'ADR / Dispute Resolution Support')->count() + $ombudsmanCount,
             'court'         => (clone $hubBase)->whereIn('assigned_pathway', ['Court Representation', 'Representation in Court'])->count(),
             'court_in_cms'  => $courtConnectedCount,
             'court_not_cms' => (clone $courtCases)->count() - $courtConnectedCount,
-            'referred'      => (clone $hubBase)->whereIn('assigned_pathway', ['Government Department / Public Institution', 'Civil Society / NGO / CSO / NPO', 'Referral', 'Other'])->count(),
+            'referred'      => (clone $hubBase)->whereIn('assigned_pathway', ['Government Department / Public Institution', 'Civil Society / NGO / CSO / NPO', 'Referral', 'Other'])->count() - $ombudsmanCount,
             'info_awareness'=> (clone $hubBase)->where('assigned_pathway', 'Information & Awareness')->count(),
         ];
 
