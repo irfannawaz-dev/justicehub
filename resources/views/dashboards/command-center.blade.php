@@ -801,7 +801,6 @@
                     ['label' => 'Child',       'value' => $m['vulnerability']['child'],       'icon' => 'baby',             'color' => 'var(--ochre)',    'bg' => 'rgba(184,115,25,0.08)'],
                     ['label' => 'Minority',    'value' => $m['vulnerability']['minority'],    'icon' => 'flag',             'color' => 'var(--ochre)',    'bg' => 'rgba(184,115,25,0.08)'],
                     ['label' => 'Disability',  'value' => $m['vulnerability']['disability'],  'icon' => 'heart-handshake',  'color' => '#7e57c2',         'bg' => 'rgba(126,87,194,0.08)'],
-                    ['label' => 'Underserved', 'value' => $m['vulnerability']['underserved'], 'icon' => 'users',            'color' => 'var(--moss)',     'bg' => 'rgba(74,122,92,0.08)'],
                 ] as $v)
                 <div style="display:flex; align-items:center; gap:10px; padding:8px 10px; background:{{ $v['bg'] }}; border-radius:6px;">
                     <div style="width:30px; height:30px; background:{{ $v['bg'] }}; border:1px solid {{ $v['color'] }}20; display:flex; align-items:center; justify-content:center; border-radius:6px; flex-shrink:0;">
