@@ -612,6 +612,81 @@
                         </div>
                     </div>
 
+                    {{-- LAS CMS Ambiguous Candidates — user picks the right one --}}
+                    @php
+                        $lasStatus     = $case->meta['las_link_status'] ?? null;
+                        $lasCandidates = $case->meta['las_link_candidates'] ?? [];
+                    @endphp
+                    @if($lasStatus === 'ambiguous' && count($lasCandidates) > 0 && !$case->external_case_id)
+                    <div class="card jh-anim-section" style="padding: 22px 26px; border-left: 3px solid var(--ochre);">
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+                            <x-lucide-alert-triangle style="width:15px; height:15px; color:var(--ochre);" />
+                            <div class="label-cap" style="font-size:10px;">LAS CMS · Multiple Records Found</div>
+                        </div>
+                        <div style="font-size:12px; color:var(--ink-2); margin-bottom:16px; line-height:1.5;">
+                            This client's CNIC matched <strong>{{ count($lasCandidates) }} records</strong> in LAS CMS.
+                            Please review the details below and select the correct case to link.
+                        </div>
+
+                        <div style="display:flex; flex-direction:column; gap:10px;">
+                            @foreach($lasCandidates as $candidate)
+                            <div style="border:1px solid var(--rule); padding:16px 18px; background:var(--surface);">
+                                <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
+                                    <div style="flex:1; min-width:0;">
+                                        {{-- Header row --}}
+                                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
+                                            <span class="mono" style="font-size:12px; font-weight:700; color:var(--ink);">LAS #{{ $candidate['program_id'] }}</span>
+                                            @if($candidate['caseNumber'] ?? null)
+                                            <span style="font-size:11px; padding:1px 7px; background:rgba(184,115,25,0.1); color:var(--ochre); font-weight:600;">{{ $candidate['caseNumber'] }}</span>
+                                            @endif
+                                            @if($candidate['currentCaseStatus'] ?? null)
+                                            <span style="font-size:10px; padding:1px 7px; background:var(--surface-2,#f4f4f2); color:var(--ink-3); font-weight:600;">{{ $candidate['currentCaseStatus'] }}</span>
+                                            @endif
+                                        </div>
+
+                                        {{-- Details grid --}}
+                                        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:6px 16px; font-size:11px; margin-bottom:8px;">
+                                            @if($candidate['clientName'] ?? null)
+                                            <div><span style="color:var(--ink-4);">Client:</span> <strong>{{ $candidate['clientName'] }}</strong></div>
+                                            @endif
+                                            @if($candidate['districtName'] ?? null)
+                                            <div><span style="color:var(--ink-4);">District:</span> {{ $candidate['districtName'] }}</div>
+                                            @endif
+                                            @if($candidate['interviewDate'] ?? null)
+                                            <div><span style="color:var(--ink-4);">Interview:</span> {{ $candidate['interviewDate'] }}</div>
+                                            @endif
+                                            @if($candidate['lawyer1'] ?? null)
+                                            <div><span style="color:var(--ink-4);">Lawyer:</span> {{ $candidate['lawyer1'] }}</div>
+                                            @endif
+                                            @if($candidate['caseApprovalStatus'] ?? null)
+                                            <div><span style="color:var(--ink-4);">Approval:</span> {{ $candidate['caseApprovalStatus'] }}</div>
+                                            @endif
+                                        </div>
+
+                                        {{-- Case facts preview --}}
+                                        @if($candidate['caseFacts'] ?? null)
+                                        <div style="font-size:11px; color:var(--ink-3); line-height:1.5; border-top:1px solid var(--rule-2); padding-top:6px;">
+                                            {{ $candidate['caseFacts'] }}
+                                        </div>
+                                        @endif
+                                    </div>
+
+                                    {{-- Link button --}}
+                                    <form method="POST" action="{{ route('cases.link-las', $case) }}" style="flex-shrink:0;">
+                                        @csrf
+                                        <input type="hidden" name="program_id" value="{{ $candidate['program_id'] }}">
+                                        <button type="submit" class="btn-primary" style="font-size:11px; padding:6px 14px; white-space:nowrap; background:var(--moss); border-color:var(--moss);"
+                                                onclick="return confirm('Link this case to LAS #{{ $candidate['program_id'] }}?')">
+                                            <x-lucide-link style="width:11px; height:11px;" /> Link This
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
+
                     {{-- LAS CMS Litigation Data --}}
                     @if($cmsData)
                     @php
