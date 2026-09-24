@@ -1007,6 +1007,30 @@ class CaseController extends Controller
             ->with('activeTab', 'referrals');
     }
 
+    // ── LAS CMS: select ambiguous candidate ────────────────────────────────
+    public function linkLasCandidate(Request $request, CaseRecord $case)
+    {
+        $user = $request->user();
+        abort_unless($user->isHubCoordinator() || $user->isHead(), 403);
+
+        $data = $request->validate([
+            'program_id' => 'required|integer',
+        ]);
+
+        $case->update([
+            'external_case_id'   => $data['program_id'],
+            'external_synced_at' => now(),
+            'meta'               => array_merge($case->meta ?? [], [
+                'las_link_status'      => 'verified',
+                'las_link_verified_at' => now()->toIso8601String(),
+                'las_link_selected_by' => $user->name,
+            ]),
+        ]);
+
+        return redirect()->route('cases.show', $case)
+            ->with('success', "Linked to LAS #{$data['program_id']} successfully.");
+    }
+
     // ── Referral: log letter ─────────────────────────────────────────────────
     public function storeReferralLetter(Request $request, CaseRecord $case, \App\Models\CaseReferral $referral)
     {
