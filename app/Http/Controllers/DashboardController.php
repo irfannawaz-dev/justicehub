@@ -36,6 +36,14 @@ class DashboardController extends Controller
             $hubIds = \App\Models\Hub::whereIn('name', $hubNames)->pluck('id')->toArray();
         }
 
+        // If no in-page hub filter set, respect sidebar hub selection
+        if (empty($hubIds)) {
+            $sidebarHub = $request->input('_active_hub', 'all');
+            if ($sidebarHub && $sidebarHub !== 'all') {
+                $hubIds = [$sidebarHub];
+            }
+        }
+
         // Hub-scoped users: force to their hub, ignore filter params
         $user = $request->user();
         if (! $user->canSeeAllHubs()) {
@@ -382,6 +390,14 @@ class DashboardController extends Controller
         $hubIds = [];
         if (!empty($hubNames)) {
             $hubIds = \App\Models\Hub::whereIn('name', $hubNames)->pluck('id')->toArray();
+        }
+
+        // If no in-page hub filter set, respect sidebar hub selection
+        if (empty($hubIds)) {
+            $sidebarHub = $request->input('_active_hub', 'all');
+            if ($sidebarHub && $sidebarHub !== 'all') {
+                $hubIds = [$sidebarHub];
+            }
         }
 
         $user = $request->user();
