@@ -40,7 +40,9 @@ class DashboardController extends Controller
         if (empty($hubIds)) {
             $sidebarHub = $request->input('_active_hub', 'all');
             if ($sidebarHub && $sidebarHub !== 'all') {
-                $hubIds = [$sidebarHub];
+                $hubIds  = [$sidebarHub];
+                $hubName = \App\Models\Hub::where('id', $sidebarHub)->value('name');
+                if ($hubName) $hubNames = [$hubName];
             }
         }
 
@@ -48,6 +50,8 @@ class DashboardController extends Controller
         $user = $request->user();
         if (! $user->canSeeAllHubs()) {
             $hubIds = [$user->hub_id];
+            $hubName = \App\Models\Hub::where('id', $user->hub_id)->value('name');
+            if ($hubName) $hubNames = [$hubName];
         }
 
         $metrics = new DashboardMetricsService(
