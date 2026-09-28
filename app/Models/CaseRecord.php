@@ -23,7 +23,8 @@ class CaseRecord extends Model
     {
         static::saving(function (self $case) {
             if ($case->isDirty('cnic') && $case->cnic) {
-                $case->cnic_hash = hash('sha256', $case->cnic);
+                $normalized = preg_replace('/\D/', '', $case->cnic);
+                $case->cnic_hash = hash('sha256', $normalized);
             }
         });
     }
