@@ -620,10 +620,11 @@ function jhInitIntakeWizard() {
             return true;
         }
         if (step === 3) {
+            var contactOk = (document.getElementById('contactUnknownChk') && document.getElementById('contactUnknownChk').checked) || !!getVal('primaryContact');
             return !!(getVal('fullName') && getVal('fatherHusbandName') && getVal('gender') && getVal('age')
                 && getVal('maritalStatus') && getVal('religion') && getVal('educationLevel')
                 && getVal('monthlyIncome') && getVal('disabilityStatus')
-                && getVal('primaryContact') && getVal('tehsil') && getVal('district') && getVal('preferredLanguage'));
+                && contactOk && getVal('tehsil') && getVal('district') && getVal('preferredLanguage'));
         }
         if (step === 4) return !!(getVal('category') && getVal('urgencyLevel'));
         if (step === 5) {
