@@ -170,7 +170,19 @@
                         <span id="intake-repeat-status" style="margin-left: 8px; font-size: 11px; font-weight: 500;"></span>
                         <input type="hidden" name="repeatClient" value="">
                     </div>
-                    <x-form-input name="primaryContact" :label="__('intake.primary_contact')" required :mono="true" placeholder="03XXXXXXXXX" maxlength="11" pattern="[0-9]{11}" inputmode="numeric" />
+                    <div>
+                        <label for="primaryContact" style="display: block; margin-bottom: 6px; font-size: 10px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3);">
+                            {{ __('intake.primary_contact') }} <span style="color: var(--burgundy);"> *</span>
+                        </label>
+                        <input type="text" id="primaryContact" name="primaryContact" class="inp mono"
+                               value="{{ old('primaryContact') }}" placeholder="03XXXXXXXXX"
+                               maxlength="11" pattern="[0-9]{11}" inputmode="numeric" required>
+                        <label style="display:flex; align-items:center; gap:6px; margin-top:6px; cursor:pointer; font-size:11px; color:var(--ink-3);">
+                            <input type="checkbox" name="contactUnknownChk" id="contactUnknownChk" style="accent-color:var(--forest); width:14px; height:14px;"
+                                   onchange="jhToggleContactValidation(this.checked)" {{ old('contactUnknownChk') ? 'checked' : '' }}>
+                            Contact number not available — allow alternative entry
+                        </label>
+                    </div>
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 14px;">
                     <x-form-input name="fullName" :label="__('intake.full_name')" required />
@@ -200,17 +212,9 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px;">
                     <div>
                         <label style="display:block; margin-bottom:6px; font-size:10px; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">{{ __('intake.district') }} <span style="color:var(--burgundy);">*</span></label>
-                        @if(auth()->user()->canSeeAllHubs())
-                            <select name="district" id="intakeDistrict" required class="inp" onchange="intakeLocationCascade('district')">
-                                <option value="">{{ __('intake.select_district') }}</option>
-                            </select>
-                        @else
-                            {{-- Hub-scoped users: district locked to their hub's district --}}
-                            @php $hubDistrict = \App\Models\Hub::find(auth()->user()->hub_id)?->district ?? ''; @endphp
-                            <input type="hidden" name="district" value="{{ $hubDistrict }}">
-                            <input type="text" id="intakeDistrict" value="{{ $hubDistrict }}" class="inp" readonly
-                                style="background: var(--parchment-2); color: var(--ink-3); cursor: not-allowed;">
-                        @endif
+                        <select name="district" id="intakeDistrict" required class="inp" onchange="intakeLocationCascade('district')">
+                            <option value="">{{ __('intake.select_district') }}</option>
+                        </select>
                     </div>
                     <div>
                         <label style="display:block; margin-bottom:6px; font-size:10px; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-3);">{{ __('intake.tehsil') }} <span style="color:var(--burgundy);">*</span></label>
@@ -352,6 +356,28 @@
     </form>
 </div>
 <script>
+// ── Contact number validation toggle ──
+document.addEventListener('DOMContentLoaded', function() {
+    var chk = document.getElementById('contactUnknownChk');
+    if (chk && chk.checked) jhToggleContactValidation(true);
+});
+function jhToggleContactValidation(unknown) {
+    var inp = document.getElementById('primaryContact');
+    if (unknown) {
+        inp.removeAttribute('pattern');
+        inp.removeAttribute('maxlength');
+        inp.removeAttribute('inputmode');
+        inp.placeholder = 'Enter any available number or code…';
+        inp.required = false;
+    } else {
+        inp.setAttribute('pattern', '[0-9]{11}');
+        inp.setAttribute('maxlength', '11');
+        inp.setAttribute('inputmode', 'numeric');
+        inp.placeholder = '03XXXXXXXXX';
+        inp.required = true;
+    }
+}
+
 // ── Location cascade data ──
 var _locHubDistricts = @json($hubDistricts);
 var _locData = @json($locationData);
@@ -440,33 +466,27 @@ document.getElementById('jh-intake-form').addEventListener('submit', function() 
     var districtSel = document.getElementById('intakeDistrict');
     if (!districtSel) return;
 
-    var isLocked = districtSel.tagName === 'INPUT'; // readonly input = hub-scoped user
+    // Fill full district dropdown for all users
+    var districts = Object.keys(_locData).sort();
+    districts.forEach(function(d) {
+        var o = document.createElement('option');
+        o.value = d; o.textContent = d;
+        districtSel.appendChild(o);
+    });
 
-    if (!isLocked) {
-        // Global users: fill full district dropdown
-        var districts = Object.keys(_locData).sort();
-        districts.forEach(function(d) {
-            var o = document.createElement('option');
-            o.value = d; o.textContent = d;
-            districtSel.appendChild(o);
+    // Wire hub → district auto-select (suggestion, not locked)
+    var hubSel = document.querySelector('[name="hubLocation"]');
+    if (hubSel) {
+        hubSel.addEventListener('change', function() {
+            var district = _locHubDistricts[this.value] || '';
+            districtSel.value = district;
+            intakeLocationCascade('district');
         });
-
-        // Wire hub → district auto-select (global only)
-        var hubSel = document.querySelector('[name="hubLocation"]');
-        if (hubSel) {
-            hubSel.addEventListener('change', function() {
-                var district = _locHubDistricts[this.value] || '';
-                districtSel.value = district;
-                intakeLocationCascade('district');
-            });
-            if (hubSel.value && _locHubDistricts[hubSel.value]) {
-                districtSel.value = _locHubDistricts[hubSel.value];
-                intakeLocationCascade('district');
-            }
+        // Auto-select hub's district on load if hub is pre-set
+        if (hubSel.value && _locHubDistricts[hubSel.value]) {
+            districtSel.value = _locHubDistricts[hubSel.value];
+            intakeLocationCascade('district');
         }
-    } else {
-        // Hub-scoped users: district is pre-set, just trigger taluka cascade
-        intakeLocationCascade('district');
     }
 })();
 
