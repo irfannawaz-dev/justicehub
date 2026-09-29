@@ -141,8 +141,8 @@ class LearningController extends Controller
         $positiveRate   = $feedbacks->count() > 0
             ? round($feedbacks->where('score_overall', '>=', 4)->count() / $feedbacks->count() * 100)
             : 0;
-        $adrCases       = $cases->filter(fn($c) => in_array($c->disposition, ['adr', 'mediation', 'ADR']));
-        $adrResolved    = $adrCases->filter(fn($c) => $c->status === 'resolved')->count();
+        $adrCases       = $cases->filter(fn($c) => $c->disposition === \App\Enums\CaseDisposition::Adr);
+        $adrResolved    = $adrCases->filter(fn($c) => $c->status === \App\Enums\CaseStatus::Closed)->count();
         $adrRate        = $adrCases->count() > 0 ? round($adrResolved / $adrCases->count() * 100) : 0;
         $resolvedComp   = $complaints->where('status', 'resolved')->count();
         $compSlaRate    = $complaints->count() > 0 ? round($resolvedComp / $complaints->count() * 100) : 0;
@@ -179,7 +179,7 @@ class LearningController extends Controller
         ];
 
         // ── Equity metrics ────────────────────────────────────────────
-        $femaleCount      = $cases->where('gender', 'female')->count();
+        $femaleCount      = $cases->where('gender', 'Female')->count();
         $minorityCount    = $cases->filter(fn($c) => (bool)$c->is_minority)->count();
         $underservedCount = $cases->filter(fn($c) => (bool)$c->is_underserved)->count();
         $femaleRate      = round($femaleCount / $n * 100);

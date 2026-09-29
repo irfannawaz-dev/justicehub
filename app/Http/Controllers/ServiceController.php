@@ -156,10 +156,10 @@ class ServiceController extends Controller
             'disposition'   => 'adr',
             'urgency'       => $data['urgency'],
             'assigned_to'   => $data['mediator_name'] ?: $case->assigned_to,
-            'is_gbv'        => $request->boolean('is_gbv'),
-            'is_child'      => $request->boolean('is_child'),
-            'is_minority'   => $request->boolean('is_minority'),
-            'is_disability' => $request->boolean('is_disability'),
+            'is_gbv'        => $request->boolean('is_gbv') || $case->is_gbv,
+            'is_child'      => $request->boolean('is_child') || $case->is_child,
+            'is_minority'   => $request->boolean('is_minority') || $case->is_minority,
+            'is_disability' => $request->boolean('is_disability') || $case->is_disability,
             'last_update'   => now(),
         ]);
 
@@ -688,6 +688,8 @@ class ServiceController extends Controller
 
     public function updateAdrStage(Request $request, CaseRecord $case)
     {
+        abort_unless($request->user()->can('cases.edit'), 403);
+
         $stages = ['ADR Intake', 'In Mediation', 'Settlement Draft', 'Resolved', 'Escalated'];
         $request->validate(['stage' => 'required|in:' . implode(',', $stages)]);
 
@@ -725,6 +727,8 @@ class ServiceController extends Controller
 
     public function updateLitigationStage(Request $request, CaseRecord $case)
     {
+        abort_unless($request->user()->can('cases.edit'), 403);
+
         $stages = ['Filed', 'In Hearings', 'Awaiting Judgment', 'Resolved'];
         $request->validate(['stage' => 'required|in:' . implode(',', $stages)]);
 

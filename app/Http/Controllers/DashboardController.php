@@ -227,6 +227,8 @@ class DashboardController extends Controller
 
     public function lcd(Request $request)
     {
+        abort_unless($request->input('token') === config('app.lcd_token'), 403, 'Invalid LCD token.');
+
         $hubId = $request->input('hub', 'all');
         $metrics = new DashboardMetricsService($hubId);
 
