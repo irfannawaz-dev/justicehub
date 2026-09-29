@@ -11,6 +11,8 @@ class ServiceEncounterController extends Controller
 {
     public function store(Request $request, CaseRecord $case)
     {
+        abort_unless($request->user()->can('cases.edit'), 403);
+
         $request->validate([
             'date' => 'required|date',
             'type' => 'required|string',
@@ -54,6 +56,8 @@ class ServiceEncounterController extends Controller
 
     public function logFromScorecard(Request $request)
     {
+        abort_unless($request->user()->can('cases.edit'), 403);
+
         $validated = $request->validate([
             'case_id'        => 'required|exists:cases,id',
             'type'           => 'required|string|max:100',

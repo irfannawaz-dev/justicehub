@@ -492,7 +492,7 @@ class ReferralController extends Controller
         $urgencyTotal = array_sum($urgencyMap) ?: 1;
         $urgencyData  = [
             ['label' => 'Low',       'val' => $urgencyMap['Low']       ?? 0, 'color' => '#2f7a4d'],
-            ['label' => 'Medium',    'val' => $urgencyMap['Med']       ?? 0, 'color' => '#b87319'],
+            ['label' => 'Medium',    'val' => $urgencyMap['Medium']    ?? 0, 'color' => '#b87319'],
             ['label' => 'High',      'val' => $urgencyMap['High']      ?? 0, 'color' => '#8a2e1d'],
             ['label' => 'Immediate', 'val' => $urgencyMap['Immediate'] ?? 0, 'color' => '#5c0000'],
         ];

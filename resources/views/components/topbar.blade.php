@@ -230,18 +230,19 @@
                     return;
                 }
                 empty.style.display = 'none';
+                const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
                 list.innerHTML = data.items.map(n => {
                     const color = typeColors[n.type] || typeColors.info;
-                    const href  = n.action_url ? `href="${n.action_url}"` : '';
+                    const href  = n.action_url ? `href="${esc(n.action_url)}"` : '';
                     const cls   = n.read ? '' : 'unread';
                     return `<a class="jh-notif-item ${cls}" ${href}
-                                onclick="jhReadNotif('${n.id}', this)"
+                                onclick="jhReadNotif('${esc(n.id)}', this)"
                                 style="color:inherit;">
                                 <span class="jh-notif-dot" style="background:${n.read ? 'var(--rule)' : color};"></span>
                                 <div style="flex:1; min-width:0;">
-                                    <div style="font-size:12px; font-weight:${n.read ? '400' : '600'}; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${n.title}</div>
-                                    <div style="font-size:11px; color:var(--ink-3); margin-top:2px; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${n.message}</div>
-                                    <div style="font-size:10px; color:var(--ink-4); margin-top:3px;">${n.time}</div>
+                                    <div style="font-size:12px; font-weight:${n.read ? '400' : '600'}; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(n.title)}</div>
+                                    <div style="font-size:11px; color:var(--ink-3); margin-top:2px; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${esc(n.message)}</div>
+                                    <div style="font-size:10px; color:var(--ink-4); margin-top:3px;">${esc(n.time)}</div>
                                 </div>
                             </a>`;
                 }).join('');

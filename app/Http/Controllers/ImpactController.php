@@ -50,8 +50,8 @@ class ImpactController extends Controller
 
         $metrics = [
             'total_cases'          => $cases->count(),
-            'active_cases'         => $cases->filter(fn($c) => $c->status?->value !== 'closed')->count(),
-            'resolved_cases'       => $cases->filter(fn($c) => $c->status?->value === 'closed')->count(),
+            'active_cases'         => $cases->filter(fn($c) => $c->status !== \App\Enums\CaseStatus::Closed)->count(),
+            'resolved_cases'       => $cases->filter(fn($c) => $c->status === \App\Enums\CaseStatus::Closed)->count(),
             'sla_met_pct'          => $cases->count() > 0 ? round(($cases->where('sla_met', true)->count() / $cases->count()) * 100) : 0,
             'underserved_pct'      => $cases->count() > 0 ? round(($cases->where('is_underserved', true)->count() / $cases->count()) * 100) : 0,
             'avg_feedback'         => $feedback->count() > 0 ? round($feedback->avg('score_overall'), 1) : 0,

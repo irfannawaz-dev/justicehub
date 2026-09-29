@@ -597,6 +597,8 @@ class CaseController extends Controller
 
     public function verifyDocument(Request $request, \App\Models\Document $document)
     {
+        abort_unless($request->user()->can('cases.edit'), 403);
+
         $document->update([
             'status' => 'Verified',
         ]);
@@ -623,13 +625,15 @@ class CaseController extends Controller
 
     public function storeDocument(Request $request, CaseRecord $case)
     {
+        abort_unless($request->user()->can('cases.edit'), 403);
+
         $request->validate([
             'name'            => 'required|string|max:255',
             'type'            => 'required|string',
             'confidentiality' => 'required|string',
             'added_by'        => 'required|string|max:255',
             'description'     => 'nullable|string',
-            'file'            => 'required|file|max:10240',
+            'file'            => 'required|file|max:10240|mimes:pdf,jpg,jpeg,png',
         ]);
 
         $file = $request->file('file');
@@ -957,6 +961,8 @@ class CaseController extends Controller
     // ── Referral: create ─────────────────────────────────────────────────────
     public function storeReferral(Request $request, CaseRecord $case)
     {
+        abort_unless($request->user()->can('cases.edit'), 403);
+
         $data = $request->validate([
             'referred_to'          => 'required|string|max:255',
             'referral_date'        => 'required|date',
@@ -1124,8 +1130,9 @@ class CaseController extends Controller
     }
 
     // ── Referral: delete ─────────────────────────────────────────────────────
-    public function destroyReferral(CaseRecord $case, \App\Models\CaseReferral $referral)
+    public function destroyReferral(Request $request, CaseRecord $case, \App\Models\CaseReferral $referral)
     {
+        abort_unless($request->user()->can('cases.edit'), 403);
         abort_unless($referral->case_id === $case->id, 404);
 
         $referral->delete();

@@ -141,6 +141,8 @@ class SettingsController extends Controller
 
     public function updateFinance(Request $request)
     {
+        abort_unless($request->user()->can('settings.edit'), 403);
+
         $request->validate([
             'cost_per_case' => 'required|numeric|min:0',
             'overhead_pct'  => 'required|numeric|min:0|max:100',
@@ -166,6 +168,8 @@ class SettingsController extends Controller
 
     public function storeTraining(Request $request)
     {
+        abort_unless($request->user()->can('settings.edit'), 403);
+
         $request->validate([
             'code'          => 'required|string|max:30|unique:trainings,code',
             'name'          => 'required|string|max:200',
@@ -189,16 +193,20 @@ class SettingsController extends Controller
         return back()->with('success', "Training course {$request->code} added.");
     }
 
-    public function deleteTraining(\App\Models\Training $training)
+    public function deleteTraining(Request $request, \App\Models\Training $training)
     {
+        abort_unless($request->user()->can('settings.edit'), 403);
+
         $training->delete();
         return back()->with('success', "Training course {$training->code} deleted.");
     }
 
     // ── Module Toggle ────────────────────────────────────────────
 
-    public function toggleModule(string $key)
+    public function toggleModule(Request $request, string $key)
     {
+        abort_unless($request->user()->can('settings.edit'), 403);
+
         $settingKey = 'module_' . $key;
         $current = DB::table('settings')->where('key', $settingKey)->value('value');
         $newValue = ($current === 'off') ? 'on' : 'off';
@@ -215,6 +223,8 @@ class SettingsController extends Controller
 
     public function storePartnerCategory(Request $request)
     {
+        abort_unless($request->user()->can('settings.edit'), 403);
+
         $request->validate(['category' => 'required|string|max:100']);
 
         $label = trim($request->category);
@@ -245,6 +255,8 @@ class SettingsController extends Controller
 
     public function storePartner(Request $request)
     {
+        abort_unless($request->user()->can('settings.edit'), 403);
+
         $request->validate([
             'name'         => 'required|string|max:255',
             'category'     => 'required|string',
@@ -272,6 +284,8 @@ class SettingsController extends Controller
 
     public function updatePartner(Request $request, \App\Models\Partner $partner)
     {
+        abort_unless($request->user()->can('settings.edit'), 403);
+
         $request->validate([
             'name'         => 'required|string|max:255',
             'category'     => 'required|string',
@@ -292,8 +306,10 @@ class SettingsController extends Controller
         return back()->with('success', "Partner '{$partner->name}' updated.");
     }
 
-    public function destroyPartner(\App\Models\Partner $partner)
+    public function destroyPartner(Request $request, \App\Models\Partner $partner)
     {
+        abort_unless($request->user()->can('settings.edit'), 403);
+
         $name = $partner->name;
         $partner->delete();
         return back()->with('success', "Partner '{$name}' removed.");
@@ -315,6 +331,8 @@ class SettingsController extends Controller
 
     public function storeLocation(Request $request)
     {
+        abort_unless($request->user()->can('settings.edit'), 403);
+
         $data = $request->validate([
             'district'      => 'required|string|max:100',
             'taluka'        => 'nullable|string|max:100',
@@ -337,12 +355,16 @@ class SettingsController extends Controller
 
     public function deleteLocation(Request $request, $id)
     {
+        abort_unless($request->user()->can('settings.edit'), 403);
+
         DB::table('locations')->where('id', $id)->delete();
         return back()->with('success', 'Location deleted.');
     }
 
     public function bulkDeleteLocations(Request $request)
     {
+        abort_unless($request->user()->can('settings.edit'), 403);
+
         $data = $request->validate([
             'district' => 'required|string',
             'taluka'   => 'nullable|string',
@@ -359,8 +381,10 @@ class SettingsController extends Controller
 
     // ── Cache Management ────────────────────────────────────────
 
-    public function toggleCache()
+    public function toggleCache(Request $request)
     {
+        abort_unless($request->user()->can('settings.edit'), 403);
+
         $current = DB::table('settings')->where('key', 'cache_enabled')->value('value') ?? 'on';
         $newValue = ($current === 'off') ? 'on' : 'off';
 
@@ -377,6 +401,8 @@ class SettingsController extends Controller
 
     public function updateCacheTtl(Request $request)
     {
+        abort_unless($request->user()->can('settings.edit'), 403);
+
         $request->validate(['ttl' => 'required|in:120,300,600,900,1800']);
 
         DB::table('settings')->updateOrInsert(
@@ -390,8 +416,10 @@ class SettingsController extends Controller
         return back()->with('success', "Cache duration set to {$minutes} minutes.");
     }
 
-    public function flushCache()
+    public function flushCache(Request $request)
     {
+        abort_unless($request->user()->can('settings.edit'), 403);
+
         DashboardMetricsService::flush();
         Cache::forget('jh.settings.cache_enabled');
         Cache::forget('jh.settings.cache_ttl');
@@ -403,6 +431,8 @@ class SettingsController extends Controller
 
     public function updateSla(Request $request)
     {
+        abort_unless($request->user()->can('settings.edit'), 403);
+
         $request->validate([
             'sla_Immediate' => 'required|integer|min:1|max:8760',
             'sla_High'      => 'required|integer|min:1|max:8760',
@@ -429,6 +459,8 @@ class SettingsController extends Controller
 
     public function updateCapacity(Request $request)
     {
+        abort_unless($request->user()->can('settings.edit'), 403);
+
         $request->validate([
             'cap_Lawyer'          => 'required|integer|min:1|max:200',
             'cap_HubCoordinator'  => 'required|integer|min:1|max:200',

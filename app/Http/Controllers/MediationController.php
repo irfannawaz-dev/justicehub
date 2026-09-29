@@ -12,6 +12,8 @@ class MediationController extends Controller
     // Step 1a — Set mediation type
     public function updateType(Request $request, CaseRecord $case)
     {
+        abort_unless($request->user()->can('cases.edit'), 403);
+
         $request->validate([
             'mediation_type' => 'required|in:Court Annexed Mediation,Private Mediation',
         ]);
@@ -30,6 +32,8 @@ class MediationController extends Controller
     // Step 1 — Add both parties at once
     public function storeParty(Request $request, CaseRecord $case)
     {
+        abort_unless($request->user()->can('cases.edit'), 403);
+
         $request->validate([
             'parties'           => 'required|array|size:2',
             'parties.*.name'    => 'required|string|max:255',
@@ -54,8 +58,9 @@ class MediationController extends Controller
     }
 
     // Step 1 — Remove a party
-    public function destroyParty(CaseRecord $case, MediationParty $party)
+    public function destroyParty(Request $request, CaseRecord $case, MediationParty $party)
     {
+        abort_unless($request->user()->can('cases.edit'), 403);
         abort_if($party->case_id !== $case->id, 403);
         $party->delete();
 
@@ -66,6 +71,8 @@ class MediationController extends Controller
     // Step 2 — Update consent for all parties at once
     public function updateConsent(Request $request, CaseRecord $case)
     {
+        abort_unless($request->user()->can('cases.edit'), 403);
+
         $statuses = $request->input('consent', []);
 
         foreach ($statuses as $partyId => $status) {
@@ -84,6 +91,8 @@ class MediationController extends Controller
     // Step 3 — Add diary entry
     public function storeDiary(Request $request, CaseRecord $case)
     {
+        abort_unless($request->user()->can('cases.edit'), 403);
+
         $request->validate([
             'session_date'          => 'required|date',
             'next_session_date'     => 'nullable|date',
