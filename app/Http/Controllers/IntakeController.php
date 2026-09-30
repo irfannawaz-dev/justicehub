@@ -271,14 +271,13 @@ class IntakeController extends Controller
             }
         }
 
-        // LAS CMS: For Court Representation cases, attempt CNIC match (not push)
-        // Records are NOT created here — linkage happens on case view via CNIC lookup.
-        if ($case && $case->assigned_pathway === 'Court Representation' && $case->cnic) {
+        // LAS CMS: Push Court Representation intakes to the programs table
+        if ($case && $case->assigned_pathway === 'Court Representation') {
             try {
                 $sync = new LasCmsSyncService();
-                $sync->linkByCnic($case);
+                $sync->pushCase($case);
             } catch (\Exception $e) {
-                \Log::warning("LasCMS: CNIC match attempt failed for {$caseUid}: " . $e->getMessage());
+                \Log::warning("LasCMS: Push failed for {$caseUid}: " . $e->getMessage());
             }
         }
 
