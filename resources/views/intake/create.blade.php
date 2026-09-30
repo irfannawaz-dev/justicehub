@@ -164,6 +164,11 @@
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 14px;">
                     <div>
                         <x-form-input name="cnic" :label="__('intake.cnic')" :mono="true" :hint="__('intake.cnic_hint')" maxlength="13" />
+                        <label style="display:flex; align-items:center; gap:6px; margin-top:6px; cursor:pointer; font-size:11px; color:var(--ink-3);">
+                            <input type="checkbox" name="cnicUnknownChk" id="cnicUnknownChk" style="accent-color:var(--forest); width:14px; height:14px;"
+                                   onchange="jhToggleCnicValidation(this.checked)" {{ old('cnicUnknownChk') ? 'checked' : '' }}>
+                            CNIC not available — allow alternative entry
+                        </label>
                         <button type="button" id="intake-cnic-search-btn" class="btn-ghost" style="margin-top: 8px; font-size: 11px; padding: 5px 14px; display: inline-flex; align-items: center; gap: 5px;">
                             <x-lucide-search style="width:12px;height:12px;" /> {{ __('intake.search_client') }}
                         </button>
@@ -360,6 +365,8 @@
 document.addEventListener('DOMContentLoaded', function() {
     var chk = document.getElementById('contactUnknownChk');
     if (chk && chk.checked) jhToggleContactValidation(true);
+    var cnicChk = document.getElementById('cnicUnknownChk');
+    if (cnicChk && cnicChk.checked) jhToggleCnicValidation(true);
 });
 function jhToggleContactValidation(unknown) {
     var inp = document.getElementById('primaryContact');
@@ -375,6 +382,19 @@ function jhToggleContactValidation(unknown) {
         inp.setAttribute('inputmode', 'numeric');
         inp.placeholder = '03XXXXXXXXX';
         inp.required = true;
+    }
+}
+function jhToggleCnicValidation(unknown) {
+    var inp = document.querySelector('[name="cnic"]');
+    if (!inp) return;
+    if (unknown) {
+        inp.removeAttribute('maxlength');
+        inp.removeAttribute('inputmode');
+        inp.placeholder = 'Enter any available ID or note…';
+    } else {
+        inp.setAttribute('maxlength', '13');
+        inp.setAttribute('inputmode', 'numeric');
+        inp.placeholder = '';
     }
 }
 
