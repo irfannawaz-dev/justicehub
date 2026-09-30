@@ -533,11 +533,11 @@
     <div class="sl-row">
         <div class="fc w2">
             <div class="lbl">{{ $l['cnic'] }}</div>
-            <div class="val mono">{{ $case->cnic ?? '—' }}</div>
+            <div class="val mono">{{ ($case->cnic && strlen($case->cnic) === 13) ? $case->cnic : ($case->cnic ? 'N/A' : '—') }}</div>
         </div>
         <div class="fc w2">
             <div class="lbl">{{ $l['mobile'] }}</div>
-            <div class="val mono">{{ $case->primary_contact ?? '—' }}</div>
+            <div class="val mono">{{ ($case->primary_contact && strlen($case->primary_contact) >= 10) ? $case->primary_contact : ($case->primary_contact ? 'N/A' : '—') }}</div>
         </div>
         <div class="fc w2">
             <div class="lbl">{{ $l['address'] }}</div>

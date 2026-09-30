@@ -475,7 +475,11 @@
                             <div class="jh-intake-row">
                                 <div class="jh-intake-label">CNIC</div>
                                 <div class="jh-intake-value" style="font-family: monospace; letter-spacing: 0.04em;">
-                                    {{ $case->cnic }}
+                                    @if(strlen($case->cnic) === 13)
+                                        {{ $case->cnic }}
+                                    @else
+                                        <span style="color:var(--burgundy); font-family:inherit; font-style:italic;">Not Available</span>
+                                    @endif
                                     @if($case->external_case_id)
                                     <span style="margin-left:8px; display:inline-flex; align-items:center; gap:4px; background:var(--forest); color:#fff; font-size:9px; font-weight:700; letter-spacing:0.05em; padding:2px 7px; font-family:inherit;">
                                         <x-lucide-gavel style="width:9px;height:9px;" /> LAS #{{ $case->external_case_id }}
@@ -545,7 +549,11 @@
                             <div class="jh-intake-row">
                                 <div class="jh-intake-label">Phone Number</div>
                                 <div class="jh-intake-value" style="font-family:monospace; letter-spacing:0.04em;">
-                                    {{ $case->primary_contact }}
+                                    @if(strlen($case->primary_contact) >= 10)
+                                        {{ $case->primary_contact }}
+                                    @else
+                                        <span style="color:var(--burgundy); font-family:inherit; font-style:italic;">Not Available</span>
+                                    @endif
                                     @if($case->alternative_contact)
                                     <span style="color:var(--ink-4); font-size:11px; margin-left:8px;">(Alt: {{ $case->alternative_contact }})</span>
                                     @endif
