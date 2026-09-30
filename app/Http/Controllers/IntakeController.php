@@ -80,7 +80,15 @@ class IntakeController extends Controller
         $adrPartners = \App\Models\Partner::whereIn('category', ['ADR', 'Mediation', 'Legal Aid'])
             ->orderBy('name')->pluck('name');
 
-        return view('intake.create', compact('hubs', 'hubDistricts', 'locationData', 'lawyers', 'allStaff', 'defaultStaffName', 'defaultStaffDesignation', 'hubCoordinators', 'governmentPartners', 'ngoPartners', 'adrPartners'));
+        // Complaint departments grouped by parent (Provincial Ombudsman, Federal Ombudsman, etc.)
+        $complaintDepts = \App\Models\Lookup::where('group_key', 'intake.complaint_department')
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get(['value', 'label', 'parent_value'])
+            ->groupBy(fn($item) => $item->parent_value ?: '__all__')
+            ->map(fn($group) => $group->pluck('label', 'value'));
+
+        return view('intake.create', compact('hubs', 'hubDistricts', 'locationData', 'lawyers', 'allStaff', 'defaultStaffName', 'defaultStaffDesignation', 'hubCoordinators', 'governmentPartners', 'ngoPartners', 'adrPartners', 'complaintDepts'));
     }
 
     public function store(Request $request)
