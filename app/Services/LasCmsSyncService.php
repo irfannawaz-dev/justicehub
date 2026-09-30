@@ -142,8 +142,8 @@ class LasCmsSyncService
 
     /**
      * Push a JusticeHub case to LAS CMS via API.
+     * Creates a new record in the programs table.
      * Returns the external programs.id on success.
-     * @deprecated Use linkByCnic() instead — cases should be matched, not created.
      */
     public function pushCase(CaseRecord $case): ?int
     {

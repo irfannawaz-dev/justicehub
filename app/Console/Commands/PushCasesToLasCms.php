@@ -10,9 +10,10 @@ class PushCasesToLasCms extends Command
 {
     protected $signature = 'las:push-cases
                             {--case= : Push a specific case by case_uid}
+                            {--since= : Only push cases created on or after this date (YYYY-MM-DD)}
                             {--dry-run : Show what would be pushed without actually pushing}';
 
-    protected $description = 'Push unsynced Court Representation cases to LAS CMS API';
+    protected $description = 'Push unsynced cases to LAS CMS API (new intakes only by default)';
 
     public function handle(): int
     {
@@ -39,20 +40,24 @@ class PushCasesToLasCms extends Command
             return $id ? 0 : 1;
         }
 
-        // Bulk mode — all unsynced Court Representation cases
+        // Bulk mode — only NEW cases (created after sync feature launch)
+        // Old cases were matched via CNIC and should not be bulk-pushed.
+        $sinceDate = $this->option('since') ?? '2026-09-30';
+
         $cases = CaseRecord::whereNull('external_case_id')
             ->where('assigned_pathway', 'Court Representation')
+            ->where('intake_date', '>=', $sinceDate)
             ->orderBy('intake_date')
             ->get();
 
         $total = $cases->count();
 
         if ($total === 0) {
-            $this->info('All Court Representation cases are already synced.');
+            $this->info('All cases are already synced.');
             return 0;
         }
 
-        $this->info("Found {$total} unsynced case(s) to push...");
+        $this->info("Found {$total} unsynced case(s) since {$sinceDate} to push...");
 
         if ($this->option('dry-run')) {
             foreach ($cases as $case) {

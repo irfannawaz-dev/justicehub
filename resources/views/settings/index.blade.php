@@ -1009,6 +1009,11 @@ var _lookupUpdateUrl = '/settings/lookups/options/';
 var _lookupToggleUrl = '/settings/lookups/options/';
 var _lookupDestroyUrl = '/settings/lookups/options/';
 
+function jhToggleLookupEdit(id) {
+    var row = document.getElementById('lookup-edit-' + id);
+    if (row) row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+}
+
 function jhLoadLookupGroup(groupKey, linkEl) {
     // Highlight active link
     document.querySelectorAll('#lookup-group-list a').forEach(function(a) {
@@ -1083,6 +1088,8 @@ function jhLoadLookupGroup(groupKey, linkEl) {
 
                     // Actions
                     html += '<td style="padding:8px 12px;text-align:right;white-space:nowrap;">';
+                    // Edit
+                    html += '<button type="button" title="Edit" onclick="jhToggleLookupEdit(' + o.id + ')" style="padding:4px 8px;background:transparent;border:1px solid var(--rule-2);cursor:pointer;font-family:inherit;font-size:11px;color:var(--forest);">&#x270E;</button> ';
                     // Toggle
                     html += '<form method="POST" action="' + _lookupToggleUrl + o.id + '/toggle" style="display:inline;">';
                     html += '<input type="hidden" name="_token" value="' + _lookupCsrf + '">';
@@ -1096,6 +1103,25 @@ function jhLoadLookupGroup(groupKey, linkEl) {
                     html += '<button type="submit" title="Delete" style="padding:4px 8px;background:transparent;border:1px solid var(--rule-2);cursor:pointer;color:var(--burgundy);font-family:inherit;font-size:11px;">&#x1F5D1;</button>';
                     html += '</form>';
                     html += '</td></tr>';
+
+                    // Inline edit row (hidden by default)
+                    html += '<tr id="lookup-edit-' + o.id + '" style="display:none;background:var(--parchment);border-bottom:1px solid var(--rule-2);">';
+                    html += '<td colspan="6" style="padding:10px 12px;">';
+                    html += '<form method="POST" action="' + _lookupUpdateUrl + o.id + '" style="display:grid;grid-template-columns:60px 1fr 1fr 1fr auto;gap:8px;align-items:end;">';
+                    html += '<input type="hidden" name="_token" value="' + _lookupCsrf + '">';
+                    html += '<input type="hidden" name="_method" value="PATCH">';
+                    html += '<div><label style="font-size:9px;color:var(--ink-3);display:block;margin-bottom:3px;">Order</label>';
+                    html += '<input type="number" name="sort_order" value="' + o.sort_order + '" min="0" max="9999" required class="inp mono" style="width:100%;font-size:11px;padding:5px 6px;"></div>';
+                    html += '<div><label style="font-size:9px;color:var(--ink-3);display:block;margin-bottom:3px;">Label *</label>';
+                    html += '<input type="text" name="label" value="' + (o.label || o.value) + '" required class="inp" style="width:100%;font-size:11px;padding:5px 8px;"></div>';
+                    html += '<div><label style="font-size:9px;color:var(--ink-3);display:block;margin-bottom:3px;">Value</label>';
+                    html += '<input type="text" value="' + o.value + '" disabled class="inp mono" style="width:100%;font-size:11px;padding:5px 8px;opacity:0.5;" title="Value cannot be changed"></div>';
+                    html += '<div><label style="font-size:9px;color:var(--ink-3);display:block;margin-bottom:3px;">Parent</label>';
+                    html += '<input type="text" name="parent_value" value="' + (o.parent_value || '') + '" placeholder="e.g. Court Representation" class="inp" style="width:100%;font-size:11px;padding:5px 8px;"></div>';
+                    html += '<div style="display:flex;gap:4px;">';
+                    html += '<button type="submit" class="btn-primary" style="padding:5px 12px;font-size:11px;">Save</button>';
+                    html += '<button type="button" onclick="jhToggleLookupEdit(' + o.id + ')" style="padding:5px 10px;font-size:11px;background:transparent;border:1px solid var(--rule-2);cursor:pointer;color:var(--ink-3);">Cancel</button>';
+                    html += '</div></form></td></tr>';
                 });
                 html += '</tbody></table>';
             }

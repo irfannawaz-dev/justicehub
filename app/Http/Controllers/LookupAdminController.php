@@ -68,13 +68,15 @@ class LookupAdminController extends Controller
         $this->guard($request);
 
         $request->validate([
-            'label'      => 'required|string|max:150',
-            'sort_order' => 'required|integer|min:0|max:9999',
+            'label'        => 'required|string|max:150',
+            'sort_order'   => 'required|integer|min:0|max:9999',
+            'parent_value' => 'nullable|string|max:150',
         ]);
 
         $lookup->update([
-            'label'      => $request->label,
-            'sort_order' => $request->sort_order,
+            'label'        => $request->label,
+            'sort_order'   => $request->sort_order,
+            'parent_value' => $request->parent_value ?: null,
         ]);
 
         Lookup::clearCache($lookup->group_key);

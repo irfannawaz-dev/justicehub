@@ -270,22 +270,12 @@ class CaseController extends Controller
         // Hub scope enforced via Route::bind() in AppServiceProvider
         $case->load(['serviceEncounters', 'documents', 'complaints', 'feedback', 'hub', 'transfers.transferredBy', 'transfers.approvedBy', 'mediationParties', 'mediationDiary', 'caseReferrals.letters', 'caseReferrals.threads', 'messages.sender']);
 
-        // LAS CMS: Court Representation cases only
-        if ($case->assigned_pathway === 'Court Representation') {
+        // LAS CMS: Pull data for linked cases (linked at intake via pushCase)
+        if ($case->external_case_id) {
             try {
                 $sync = new \App\Services\LasCmsSyncService();
-
-                // If not yet linked, attempt CNIC match against programs table
-                if (!$case->external_case_id && $case->cnic) {
-                    $sync->linkByCnic($case);
-                    $case->refresh();
-                }
-
-                // Pull hearings + sync status if linked
-                if ($case->external_case_id) {
-                    $sync->pullHearings($case);
-                    $case->load('serviceEncounters');
-                }
+                $sync->pullHearings($case);
+                $case->load('serviceEncounters');
             } catch (\Exception $e) {
                 \Log::warning('LAS CMS sync failed for ' . $case->case_uid . ': ' . $e->getMessage());
             }
