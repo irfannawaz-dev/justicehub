@@ -706,7 +706,7 @@ function jhInitIntakeWizard() {
         if (box) box.style.display = (lawyerPathways.includes(pw) && sp === 'Justice Hub Lawyer') ? '' : 'none';
         updateValidationHint();
     }
-    // Show complaint department when Provincial Ombudsman selected
+    // Show complaint department when Ombudsman selected, filtered by parent
     function updateComplaintDeptBox() {
         const sp  = getVal('pathwaySpecific');
         const box = document.getElementById('intake-pw-complaint-dept-box');
@@ -714,8 +714,25 @@ function jhInitIntakeWizard() {
         const show = sp && (sp.toLowerCase().includes('ombudsman') || sp.toLowerCase().includes('mohtasib'));
         box.style.display = show ? '' : 'none';
         var sel = box.querySelector('select');
-        if (sel) sel.required = show;
-        if (!show && sel) sel.value = '';
+        if (!sel) return;
+        sel.required = show;
+        if (!show) { sel.value = ''; return; }
+
+        // Populate options filtered by parent_value matching specific pathway
+        const depts = (typeof _complaintDepts !== 'undefined') ? _complaintDepts : {};
+        const current = sel.value;
+        let opts = [];
+        // Options with parent matching selected specific pathway
+        if (depts[sp]) {
+            opts = Object.entries(depts[sp]);
+        }
+        // Also include options with no parent (__all__) — shared across all
+        if (depts['__all__']) {
+            opts = opts.concat(Object.entries(depts['__all__']));
+        }
+        sel.innerHTML = '<option value="">Select...</option>' + opts.map(([val, label]) =>
+            `<option value="${val}"${val === current ? ' selected' : ''}>${label}</option>`
+        ).join('');
         updateValidationHint();
     }
 

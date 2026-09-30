@@ -274,9 +274,14 @@
                     </div>
                 </div>
 
-                {{-- Department / Complaint Against (shown for Provincial Ombudsman) --}}
+                {{-- Department / Complaint Against (shown for Ombudsman pathways, filtered by parent) --}}
                 <div id="intake-pw-complaint-dept-box" style="display:none; margin-top: 12px;">
-                    <x-form-select name="complaintDepartment" :label="__('intake.complaint_dept')" required lookup-group="intake.complaint_department" />
+                    <label for="complaintDepartment" style="display: block; margin-bottom: 6px; font-size: 10px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3);">
+                        {{ __('intake.complaint_dept') }} <span style="color: var(--burgundy);"> *</span>
+                    </label>
+                    <select name="complaintDepartment" id="complaintDepartment" class="inp">
+                        <option value="">Select...</option>
+                    </select>
                 </div>
 
                 {{-- Lawyer assignment (Court Representation → Justice Hub Lawyer) --}}
@@ -405,6 +410,7 @@ var _hubCoordinators = @json($hubCoordinators);
 var _governmentPartners = @json($governmentPartners->values());
 var _ngoPartners = @json($ngoPartners->values());
 var _adrPartners = @json($adrPartners->values());
+var _complaintDepts = @json($complaintDepts);
 
 // ── Cascade function (global, always available for onchange) ──
 function intakeLocationCascade(level) {
