@@ -158,7 +158,7 @@ class LasCmsSyncService
             'caseReferred'        => 'Justicehub',
             'districtName'        => $case->district ?: 'Unknown',
             'interviewDate'       => $case->intake_date?->format('Y-m-d'),
-            'interviewerName'     => $case->staff_receiving ?: $case->assigned_to ?: 'JusticeHub',
+            'interviewerName'     => $case->assigned_to ?: $case->staff_receiving ?: 'JusticeHub',
             'clientName'          => $case->name,
             'fatherHusbandName'   => $case->father_husband_name ?: '-',
             'contactNumber'       => $case->primary_contact ?: '-',
