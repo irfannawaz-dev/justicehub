@@ -135,6 +135,14 @@
                         <x-lucide-check-circle-2 style="width:12px;height:12px;" /> {{ __('cases.mark_resolved') }}
                     </button>
                     @endif
+                    @if($user->isHead())
+                    <form method="POST" action="{{ route('cases.destroy', $case) }}" onsubmit="return confirm('Permanently delete {{ $case->case_uid }}? This cannot be undone.');" style="display:inline;">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="btn-ghost" style="color:var(--burgundy); border-color:var(--burgundy);">
+                            <x-lucide-trash-2 style="width:12px;height:12px;" /> Delete
+                        </button>
+                    </form>
+                    @endif
                 </div>
                 @endif
                 <div style="text-align: right;">
