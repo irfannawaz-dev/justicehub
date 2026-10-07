@@ -224,13 +224,17 @@ class IntakeController extends Controller
 
         // Notify assigned user (in-app)
         if ($case && ($assignedUser = $case->getAssignedUser())) {
-            $assignedUser->notify(new \App\Notifications\CaseNotification(
-                title:      "New case assigned — {$case->case_uid}",
-                message:    "A new case has been assigned to you. Client: {$case->name}. Pathway: {$case->assigned_pathway}. Urgency: {$case->urgency->value}.",
-                actionText: 'View Case',
-                actionUrl:  route('cases.show', $case),
-                type:       'assigned',
-            ));
+            try {
+                $assignedUser->notify(new \App\Notifications\CaseNotification(
+                    title:      "New case assigned — {$case->case_uid}",
+                    message:    "A new case has been assigned to you. Client: {$case->name}. Pathway: {$case->assigned_pathway}. Urgency: {$case->urgency->value}.",
+                    actionText: 'View Case',
+                    actionUrl:  route('cases.show', $case),
+                    type:       'assigned',
+                ));
+            } catch (\Exception $e) {
+                \Log::warning("Intake notification failed for {$case->case_uid}: " . $e->getMessage());
+            }
         }
 
         // Send intake email to assigned user + CC hub coordinator + justice.hub@las.org.pk
