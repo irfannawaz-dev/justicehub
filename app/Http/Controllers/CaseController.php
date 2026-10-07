@@ -1246,4 +1246,22 @@ class CaseController extends Controller
             $filename
         );
     }
+
+    public function destroy(CaseRecord $case)
+    {
+        abort_unless(auth()->user()->isHead(), 403, 'Only Head can delete cases.');
+
+        $uid = $case->case_uid;
+
+        // Delete related records
+        $case->serviceEncounters()->delete();
+        $case->caseReferrals()->delete();
+        $case->documents()->delete();
+        $case->feedback()->delete();
+        $case->complaints()->delete();
+        $case->messages()->delete();
+        $case->delete();
+
+        return redirect()->route('cases.index')->with('success', "Case {$uid} deleted.");
+    }
 }
