@@ -2726,11 +2726,9 @@
             <select name="to_assignee" id="jh-transfer-assignee" class="inp" required>
                 <option value="">— Select staff member —</option>
                 @foreach($allStaff as $u)
-                    @if($u->name !== $case->assigned_to)
-                    <option value="{{ $u->name }}" data-hub="{{ $u->hub_id }}" data-role="{{ $u->role->value }}">
-                        {{ $u->name }} ({{ $u->designation ?: $u->role->label() }}{{ $u->hub_id !== $case->hub_id ? ' · ' . $u->hub_id : '' }})
+                    <option value="{{ $u->name }}" data-hub="{{ $u->hub_id }}" data-role="{{ $u->role->value }}" data-current="{{ $u->name === $case->assigned_to ? '1' : '0' }}">
+                        {{ $u->name }} ({{ $u->designation ?: $u->role->label() }}{{ $u->hub_id !== $case->hub_id ? ' · ' . $u->hub_id : '' }}){{ $u->name === $case->assigned_to ? ' ★ current' : '' }}
                     </option>
-                    @endif
                 @endforeach
             </select>
         </div>
@@ -2811,6 +2809,7 @@ function jhUpdateTransferSpecific(pw) {
 function jhFilterStaff(pw) {
     var sel = document.getElementById('jh-transfer-assignee');
     if (!sel) return;
+    var isPathwayMode = pw !== '';
     var roleMap = {
         'Court Representation': ['lawyer'],
         'Legal Advice / Consultation': ['lawyer', 'hub-coordinator'],
@@ -2820,6 +2819,10 @@ function jhFilterStaff(pw) {
     var allowedRoles = pw && roleMap[pw] ? roleMap[pw] : null;
     Array.from(sel.options).forEach(function(opt) {
         if (!opt.value) return;
+        var isCurrent = opt.dataset.current === '1';
+        // In "Reassign Staff" mode (no pw), hide the current assignee
+        if (!isPathwayMode && isCurrent) { opt.style.display = 'none'; if (opt.selected) { opt.selected = false; sel.value = ''; } return; }
+        // In "Change Pathway" mode, show current assignee but filter by role
         if (!allowedRoles) { opt.style.display = ''; return; }
         var role = opt.dataset.role || '';
         opt.style.display = allowedRoles.includes(role) || role === 'head' ? '' : 'none';
