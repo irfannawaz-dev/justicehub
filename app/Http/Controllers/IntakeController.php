@@ -140,17 +140,19 @@ class IntakeController extends Controller
             return is_numeric($tail) ? (int) $tail : 0;
         })->max() ?? 0;
 
-        // Increment until we find a uid not yet taken
-        do {
-            $maxSeq++;
-            $caseUid = $prefix . $maxSeq;
-        } while (CaseRecord::where('case_uid', $caseUid)->exists());
-
+        $maxSeq++;
+        $caseUid = $prefix . $maxSeq;
         $caseRef = 'LAS-' . $district . '-REF-' . $maxSeq;
         $encounterId = 'SE-' . str_pad(rand(10000, 99999), 5, '0', STR_PAD_LEFT);
 
-        $case = DB::transaction(function () use ($request, $caseUid, $caseRef, $encounterId, $hubId) {
-            $case = CaseRecord::create([
+        // Retry loop handles MySQL query-cache stale reads that cause duplicate-key errors
+        $case = null;
+        $attempt = 0;
+        while ($case === null && $attempt < 10) {
+            $attempt++;
+            try {
+                $case = DB::transaction(function () use ($request, $caseUid, $caseRef, $encounterId, $hubId) {
+                    $case = CaseRecord::create([
                 'case_uid'           => $caseUid,
                 'case_ref'           => $caseRef,
                 'encounter_id'       => $encounterId,
@@ -229,7 +231,27 @@ class IntakeController extends Controller
             ]);
 
             return $case;
-        });
+                }); // end DB::transaction
+            } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+                // Duplicate case_uid (MySQL query-cache stale read) — try next sequence
+                $maxSeq++;
+                $caseUid = $prefix . $maxSeq;
+                $caseRef = 'LAS-' . $district . '-REF-' . $maxSeq;
+            } catch (\PDOException $e) {
+                if ($e->getCode() === '23000') {
+                    $maxSeq++;
+                    $caseUid = $prefix . $maxSeq;
+                    $caseRef = 'LAS-' . $district . '-REF-' . $maxSeq;
+                } else {
+                    throw $e;
+                }
+            }
+        } // end while retry loop
+
+        if ($case === null) {
+            \Log::error("IntakeController: failed to generate unique case_uid after 10 attempts for prefix {$prefix}");
+            return back()->withInput()->withErrors(['case_uid' => 'Could not generate a unique Case ID. Please try again.']);
+        }
 
         // Flush dashboard cache so new case appears immediately
         DashboardMetricsService::flush($hubId);
