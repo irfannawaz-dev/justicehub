@@ -130,24 +130,23 @@ class IntakeController extends Controller
         $district = str_replace(' ', '-', $hub->district ?? $hubId);
         $prefix = 'LAS-' . $district . '-';
 
-        // Only count UIDs that exactly match this hub's prefix to avoid
-        // stale/mismatched entries causing duplicate key errors
-        $maxSeq = CaseRecord::where('hub_id', $hubId)
-            ->where('case_uid', 'LIKE', $prefix . '%')
-            ->whereRaw("case_uid REGEXP '^LAS-{$district}-[0-9]+$'")
-            ->selectRaw("MAX(CAST(SUBSTRING_INDEX(case_uid, '-', -1) AS UNSIGNED)) as max_seq")
-            ->value('max_seq');
+        // Find the highest existing sequence for this prefix across ALL hubs
+        // (avoids cross-hub collisions and stale hub_id mismatches)
+        $allUids = CaseRecord::where('case_uid', 'LIKE', $prefix . '%')
+            ->pluck('case_uid');
 
-        // Also check the absolute max case_uid for this prefix regardless of hub_id
-        // to guard against cross-hub collisions
-        $absMax = CaseRecord::where('case_uid', 'LIKE', $prefix . '%')
-            ->whereRaw("case_uid REGEXP '^LAS-{$district}-[0-9]+$'")
-            ->selectRaw("MAX(CAST(SUBSTRING_INDEX(case_uid, '-', -1) AS UNSIGNED)) as max_seq")
-            ->value('max_seq');
+        $maxSeq = $allUids->map(function ($uid) use ($prefix) {
+            $tail = substr($uid, strlen($prefix));
+            return is_numeric($tail) ? (int) $tail : 0;
+        })->max() ?? 0;
 
-        $hubSeq = (max($maxSeq ?? 0, $absMax ?? 0)) + 1;
-        $caseUid = $prefix . $hubSeq;
-        $caseRef = 'LAS-' . $district . '-REF-' . $hubSeq;
+        // Increment until we find a uid not yet taken
+        do {
+            $maxSeq++;
+            $caseUid = $prefix . $maxSeq;
+        } while (CaseRecord::where('case_uid', $caseUid)->exists());
+
+        $caseRef = 'LAS-' . $district . '-REF-' . $maxSeq;
         $encounterId = 'SE-' . str_pad(rand(10000, 99999), 5, '0', STR_PAD_LEFT);
 
         $case = DB::transaction(function () use ($request, $caseUid, $caseRef, $encounterId, $hubId) {
