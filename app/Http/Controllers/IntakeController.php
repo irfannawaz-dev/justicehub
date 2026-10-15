@@ -128,11 +128,25 @@ class IntakeController extends Controller
         // Generate case UID — LAS-{District}-{per_hub_sequence}
         $hub = \App\Models\Hub::find($hubId);
         $district = str_replace(' ', '-', $hub->district ?? $hubId);
+        $prefix = 'LAS-' . $district . '-';
+
+        // Only count UIDs that exactly match this hub's prefix to avoid
+        // stale/mismatched entries causing duplicate key errors
         $maxSeq = CaseRecord::where('hub_id', $hubId)
+            ->where('case_uid', 'LIKE', $prefix . '%')
+            ->whereRaw("case_uid REGEXP '^LAS-{$district}-[0-9]+$'")
             ->selectRaw("MAX(CAST(SUBSTRING_INDEX(case_uid, '-', -1) AS UNSIGNED)) as max_seq")
             ->value('max_seq');
-        $hubSeq = ($maxSeq ?? 0) + 1;
-        $caseUid = 'LAS-' . $district . '-' . $hubSeq;
+
+        // Also check the absolute max case_uid for this prefix regardless of hub_id
+        // to guard against cross-hub collisions
+        $absMax = CaseRecord::where('case_uid', 'LIKE', $prefix . '%')
+            ->whereRaw("case_uid REGEXP '^LAS-{$district}-[0-9]+$'")
+            ->selectRaw("MAX(CAST(SUBSTRING_INDEX(case_uid, '-', -1) AS UNSIGNED)) as max_seq")
+            ->value('max_seq');
+
+        $hubSeq = (max($maxSeq ?? 0, $absMax ?? 0)) + 1;
+        $caseUid = $prefix . $hubSeq;
         $caseRef = 'LAS-' . $district . '-REF-' . $hubSeq;
         $encounterId = 'SE-' . str_pad(rand(10000, 99999), 5, '0', STR_PAD_LEFT);
 
