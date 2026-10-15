@@ -1629,7 +1629,7 @@
                                             <span style="font-size:11px; color:var(--ink-4);">by {{ $letter->logged_by }}</span>
                                             @endif
                                             @if($letter->file_path)
-                                            <a href="{{ Storage::url($letter->file_path) }}" target="_blank"
+                                            <a href="{{ route('referral-letters.download', $letter) }}"
                                                 style="display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--forest); text-decoration:none; padding:2px 7px; border:1px solid var(--rule); background:var(--parchment);">
                                                 <x-lucide-paperclip style="width:10px;height:10px;" />
                                                 {{ $letter->file_name ?? 'attachment' }}
@@ -2225,7 +2225,7 @@
                             <td style="padding: 12px 14px; text-align: right;">
                                 <div style="display: flex; gap: 6px; justify-content: flex-end;">
                                     @if($doc->file_path)
-                                    <a href="{{ asset('storage/' . $doc->file_path) }}" target="_blank" title="Download" style="padding: 5px 8px; background: var(--paper); border: 1px solid var(--rule); color: var(--ink-2); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-size: 11px;">
+                                    <a href="{{ route('documents.download', $doc) }}" title="Download" style="padding: 5px 8px; background: var(--paper); border: 1px solid var(--rule); color: var(--ink-2); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-size: 11px;">
                                         <x-lucide-download style="width: 12px; height: 12px;" /> View
                                     </a>
                                     @endif

@@ -56,7 +56,7 @@ Route::middleware(['auth', 'hub.scope', 'can.write'])->group(function () {
 
     // ── Intake ───────────────────────────────────────────────────────
     Route::get('/intake', [IntakeController::class, 'create'])->name('intake.create');
-    Route::post('/intake', [IntakeController::class, 'store'])->name('intake.store');
+    Route::post('/intake', [IntakeController::class, 'store'])->middleware('throttle:30,1')->name('intake.store');
     Route::patch('/cases/{case}/update-intake', [CaseController::class, 'updateIntake'])->name('cases.update-intake');
 
     // ── Service Encounters ───────────────────────────────────────────
@@ -65,6 +65,8 @@ Route::middleware(['auth', 'hub.scope', 'can.write'])->group(function () {
     // ── Documents ────────────────────────────────────────────────────
     Route::post('/cases/{case}/documents', [CaseController::class, 'storeDocument'])->name('documents.store');
     Route::post('/documents/{document}/verify', [CaseController::class, 'verifyDocument'])->name('documents.verify');
+    Route::get('/documents/{document}/download', [CaseController::class, 'downloadDocument'])->name('documents.download');
+    Route::get('/referral-letters/{letter}/download', [CaseController::class, 'downloadLetter'])->name('referral-letters.download');
 
     // ── Service Scorecards & Calendars ───────────────────────────────
     Route::get('/services/adr-scorecard', [ServiceController::class, 'adrScorecard'])->name('services.adr');

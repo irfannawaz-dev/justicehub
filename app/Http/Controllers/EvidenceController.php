@@ -50,7 +50,7 @@ class EvidenceController extends Controller
             'hub_id'   => 'nullable|exists:hubs,id',
             'linked_indicator' => 'nullable|exists:indicators,code',
             'files'    => 'nullable|array|max:5',
-            'files.*'  => 'file|max:51200|mimes:pdf,jpg,jpeg,png,mp4,mov,mp3,doc,docx',
+            'files.*'  => 'file|max:51200|mimes:pdf,jpg,jpeg,png,mp4,mov,mp3,doc,docx|mimetypes:application/pdf,image/jpeg,image/png,video/mp4,video/quicktime,audio/mpeg,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         ]);
 
         $lastNum = Evidence::selectRaw("MAX(CAST(SUBSTRING(evidence_uid, 4) AS UNSIGNED)) as max_num")->value('max_num');
@@ -61,7 +61,7 @@ class EvidenceController extends Controller
         $uploadedFiles = [];
         if ($request->hasFile('files')) {
             foreach ($request->file('files') as $file) {
-                $path = $file->store("evidence/{$uid}", 'public');
+                $path = $file->store("evidence/{$uid}", 'local');
                 $uploadedFiles[] = [
                     'name' => $file->getClientOriginalName(),
                     'path' => $path,

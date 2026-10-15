@@ -270,17 +270,6 @@ class CaseController extends Controller
         // Hub scope enforced via Route::bind() in AppServiceProvider
         $case->load(['serviceEncounters', 'documents', 'complaints', 'feedback', 'hub', 'transfers.transferredBy', 'transfers.approvedBy', 'mediationParties', 'mediationDiary', 'caseReferrals.letters', 'caseReferrals.threads', 'messages.sender']);
 
-        // LAS CMS: Pull data for linked cases (linked at intake via pushCase)
-        if ($case->external_case_id) {
-            try {
-                $sync = new \App\Services\LasCmsSyncService();
-                $sync->pullHearings($case);
-                $case->load('serviceEncounters');
-            } catch (\Exception $e) {
-                \Log::warning('LAS CMS sync failed for ' . $case->case_uid . ': ' . $e->getMessage());
-            }
-        }
-
         // Staff eligible for reassignment (same hub, active, can write)
         $assignableUsers = \App\Models\User::where('hub_id', $case->hub_id)
             ->where('is_active', true)
@@ -385,8 +374,10 @@ class CaseController extends Controller
         // 3. Litigation stage changes
         $litLogs = \Illuminate\Support\Facades\DB::table('litigation_stage_logs')
             ->where('case_id', $case->id)->orderBy('changed_at')->get();
+        $litChangerIds = $litLogs->pluck('changed_by')->filter()->unique();
+        $litChangers   = \App\Models\User::whereIn('id', $litChangerIds)->get()->keyBy('id');
         foreach ($litLogs as $log) {
-            $changer = $log->changed_by ? \App\Models\User::find($log->changed_by) : null;
+            $changer = $log->changed_by ? $litChangers->get($log->changed_by) : null;
             $byLabel = $changer?->name ?? ($log->changed_by == 0 ? 'System · CMS Sync' : '—');
             $timeline->push([
                 'type'  => 'lit_stage',
@@ -402,8 +393,10 @@ class CaseController extends Controller
         // 4. ADR stage changes
         $adrLogs = \Illuminate\Support\Facades\DB::table('adr_stage_logs')
             ->where('case_id', $case->id)->orderBy('changed_at')->get();
+        $adrChangerIds = $adrLogs->pluck('changed_by')->filter()->unique();
+        $adrChangers   = \App\Models\User::whereIn('id', $adrChangerIds)->get()->keyBy('id');
         foreach ($adrLogs as $log) {
-            $changer = \App\Models\User::find($log->changed_by);
+            $changer = $adrChangers->get($log->changed_by);
             $timeline->push([
                 'type'  => 'adr_stage',
                 'icon'  => 'heart-handshake',
@@ -423,7 +416,7 @@ class CaseController extends Controller
                 'label' => 'Document Uploaded',
                 'text'  => "{$doc->name} ({$doc->type}) — {$doc->confidentiality}",
                 'by'    => $doc->added_by,
-                'at'    => $doc->added_date->startOfDay(),
+                'at'    => ($doc->added_date ?? now())->startOfDay(),
                 'color' => 'var(--ochre)',
             ]);
         }
@@ -436,7 +429,7 @@ class CaseController extends Controller
                 'label' => 'Complaint Filed',
                 'text'  => $complaint->description ?? $complaint->category ?? 'Complaint recorded.',
                 'by'    => $complaint->is_anonymous ? 'Anonymous' : ($complaint->submitted_by ?? '—'),
-                'at'    => $complaint->submitted_date->startOfDay(),
+                'at'    => ($complaint->submitted_date ?? now())->startOfDay(),
                 'color' => 'var(--burgundy)',
             ]);
         }
@@ -450,7 +443,7 @@ class CaseController extends Controller
                 'label' => 'Feedback Received',
                 'text'  => trim($score . ' ' . ($fb->comment ?? '')),
                 'by'    => $fb->is_anonymous ? 'Anonymous' : ($fb->client_name ?? '—'),
-                'at'    => $fb->date->startOfDay(),
+                'at'    => ($fb->date ?? now())->startOfDay(),
                 'color' => 'var(--moss)',
             ]);
         }
@@ -623,15 +616,24 @@ class CaseController extends Controller
             'confidentiality' => 'required|string',
             'added_by'        => 'required|string|max:255',
             'description'     => 'nullable|string',
-            'file'            => 'required|file|max:10240|mimes:pdf,jpg,jpeg,png',
+            'file'            => 'required|file|max:10240|mimes:pdf,jpg,jpeg,png|mimetypes:application/pdf,image/jpeg,image/png',
         ]);
 
         $file = $request->file('file');
-        $path = $file->store('documents/' . $case->id, 'public');
+        $path = $file->store('documents/' . $case->id, 'local');
 
-        $maxNum = \App\Models\Document::selectRaw("MAX(CAST(SUBSTRING(document_uid, 5) AS UNSIGNED)) as max_num")->value('max_num');
-        $nextNum = $maxNum ? $maxNum + 1 : 1001;
-        $docUid = 'DOC-' . str_pad($nextNum, 5, '0', STR_PAD_LEFT);
+        // Retry loop prevents duplicate docUid under concurrent uploads
+        $docUid = null;
+        $attempt = 0;
+        $allDocUids = \App\Models\Document::pluck('document_uid');
+        $maxNum = $allDocUids->map(function ($u) {
+            $tail = substr($u, 4); // strip 'DOC-'
+            return is_numeric($tail) ? (int) $tail : 0;
+        })->max() ?? 1000;
+        do {
+            $maxNum++;
+            $docUid = 'DOC-' . str_pad($maxNum, 5, '0', STR_PAD_LEFT);
+        } while (\App\Models\Document::where('document_uid', $docUid)->exists() && $attempt++ < 20);
 
         \App\Models\Document::create([
             'document_uid'   => $docUid,
@@ -661,17 +663,25 @@ class CaseController extends Controller
         ]);
 
         if ($case->external_case_id) {
-            (new \App\Services\LasCmsSyncService())->updateStatus($case->fresh());
+            try {
+                (new \App\Services\LasCmsSyncService())->updateStatus($case->fresh());
+            } catch (\Exception $e) {
+                \Log::warning("LAS CMS sync failed on approve for {$case->case_uid}: " . $e->getMessage());
+            }
         }
 
-        if ($assignedUser = $case->getAssignedUser()) {
-            $assignedUser->notify(new \App\Notifications\CaseNotification(
-                title:      "Case pathway approved — {$case->case_uid}",
-                message:    "The pathway for case {$case->case_uid} ({$case->name}) has been approved.",
-                actionText: 'View Case',
-                actionUrl:  route('cases.show', $case),
-                type:       'approved',
-            ));
+        try {
+            if ($assignedUser = $case->getAssignedUser()) {
+                $assignedUser->notify(new \App\Notifications\CaseNotification(
+                    title:      "Case pathway approved — {$case->case_uid}",
+                    message:    "The pathway for case {$case->case_uid} ({$case->name}) has been approved.",
+                    actionText: 'View Case',
+                    actionUrl:  route('cases.show', $case),
+                    type:       'approved',
+                ));
+            }
+        } catch (\Exception $e) {
+            \Log::warning("Approve notification failed for {$case->case_uid}: " . $e->getMessage());
         }
 
         return back()->with('success', 'Case pathway approved.');
@@ -691,17 +701,25 @@ class CaseController extends Controller
         ]);
 
         if ($case->external_case_id) {
-            (new \App\Services\LasCmsSyncService())->updateStatus($case->fresh());
+            try {
+                (new \App\Services\LasCmsSyncService())->updateStatus($case->fresh());
+            } catch (\Exception $e) {
+                \Log::warning("LAS CMS sync failed on reject for {$case->case_uid}: " . $e->getMessage());
+            }
         }
 
-        if ($assignedUser = $case->getAssignedUser()) {
-            $assignedUser->notify(new \App\Notifications\CaseNotification(
-                title:      "Case pathway rejected — {$case->case_uid}",
-                message:    "The pathway for case {$case->case_uid} ({$case->name}) was rejected. Reason: {$request->input('rejection_reason')}",
-                actionText: 'View Case',
-                actionUrl:  route('cases.show', $case),
-                type:       'rejected',
-            ));
+        try {
+            if ($assignedUser = $case->getAssignedUser()) {
+                $assignedUser->notify(new \App\Notifications\CaseNotification(
+                    title:      "Case pathway rejected — {$case->case_uid}",
+                    message:    "The pathway for case {$case->case_uid} ({$case->name}) was rejected. Reason: {$request->input('rejection_reason')}",
+                    actionText: 'View Case',
+                    actionUrl:  route('cases.show', $case),
+                    type:       'rejected',
+                ));
+            }
+        } catch (\Exception $e) {
+            \Log::warning("Reject notification failed for {$case->case_uid}: " . $e->getMessage());
         }
 
         return back()->with('success', 'Case pathway rejected.');
@@ -714,6 +732,13 @@ class CaseController extends Controller
             ? ($case->assigned_to === $user->name)
             : $user->can('cases.approve');
         abort_unless($canResolve, 403, 'Only the assigned Hub Coordinator can resolve this case.');
+
+        // Prevent re-resolving an already closed case
+        abort_if(
+            in_array($case->status, [\App\Enums\CaseStatus::Closed, \App\Enums\CaseStatus::Settlement]),
+            403,
+            'This case is already resolved.'
+        );
 
         $isAdr = $case->assigned_pathway === 'ADR / Dispute Resolution Support';
         $data = $request->validate([
@@ -753,7 +778,8 @@ class CaseController extends Controller
             $notified = [];
             foreach (array_unique([$case->assigned_to, $case->staff_receiving]) as $name) {
                 if (! $name || in_array($name, $notified)) continue;
-                $targetUser = \App\Models\User::where('name', $name)->where('hub_id', $case->hub_id)->first();
+                // No hub_id filter — Head/ProvincialLead have null hub_id and must still be found
+                $targetUser = \App\Models\User::where('name', $name)->first();
                 if ($targetUser) {
                     $targetUser->notify(new \App\Notifications\CaseNotification(
                         title:      "Case resolved — {$case->case_uid}",
@@ -819,9 +845,13 @@ class CaseController extends Controller
             'note'         => $logNote,
         ]);
 
-        // Notify Head / approvers
-        $approvers = \App\Models\User::where('hub_id', $case->hub_id)
-            ->whereIn('role', ['head', 'provincial-lead', 'hub-coordinator'])
+        // Notify Head / approvers — Heads have null hub_id so query them separately
+        $approvers = \App\Models\User::where(function ($q) use ($case) {
+                $q->whereIn('role', ['head', 'provincial-lead'])
+                  ->orWhere(function ($q2) use ($case) {
+                      $q2->where('role', 'hub-coordinator')->where('hub_id', $case->hub_id);
+                  });
+            })
             ->where('id', '!=', $request->user()->id)
             ->get();
 
@@ -844,6 +874,7 @@ class CaseController extends Controller
 
     public function approveTransfer(Request $request, CaseRecord $case, \App\Models\CaseTransfer $transfer)
     {
+        abort_unless($transfer->case_id === $case->id, 404);
         abort_unless($request->user()->can('cases.approve'), 403);
 
         $data = $request->validate([
@@ -911,6 +942,7 @@ class CaseController extends Controller
 
     public function rejectTransfer(Request $request, CaseRecord $case, \App\Models\CaseTransfer $transfer)
     {
+        abort_unless($transfer->case_id === $case->id, 404);
         abort_unless($request->user()->can('cases.approve'), 403);
 
         $data = $request->validate([
@@ -1037,7 +1069,7 @@ class CaseController extends Controller
             'our_ref'     => 'nullable|string|max:255',
             'note'        => 'nullable|string|max:2000',
             'letter_date' => 'required|date',
-            'letter_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240',
+            'letter_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240|mimetypes:application/pdf,image/jpeg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         ]);
 
         $data['case_referral_id'] = $referral->id;
@@ -1045,7 +1077,7 @@ class CaseController extends Controller
 
         if ($request->hasFile('letter_file')) {
             $file              = $request->file('letter_file');
-            $data['file_path'] = $file->store('referral-letters/' . $case->id, 'public');
+            $data['file_path'] = $file->store('referral-letters/' . $case->id, 'local');
             $data['file_name'] = $file->getClientOriginalName();
         }
 
@@ -1235,6 +1267,41 @@ class CaseController extends Controller
             ->with('success', 'Message sent.');
     }
 
+    public function downloadDocument(\App\Models\Document $document)
+    {
+        abort_unless(auth()->user()->can('cases.view'), 403);
+
+        $disk = \Illuminate\Support\Facades\Storage::disk('local');
+        $publicDisk = \Illuminate\Support\Facades\Storage::disk('public');
+
+        if ($disk->exists($document->file_path)) {
+            return $disk->download($document->file_path, $document->name);
+        }
+        // Fallback for files uploaded before private-disk migration
+        if ($publicDisk->exists($document->file_path)) {
+            return $publicDisk->download($document->file_path, $document->name);
+        }
+
+        abort(404, 'File not found.');
+    }
+
+    public function downloadLetter(\App\Models\CaseReferralLetter $letter)
+    {
+        abort_unless(auth()->user()->can('cases.view'), 403);
+
+        $disk = \Illuminate\Support\Facades\Storage::disk('local');
+        $publicDisk = \Illuminate\Support\Facades\Storage::disk('public');
+
+        if ($disk->exists($letter->file_path)) {
+            return $disk->download($letter->file_path, $letter->file_name ?? basename($letter->file_path));
+        }
+        if ($publicDisk->exists($letter->file_path)) {
+            return $publicDisk->download($letter->file_path, $letter->file_name ?? basename($letter->file_path));
+        }
+
+        abort(404, 'File not found.');
+    }
+
     public function exportExcel(Request $request)
     {
         abort_unless($request->user()->can('reports.export'), 403);
@@ -1249,18 +1316,23 @@ class CaseController extends Controller
 
     public function destroy(CaseRecord $case)
     {
-        abort_unless(auth()->user()->isHead(), 403, 'Only Head can delete cases.');
+        abort_unless(auth()->user()->can('cases.delete'), 403, 'You do not have permission to delete cases.');
 
         $uid = $case->case_uid;
 
-        // Delete related records
-        $case->serviceEncounters()->delete();
-        $case->caseReferrals()->delete();
-        $case->documents()->delete();
-        $case->feedback()->delete();
-        $case->complaints()->delete();
-        $case->messages()->delete();
-        $case->delete();
+        \Illuminate\Support\Facades\DB::transaction(function () use ($case) {
+            $case->serviceEncounters()->delete();
+            $case->caseReferrals()->delete();
+            $case->documents()->delete();
+            $case->feedback()->delete();
+            $case->complaints()->delete();
+            $case->messages()->delete();
+            $case->mediationParties()->delete();
+            $case->mediationDiary()->delete();
+            $case->caseStudies()->delete();
+            $case->transfers()->delete();
+            $case->delete();
+        });
 
         return redirect()->route('cases.index')->with('success', "Case {$uid} deleted.");
     }

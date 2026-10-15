@@ -249,9 +249,9 @@ class CaseRecord extends Model
         return $query->where('status', CaseStatus::Active);
     }
 
-    public function scopeByStatus($query, string $status)
+    public function scopeByStatus($query, \App\Enums\CaseStatus|string $status)
     {
-        return $query->where('status', $status);
+        return $query->where('status', $status instanceof \App\Enums\CaseStatus ? $status->value : $status);
     }
 
     public function scopeByDisposition($query, string $disposition)
