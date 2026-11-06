@@ -207,7 +207,7 @@ class IntakeController extends Controller
                 'is_disability'      => $request->disabilityStatus === 'Yes',
                 'is_underserved'     => in_array($request->monthlyIncome, ['Less than 30,000', '30,000 - 60,000']),
                 'assigned_to'        => $this->resolveAssignedTo($request),
-                'assigned_staff_id'  => (in_array($request->assignedPathway, ['Court Representation', 'Legal Advice / Consultation']) && $request->pathwaySpecific === 'Justice Hub Lawyer' && $request->assignedLawyer)
+                'assigned_staff_id'  => (in_array($request->assignedPathway, ['Court Representation', 'Representation in Court', 'Legal Advice / Consultation'], true) && $request->pathwaySpecific === 'Justice Hub Lawyer' && $request->assignedLawyer)
                                         ? \App\Models\Staff::where('user_id', $request->assignedLawyer)->value('id')
                                         : null,
                 'last_update'        => now()->toDateString(),
@@ -319,7 +319,7 @@ class IntakeController extends Controller
         }
 
         // LAS CMS: Push Court Representation intakes to the programs table
-        if ($case && $case->assigned_pathway === 'Court Representation') {
+        if ($case && in_array($case->assigned_pathway, ['Court Representation', 'Representation in Court'], true)) {
             try {
                 $sync = new LasCmsSyncService();
                 $sync->pushCase($case);
@@ -343,7 +343,7 @@ class IntakeController extends Controller
         $specific = $request->pathwaySpecific;
 
         // Lawyer assignment
-        if (in_array($pathway, ['Court Representation', 'Legal Advice / Consultation'])
+        if (in_array($pathway, ['Court Representation', 'Representation in Court', 'Legal Advice / Consultation'])
             && $specific === 'Justice Hub Lawyer'
             && $request->assignedLawyer) {
             return \App\Models\User::find($request->assignedLawyer)?->name ?? $request->staffReceiving;

@@ -10,3 +10,4 @@ Artisan::command('inspire', function () {
 
 // ── SLA breach notifications — run every hour ──────────────────────
 Schedule::command('notifications:sla-check')->hourly();
+Schedule::command('las:sync-drafts')->everyFifteenMinutes()->withoutOverlapping();

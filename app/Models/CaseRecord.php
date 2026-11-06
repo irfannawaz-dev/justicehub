@@ -61,7 +61,7 @@ class CaseRecord extends Model
         // Other
         'summary', 'last_update', 'meta',
         // External LAS CMS link
-        'external_case_id', 'external_synced_at',
+        'external_case_id', 'jh_cms_interview_id', 'jh_cms_interview_status', 'external_synced_at',
     ];
 
     protected function casts(): array

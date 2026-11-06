@@ -14,6 +14,7 @@ use App\Models\Reflection;
 use App\Models\ServiceEncounter;
 use App\Models\Staff;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 
@@ -316,8 +317,15 @@ class LearningController extends Controller
             'replication_potential' => ['nullable', Rule::in(['low', 'medium', 'high'])],
         ]);
 
+        $caseId = null;
+        if ($request->filled('case_id')) {
+            $case = CaseRecord::findOrFail($request->case_id);
+            Gate::authorize('update', $case);
+            $caseId = $case->id;
+        }
+
         CaseStudy::create([
-            'case_id'               => $request->case_id ?: null,
+            'case_id'               => $caseId,
             'title'                 => $request->title,
             'narrative'             => $request->narrative,
             'impact_statement'      => $request->impact_statement,

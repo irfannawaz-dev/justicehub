@@ -35,6 +35,12 @@ class PushCasesToLasCms extends Command
                 return 0;
             }
             $id = $sync->pushCase($case);
+            $case->refresh();
+            if (!$id && $case->jh_cms_interview_id) {
+                $this->info("CMS draft ready: {$caseUid} -> interview.id={$case->jh_cms_interview_id} ({$case->jh_cms_interview_status})");
+
+                return self::SUCCESS;
+            }
             $id ? $this->info("Pushed {$caseUid} → programs.id={$id}")
                 : $this->error("Failed to push {$caseUid} — check logs.");
             return $id ? 0 : 1;
@@ -45,7 +51,7 @@ class PushCasesToLasCms extends Command
         $sinceDate = $this->option('since') ?? '2026-09-30';
 
         $cases = CaseRecord::whereNull('external_case_id')
-            ->where('assigned_pathway', 'Court Representation')
+            ->whereIn('assigned_pathway', ['Court Representation', 'Representation in Court'])
             ->where('intake_date', '>=', $sinceDate)
             ->orderBy('intake_date')
             ->get();
@@ -68,6 +74,7 @@ class PushCasesToLasCms extends Command
 
         $bar     = $this->output->createProgressBar($total);
         $pushed  = 0;
+        $drafted = 0;
         $failed  = 0;
 
         $bar->start();
@@ -76,6 +83,8 @@ class PushCasesToLasCms extends Command
             $id = $sync->pushCase($case);
             if ($id) {
                 $pushed++;
+            } elseif ($case->fresh()->jh_cms_interview_id) {
+                $drafted++;
             } else {
                 $failed++;
                 $this->newLine();
@@ -87,6 +96,8 @@ class PushCasesToLasCms extends Command
         $bar->finish();
         $this->newLine(2);
         $this->info("Done. Pushed: {$pushed} | Failed: {$failed} | Total: {$total}");
+
+        $this->info("CMS drafts awaiting lawyer completion: {$drafted}");
 
         return $failed > 0 ? 1 : 0;
     }

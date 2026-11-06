@@ -19,7 +19,7 @@ class ReconcileLasCmsLinks extends Command
     public function handle(LasCmsSyncService $sync): int
     {
         $query = CaseRecord::query()
-            ->where('assigned_pathway', 'Court Representation')
+            ->whereIn('assigned_pathway', ['Court Representation', 'Representation in Court'])
             ->whereNotNull('cnic');
 
         if ($caseUid = $this->option('case')) {

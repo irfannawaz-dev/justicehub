@@ -49,6 +49,10 @@ class LasCmsSyncService
      */
     public function linkByCnic(CaseRecord $case): ?int
     {
+        if ($case->jh_cms_interview_id) {
+            return $this->resolveDraft($case);
+        }
+
         if (!$case->cnic) return null;
 
         $localCnic = $this->normalizeCnic($case->cnic);
@@ -142,8 +146,8 @@ class LasCmsSyncService
 
     /**
      * Push a JusticeHub case to LAS CMS via API.
-     * Creates a new record in the programs table.
-     * Returns the external programs.id on success.
+     * Creates a CMS draft interview; the lawyer later converts it to a program.
+     * Returns programs.id only when the CMS response already contains one.
      */
     public function pushCase(CaseRecord $case): ?int
     {
@@ -151,9 +155,15 @@ class LasCmsSyncService
             return $case->external_case_id;
         }
 
+        if ($case->jh_cms_interview_id) {
+            return $this->resolveDraft($case);
+        }
+
         $uniqueNumber = now()->year . '-JusticeHub-' . $case->id . '-' . ($case->district ?: 'Unknown');
+        $assignedUser = $case->getAssignedUser();
 
         $payload = [
+            'justicehub_case_uid' => $case->case_uid,
             'programName'         => 'JusticeHub',
             'caseReferred'        => 'Justicehub',
             'districtName'        => $case->district ?: 'Unknown',
@@ -171,6 +181,7 @@ class LasCmsSyncService
             'caseSubmittedFAppro' => 'Yes',
             'caseApprovalStatus'  => 'Pending',
             'lawyer1'             => $case->assigned_to,
+            'lawyerEmail'         => $assignedUser?->email,
             'natureOfCase'        => [$case->primary_issue],
             'currentCaseStatus'   => $this->mapStatus($case->status),
             'UniqueNumber'        => $uniqueNumber,
@@ -183,16 +194,22 @@ class LasCmsSyncService
 
             if ($response->successful()) {
                 $externalId = $response->json('program_id') ?? $response->json('id') ?? $response->json('data.id');
+                $interviewId = $response->json('interview_id');
+                $interviewStatus = $response->json('status', 'draft');
+
+                if (!$externalId && $interviewId) {
+                    $this->markDraftLinked($case, (int) $interviewId, $interviewStatus);
+                    Log::info("LasCMS: Created draft interview #{$interviewId} for {$case->case_uid}");
+
+                    return null;
+                }
 
                 if (!$externalId) {
                     Log::error("LasCMS pushCase: API returned success but no id for {$case->case_uid}. Response: " . $response->body());
                     return null;
                 }
 
-                $case->update([
-                    'external_case_id'   => $externalId,
-                    'external_synced_at' => now(),
-                ]);
+                $this->markProgramLinked($case, (int) $externalId, $interviewId, $interviewStatus);
 
                 Log::info("LasCMS: Pushed case {$case->case_uid} → programs.id={$externalId}");
                 return $externalId;
@@ -205,6 +222,78 @@ class LasCmsSyncService
             Log::error("LasCMS pushCase exception for {$case->case_uid}: " . $e->getMessage());
             return null;
         }
+    }
+
+    /** Resolve a CMS draft interview to its final programs.id when available. */
+    public function resolveDraft(CaseRecord $case): ?int
+    {
+        try {
+            $caseUid = rawurlencode($case->case_uid);
+            $response = $this->http()->get("{$this->baseUrl}/cases/source/{$caseUid}");
+
+            if ($response->status() === 404) {
+                return null;
+            }
+
+            if (!$response->successful()) {
+                Log::warning("LasCMS resolveDraft failed for {$case->case_uid}: HTTP {$response->status()} - " . $response->body());
+
+                return null;
+            }
+
+            $programId = $response->json('program_id');
+            $interviewId = $response->json('interview_id') ?? $case->jh_cms_interview_id;
+            $status = $response->json('status', 'draft');
+
+            if ($programId) {
+                $this->markProgramLinked($case, (int) $programId, $interviewId, $status);
+                Log::info("LasCMS: Resolved {$case->case_uid} draft to programs.id={$programId}");
+
+                return (int) $programId;
+            }
+
+            if ($interviewId) {
+                $this->markDraftLinked($case, (int) $interviewId, $status);
+            }
+        } catch (\Exception $e) {
+            Log::warning("LasCMS resolveDraft exception for {$case->case_uid}: " . $e->getMessage());
+        }
+
+        return null;
+    }
+
+    private function markDraftLinked(CaseRecord $case, int $interviewId, ?string $status): void
+    {
+        $case->update([
+            'jh_cms_interview_id' => $interviewId,
+            'jh_cms_interview_status' => $status ?: 'draft',
+            'external_synced_at' => now(),
+            'meta' => array_merge($case->meta ?? [], [
+                'las_link_status' => 'draft',
+                'las_interview_id' => $interviewId,
+                'las_interview_status' => $status ?: 'draft',
+            ]),
+        ]);
+    }
+
+    private function markProgramLinked(
+        CaseRecord $case,
+        int $programId,
+        int|string|null $interviewId = null,
+        ?string $interviewStatus = null,
+    ): void {
+        $case->update([
+            'external_case_id' => $programId,
+            'jh_cms_interview_id' => $interviewId ?: $case->jh_cms_interview_id,
+            'jh_cms_interview_status' => $interviewStatus ?: 'converted',
+            'external_synced_at' => now(),
+            'meta' => array_merge($case->meta ?? [], [
+                'las_link_status' => 'verified',
+                'las_link_verified_at' => now()->toIso8601String(),
+                'las_interview_id' => $interviewId ?: $case->jh_cms_interview_id,
+                'las_interview_status' => $interviewStatus ?: 'converted',
+            ]),
+        ]);
     }
 
     /**

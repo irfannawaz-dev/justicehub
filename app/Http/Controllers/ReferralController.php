@@ -6,6 +6,7 @@ use App\Models\Partner;
 use App\Models\CaseRecord;
 use App\Models\ServiceEncounter;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
 
 class ReferralController extends Controller
@@ -654,6 +655,7 @@ class ReferralController extends Controller
         ]);
 
         $case    = CaseRecord::findOrFail($data['case_id']);
+        Gate::authorize('update', $case);
         $partner = Partner::findOrFail($data['partner_id']);
 
         // Log as a service encounter

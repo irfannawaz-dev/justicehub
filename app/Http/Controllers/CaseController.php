@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CaseRecord;
 use App\Models\Hub;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class CaseController extends Controller
 {
@@ -128,8 +129,12 @@ class CaseController extends Controller
         $hubCaseIds = (clone $hubBase)->pluck('id');
         $courtCases = (clone $hubBase)->whereIn('assigned_pathway', ['Court Representation', 'Representation in Court']);
         $courtConnectedCount = (clone $courtCases)
-            ->whereNotNull('external_case_id')
-            ->where('meta->las_link_status', 'verified')
+            ->where(function ($query) {
+                $query->where(function ($verified) {
+                    $verified->whereNotNull('external_case_id')
+                        ->where('meta->las_link_status', 'verified');
+                })->orWhereNotNull('jh_cms_interview_id');
+            })
             ->count();
 
         // Ombudsman cases (under Govt pathway) count as ADR, not Referred
@@ -152,8 +157,12 @@ class CaseController extends Controller
         // ── Cohort & status counts from filtered base ──
         $totalFiltered = (clone $base)->count();
         $cmsConnectedCount = (clone $base)
-            ->whereNotNull('external_case_id')
-            ->where('meta->las_link_status', 'verified')
+            ->where(function ($query) {
+                $query->where(function ($verified) {
+                    $verified->whereNotNull('external_case_id')
+                        ->where('meta->las_link_status', 'verified');
+                })->orWhereNotNull('jh_cms_interview_id');
+            })
             ->count();
 
         $counts = [
@@ -203,13 +212,18 @@ class CaseController extends Controller
         }
         if ($request->filled('cms_link') && $request->cms_link !== 'all') {
             if ($request->cms_link === 'connected') {
-                $query->whereNotNull('external_case_id')
-                    ->where('meta->las_link_status', 'verified');
+                $query->where(function ($connected) {
+                    $connected->where(function ($verified) {
+                        $verified->whereNotNull('external_case_id')
+                            ->where('meta->las_link_status', 'verified');
+                    })->orWhereNotNull('jh_cms_interview_id');
+                });
             } elseif ($request->cms_link === 'not_connected') {
-                $query->where(function ($q) {
-                    $q->whereNull('external_case_id')
-                        ->orWhereNull('meta->las_link_status')
-                        ->orWhere('meta->las_link_status', '!=', 'verified');
+                $query->whereNull('jh_cms_interview_id')
+                    ->where(function ($q) {
+                        $q->whereNull('external_case_id')
+                            ->orWhereNull('meta->las_link_status')
+                            ->orWhere('meta->las_link_status', '!=', 'verified');
                 });
             }
         }
@@ -229,6 +243,8 @@ class CaseController extends Controller
 
     public function slip(CaseRecord $case)
     {
+        Gate::authorize('view', $case);
+
         $case->load('hub');
         $lawyerPhone = $case->getAssignedUser()?->contact_number;
         return view('cases.slip', compact('case', 'lawyerPhone'));
@@ -236,38 +252,8 @@ class CaseController extends Controller
 
     public function show(CaseRecord $case)
     {
-        $viewer = auth()->user();
+        Gate::authorize('view', $case);
 
-        // Lawyers: only their own assigned cases, no mediation/ADR
-        if ($viewer->isLawyer()) {
-            if ($case->assigned_to !== $viewer->name) {
-                abort(403, 'You can only view cases assigned to you.');
-            }
-            if (in_array($case->assigned_pathway, ['Mediation', 'ADR / Dispute Resolution Support'])) {
-                abort(403, 'Lawyers are not permitted to view mediation cases.');
-            }
-        }
-
-        // Court Clerk: only litigation / court representation cases
-        if ($viewer->isCourtClerk() && !in_array($case->assigned_pathway, [
-            'Representation in Court', 'Court Representation',
-        ]) && $case->disposition !== 'litigation') {
-            abort(403, 'Court Clerks can only view litigation cases.');
-        }
-
-        // Litigation Manager: only Representation in Court cases
-        if ($viewer->isLitigationManager() && !in_array($case->assigned_pathway, [
-            'Representation in Court', 'Court Representation',
-        ])) {
-            abort(403, 'Litigation Managers can only view litigation cases.');
-        }
-
-        // Mediation Manager: only Mediation cases
-        if ($viewer->isMediationManager() && $case->assigned_pathway !== 'Mediation') {
-            abort(403, 'Mediation Managers can only view mediation cases.');
-        }
-
-        // Hub scope enforced via Route::bind() in AppServiceProvider
         $case->load(['serviceEncounters', 'documents', 'complaints', 'feedback', 'hub', 'transfers.transferredBy', 'transfers.approvedBy', 'mediationParties', 'mediationDiary', 'caseReferrals.letters', 'caseReferrals.threads', 'messages.sender']);
 
         // Staff eligible for reassignment (same hub, active, can write)
@@ -580,7 +566,8 @@ class CaseController extends Controller
 
     public function verifyDocument(Request $request, \App\Models\Document $document)
     {
-        abort_unless($request->user()->can('cases.edit'), 403);
+        $case = $document->caseRecord()->firstOrFail();
+        Gate::authorize('update', $case);
 
         $document->update([
             'status' => 'Verified',
@@ -1269,7 +1256,8 @@ class CaseController extends Controller
 
     public function downloadDocument(\App\Models\Document $document)
     {
-        abort_unless(auth()->user()->can('cases.view'), 403);
+        $case = $document->caseRecord()->firstOrFail();
+        Gate::authorize('view', $case);
 
         $disk = \Illuminate\Support\Facades\Storage::disk('local');
         $publicDisk = \Illuminate\Support\Facades\Storage::disk('public');
@@ -1287,7 +1275,8 @@ class CaseController extends Controller
 
     public function downloadLetter(\App\Models\CaseReferralLetter $letter)
     {
-        abort_unless(auth()->user()->can('cases.view'), 403);
+        $case = $letter->referral()->firstOrFail()->caseRecord()->firstOrFail();
+        Gate::authorize('view', $case);
 
         $disk = \Illuminate\Support\Facades\Storage::disk('local');
         $publicDisk = \Illuminate\Support\Facades\Storage::disk('public');

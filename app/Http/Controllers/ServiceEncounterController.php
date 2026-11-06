@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CaseRecord;
 use App\Models\ServiceEncounter;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 
 class ServiceEncounterController extends Controller
@@ -74,6 +75,7 @@ class ServiceEncounterController extends Controller
         ]);
 
         $case = CaseRecord::findOrFail($validated['case_id']);
+        Gate::authorize('update', $case);
 
         ServiceEncounter::create([
             'case_id'      => $validated['case_id'],

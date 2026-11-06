@@ -8,6 +8,7 @@ use App\Services\DashboardMetricsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class ServiceController extends Controller
 {
@@ -150,6 +151,7 @@ class ServiceController extends Controller
         ]);
 
         $case = CaseRecord::findOrFail($data['case_id']);
+        Gate::authorize('update', $case);
 
         // Update case to ADR pathway + safeguarding flags
         $case->update([

@@ -243,12 +243,17 @@
                                 <x-lucide-circle-alert style="width:11px; height:11px; color:var(--ochre);" />
                                 <span style="font-size:10px; font-weight:700; color:var(--ochre); letter-spacing:0.05em;">LAS?</span>
                             </div>
-                            @elseif($case->assigned_pathway === 'Court Representation' && data_get($case->meta, 'las_link_status') === 'ambiguous')
+                            @elseif($case->jh_cms_interview_id)
+                            <div style="display:inline-flex; align-items:center; gap:4px; margin-top:4px; padding:3px 8px; background:rgba(14,116,144,0.10); border:1px solid rgba(14,116,144,0.35); border-radius:3px;" title="LAS CMS draft interview #{{ $case->jh_cms_interview_id }} · {{ ucfirst($case->jh_cms_interview_status ?? 'draft') }}">
+                                <x-lucide-clipboard-clock style="width:11px; height:11px; color:#0e7490;" />
+                                <span style="font-size:10px; font-weight:700; color:#0e7490; letter-spacing:0.05em;">CMS DRAFT</span>
+                            </div>
+                            @elseif(in_array($case->assigned_pathway, ['Court Representation', 'Representation in Court'], true) && data_get($case->meta, 'las_link_status') === 'ambiguous')
                             <div style="display:inline-flex; align-items:center; gap:4px; margin-top:4px; padding:3px 8px; background:rgba(126,87,194,0.12); border:1px dashed #7e57c2; border-radius:3px;" title="Multiple LAS records found — click to select the correct one">
                                 <x-lucide-git-fork style="width:11px; height:11px; color:#7e57c2;" />
                                 <span style="font-size:10px; font-weight:700; color:#7e57c2; letter-spacing:0.05em;">LAS 2+</span>
                             </div>
-                            @elseif($case->assigned_pathway === 'Court Representation')
+                            @elseif(in_array($case->assigned_pathway, ['Court Representation', 'Representation in Court'], true))
                             <div style="display:inline-flex; align-items:center; gap:4px; margin-top:4px; padding:3px 8px; background:rgba(184,115,25,0.12); border:1px dashed var(--ochre); border-radius:3px;" title="Court case — not yet matched in LAS CMS">
                                 <x-lucide-link-2-off style="width:11px; height:11px; color:var(--ochre);" />
                                 <span style="font-size:10px; font-weight:700; color:var(--ochre); letter-spacing:0.05em;">LAS?</span>
@@ -336,12 +341,17 @@
                         <x-lucide-circle-alert style="width:11px; height:11px; color:var(--ochre);" />
                         <span style="font-size:10px; font-weight:700; color:var(--ochre); letter-spacing:0.05em;">LAS?</span>
                     </span>
-                    @elseif($case->assigned_pathway === 'Court Representation' && data_get($case->meta, 'las_link_status') === 'ambiguous')
+                    @elseif($case->jh_cms_interview_id)
+                    <span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; background:rgba(14,116,144,0.10); border:1px solid rgba(14,116,144,0.35); border-radius:3px;" title="LAS CMS draft interview #{{ $case->jh_cms_interview_id }} · {{ ucfirst($case->jh_cms_interview_status ?? 'draft') }}">
+                        <x-lucide-clipboard-clock style="width:11px; height:11px; color:#0e7490;" />
+                        <span style="font-size:10px; font-weight:700; color:#0e7490; letter-spacing:0.05em;">CMS DRAFT</span>
+                    </span>
+                    @elseif(in_array($case->assigned_pathway, ['Court Representation', 'Representation in Court'], true) && data_get($case->meta, 'las_link_status') === 'ambiguous')
                     <span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; background:rgba(126,87,194,0.12); border:1px dashed #7e57c2; border-radius:3px;" title="Multiple LAS records found — click to select the correct one">
                         <x-lucide-git-fork style="width:11px; height:11px; color:#7e57c2;" />
                         <span style="font-size:10px; font-weight:700; color:#7e57c2; letter-spacing:0.05em;">LAS 2+</span>
                     </span>
-                    @elseif($case->assigned_pathway === 'Court Representation')
+                    @elseif(in_array($case->assigned_pathway, ['Court Representation', 'Representation in Court'], true))
                     <span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; background:rgba(184,115,25,0.12); border:1px dashed var(--ochre); border-radius:3px;" title="Court case — not yet matched in LAS CMS">
                         <x-lucide-link-2-off style="width:11px; height:11px; color:var(--ochre);" />
                         <span style="font-size:10px; font-weight:700; color:var(--ochre); letter-spacing:0.05em;">LAS?</span>

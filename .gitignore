@@ -26,3 +26,6 @@ Thumbs.db
 *.xls
 database/seeders/TestReferralCasesSeeder.php
 DUAL-LANGUAGE-PLAN.md
+AUDIT.md
+public/JusticeHub-User-Manual.pdf
+resources/views/manual.blade.php

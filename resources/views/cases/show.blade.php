@@ -2161,6 +2161,25 @@
                     </div>
                     @endif
                 </div>
+                @elseif($case->jh_cms_interview_id)
+                <div class="card" style="padding: 22px 26px; border-left: 3px solid #0e7490;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+                        <x-lucide-clipboard-clock style="width: 15px; height: 15px; color: #0e7490;" />
+                        <div class="label-cap" style="font-size: 10px;">LAS CMS Integration</div>
+                        <span style="font-size: 9px; padding: 2px 6px; background: rgba(14,116,144,0.10); color: #0e7490; font-weight: 700; margin-left: auto;">DRAFT</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <div style="font-size: 10px; color: var(--ink-4); text-transform: uppercase; margin-bottom: 3px;">Interview ID</div>
+                            <div class="mono" style="font-size: 13px; font-weight: 500; color: #0e7490;">{{ $case->jh_cms_interview_id }}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 10px; color: var(--ink-4); text-transform: uppercase; margin-bottom: 3px;">Status</div>
+                            <div style="font-size: 12px; color: var(--ink-2);">{{ ucfirst($case->jh_cms_interview_status ?? 'draft') }}</div>
+                        </div>
+                    </div>
+                    <div style="font-size: 12px; color: var(--ink-3); margin-top: 12px;">The draft is available to the assigned lawyer in LAS CMS. The final LAS case ID will appear after completion and submission.</div>
+                </div>
                 @endif
             </div>
         </div>
