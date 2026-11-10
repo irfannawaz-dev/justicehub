@@ -253,11 +253,11 @@ class CaseController extends Controller
         $cmsHearings    = collect();
         $cmsTimeline    = [];
 
-        if ($case->isCourtRepresentation() && ($case->external_case_id || $case->jh_cms_interview_id || $case->cnic)) {
+        if ($case->isCourtRepresentation() && ($case->external_case_id || $case->jh_cms_interview_id || $case->cnic || data_get($case->meta, 'las_sync_flow') === 'interview')) {
             try {
                 $sync    = new \App\Services\LasCmsSyncService();
                 if (!$case->external_case_id) {
-                    $case->jh_cms_interview_id ? $sync->resolveDraft($case) : $sync->linkByCnic($case);
+                    $sync->linkByCnic($case);
                 }
                 $apiData = $sync->fetchCaseWithHearings($case);
 
@@ -789,7 +789,7 @@ class CaseController extends Controller
         $transfer = \App\Models\CaseTransfer::create([
             'case_id'              => $case->id,
             'transfer_type'        => $data['transfer_type'],
-            'from_assignee'        => $case->assigned_to,
+            'from_assignee'        => $case->assigned_to ?? 'Unassigned',
             'to_assignee'          => $data['to_assignee'],
             'from_pathway'         => $case->assigned_pathway,
             'to_pathway'           => $data['to_pathway'] ?? null,
