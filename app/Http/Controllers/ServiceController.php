@@ -386,21 +386,16 @@ class ServiceController extends Controller
             ->latest('intake_date')
             ->get();
 
-        // Bulk-fetch CMS caseStage + caseApprovalStatus for all linked cases (1 query, no N+1)
-        $linkedExternalIds = $cases->whereNotNull('external_case_id')->pluck('external_case_id', 'id');
-        $cmsStageMap      = collect();
-        $cmsApprovalMap   = collect(); // external_case_id → caseApprovalStatus
-        if ($linkedExternalIds->isNotEmpty()) {
-            try {
-                $cmsRows = DB::connection('las_cms')
-                    ->table('programs')
-                    ->whereIn('id', $linkedExternalIds->values())
-                    ->get(['id', 'caseStage', 'caseApprovalStatus']);
-                $cmsStageMap    = $cmsRows->pluck('caseStage', 'id');
-                $cmsApprovalMap = $cmsRows->pluck('caseApprovalStatus', 'id');
-            } catch (\Exception $e) {
-                \Log::warning('LAS CMS stage fetch failed: ' . $e->getMessage());
-            }
+        // Read CMS stages only for eligible cases, verifying the CNIC or draft source first.
+        $cmsStageMap = collect();
+        $cmsApprovalMap = collect();
+        $cmsSync = app(\App\Services\LasCmsSyncService::class);
+        $cmsRows = $cmsSync->fetchCases($cases);
+        foreach ($cases as $linkedCase) {
+            $cmsRow = $cmsRows[$linkedCase->id] ?? null;
+            if (!$cmsRow) continue;
+            $cmsStageMap[$linkedCase->external_case_id] = $cmsRow['caseStage'] ?? null;
+            $cmsApprovalMap[$linkedCase->external_case_id] = $cmsRow['caseApprovalStatus'] ?? null;
         }
 
         // Map LAS CMS caseStage values → JusticeHub pipeline stages
@@ -446,7 +441,7 @@ class ServiceController extends Controller
         // 5-stage pipeline: Not Filed → Filed → In Hearings → Awaiting Judgment → Resolved
         $pipeline = ['Not Filed' => [], 'Filed' => [], 'In Hearings' => [], 'Awaiting Judgment' => [], 'Resolved' => []];
         foreach ($cases as $c) {
-            $encounters  = $c->serviceEncounters;
+            $encounters  = $c->serviceEncounters->filter(fn ($encounter) => $c->canShowCmsEncounter($encounter));
             $lastType    = strtolower($encounters->last()?->type ?? '');
             $daysInStage = $c->last_update
                 ? (int) $c->last_update->diffInDays(now())

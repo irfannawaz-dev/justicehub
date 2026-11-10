@@ -4,6 +4,10 @@ namespace App\Services;
 
 use App\Models\CaseRecord;
 use App\Models\ServiceEncounter;
+use App\Support\LasCmsIdentity;
+use Illuminate\Http\Client\Pool;
+use Illuminate\Http\Client\Response;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -39,156 +43,171 @@ class LasCmsSyncService
 
     public function normalizeCnic(?string $cnic): string
     {
-        return preg_replace('/\D/', '', (string) $cnic);
+        return LasCmsIdentity::normalizeCnic($cnic);
     }
 
-    /**
-     * Look up a programs record by client name (and optionally district).
-     * Used as fallback when CNIC is missing or invalid.
-     * Returns programs.id if exactly one match found, null otherwise.
-     */
+    /** Kept for older callers; a name alone must never establish a link. */
     public function linkByName(CaseRecord $case): ?int
     {
-        if (!$case->name) return null;
-
-        try {
-            $params = ['name' => $case->name];
-            if ($case->district) {
-                $params['district'] = $case->district;
-            }
-
-            $response = $this->http()->get("{$this->baseUrl}/cases/search", $params);
-
-            if ($response->status() === 404) {
-                $this->setLinkStatus($case, 'name_not_found', [], false, true);
-                return null;
-            }
-
-            if (!$response->successful()) {
-                Log::info("LasCMS linkByName: no match for {$case->name} ({$case->case_uid}) — HTTP {$response->status()}");
-                return null;
-            }
-
-            $matchCount = $response->json('match_count', 0);
-            $candidates = $response->json('candidates', []);
-
-            if ($matchCount === 0) {
-                $this->setLinkStatus($case, 'name_not_found', [], false, true);
-                return null;
-            }
-
-            if ($matchCount > 1) {
-                // Store candidates for manual review
-                $this->setLinkStatus($case, 'name_ambiguous', [
-                    'match_count' => $matchCount,
-                    'candidates'  => collect($candidates)->map(fn ($c) => [
-                        'program_id'  => $c['program_id'],
-                        'clientName'  => $c['clientName'],
-                        'districtName'=> $c['districtName'],
-                        'interviewDate' => $c['interviewDate'],
-                    ])->values()->all(),
-                ], false, false);
-                Log::info("LasCMS linkByName: ambiguous ({$matchCount} matches) for {$case->name} ({$case->case_uid})");
-                return null;
-            }
-
-            $program = $candidates[0];
-            $externalId = $program['program_id'] ?? null;
-
-            if (!$externalId) return null;
-
-            $case->update([
-                'external_case_id'   => $externalId,
-                'external_synced_at' => now(),
-                'meta'               => array_merge($case->meta ?? [], [
-                    'las_link_status'      => 'name_matched',
-                    'las_link_verified_at' => now()->toIso8601String(),
-                    'las_match_method'     => 'name',
-                    'las_matched_name'     => $program['clientName'],
-                ]),
-            ]);
-
-            Log::info("LasCMS: Linked {$case->case_uid} → programs.id={$externalId} via name match ('{$case->name}')");
-            return $externalId;
-
-        } catch (\Exception $e) {
-            Log::warning("LasCMS linkByName exception for {$case->case_uid}: " . $e->getMessage());
-            return null;
-        }
+        return $this->linkByCnic($case);
     }
 
-    /**
-     * Look up an existing programs record by CNIC and link it to the JusticeHub case.
-     * Does NOT create a new record — only matches an existing one.
-     * Returns the programs.id if matched, null otherwise.
-     */
+    /** Match existing court cases by CNIC; never create a CMS record here. */
     public function linkByCnic(CaseRecord $case): ?int
     {
-        if ($case->jh_cms_interview_id) {
-            return $this->resolveDraft($case);
-        }
+        if (!$case->isCourtRepresentation()) return null;
+        if ($case->jh_cms_interview_id) return $this->resolveDraft($case);
 
-        if (!$case->cnic) return null;
-
-        $localCnic = $this->normalizeCnic($case->cnic);
-        if (strlen($localCnic) !== 13) {
+        if (strlen($this->normalizeCnic($case->cnic)) !== 13) {
             $this->setLinkStatus($case, 'invalid_cnic', [], false, true);
             return null;
         }
 
-        $formattedCnic = $this->formatCnic($case->cnic);
-
         try {
             $response = $this->http()->get("{$this->baseUrl}/cases/lookup", [
-                'cnic' => $formattedCnic,  // send formatted: 42201-1234567-1
+                'cnic' => $this->formatCnic($case->cnic),
             ]);
-
-            if (!$response->successful()) {
-                $status = match ($response->status()) {
-                    404 => 'not_found',
-                    409 => 'ambiguous',
-                    default => 'lookup_failed',
-                };
-                $this->setLinkStatus($case, $status, [
-                    'match_count' => $response->json('match_count'),
-                    'candidates'  => $response->json('candidates', []),
-                ], false, in_array($response->status(), [404, 409], true));
-                Log::info("LasCMS linkByCnic: no match for CNIC {$case->cnic} ({$case->case_uid}) — HTTP {$response->status()}");
+            if (!$response->successful() && $response->status() !== 409) {
+                $this->setLinkStatus($case, $response->status() === 404 ? 'not_found' : 'lookup_failed', [], false, $response->status() === 404);
                 return null;
             }
 
-            $matchedCnic = $this->normalizeCnic($response->json('cnic'));
-            if (!hash_equals($localCnic, $matchedCnic)) {
-                $this->setLinkStatus($case, 'cnic_mismatch', [], false, true);
-                Log::warning("LasCMS linkByCnic: returned CNIC mismatch for {$case->case_uid}");
+            $data = $response->json('data') ?? $response->json() ?? [];
+            if (!is_array($data)) {
+                $this->setLinkStatus($case, 'lookup_failed');
                 return null;
             }
-
-            $externalId = $response->json('program_id')
-                ?? $response->json('id')
-                ?? $response->json('data.id');
-
-            if (!$externalId) {
-                Log::info("LasCMS linkByCnic: response OK but no id for CNIC {$case->cnic} ({$case->case_uid})");
+            $candidates = $data['candidates'] ?? [$data];
+            if (!is_array($candidates)) {
+                $this->setLinkStatus($case, 'lookup_failed');
                 return null;
             }
+            $matches = [];
+            $incomplete = false;
+            foreach ($candidates as $candidate) {
+                if (!is_array($candidate)) { $incomplete = true; continue; }
+                $id = (int) ($candidate['program_id'] ?? $candidate['id'] ?? 0);
+                if ($id < 1) { $incomplete = true; continue; }
+                if (!isset($candidate['cnic'])) {
+                    $candidate = $this->readProgram($id);
+                    if (!$candidate) { $incomplete = true; continue; }
+                }
+                if (LasCmsIdentity::matches($case, $candidate)) {
+                    $matches[$id] = array_merge($candidate, ['program_id' => $id]);
+                }
+            }
 
-            $case->update([
-                'external_case_id'   => $externalId,
-                'external_synced_at' => now(),
-                'meta'               => array_merge($case->meta ?? [], [
-                    'las_link_status'      => 'verified',
-                    'las_link_verified_at' => now()->toIso8601String(),
-                ]),
-            ]);
+            $reportedCount = $data['match_count'] ?? $response->json('match_count', count($candidates));
+            $incomplete = $incomplete || (int) $reportedCount > count($candidates);
+            if (count($matches) === 1 && !$incomplete) {
+                $id = (int) array_key_first($matches);
+                $this->markCnicLinked($case, $id);
+                return $id;
+            }
 
-            Log::info("LasCMS: Linked {$case->case_uid} → programs.id={$externalId} via CNIC match");
-            return $externalId;
-
+            $this->setLinkStatus($case, $matches || $response->status() === 409 ? 'ambiguous' : 'cnic_mismatch', [
+                'match_count' => count($matches),
+                'candidates' => array_values($matches),
+            ], false, true);
         } catch (\Exception $e) {
-            Log::warning("LasCMS linkByCnic exception for {$case->case_uid}: " . $e->getMessage());
+            $this->setLinkStatus($case, 'lookup_failed');
+            Log::warning("LasCMS lookup failed for {$case->case_uid}: " . $e->getMessage());
+        }
+        return null;
+    }
+
+    private function readProgram(int $id): ?array
+    {
+        $response = $this->http()->get("{$this->baseUrl}/cases/{$id}");
+        if (!$response->successful()) return null;
+        $data = $response->json('data') ?? $response->json();
+        if (!is_array($data)) return null;
+        $returnedId = $data['program_id'] ?? $data['id'] ?? $id;
+        return (int) $returnedId === $id ? $data : null;
+    }
+
+    private function markCnicLinked(CaseRecord $case, int $id): void
+    {
+        $this->setLinkStatus($case, 'verified', [], true);
+        $case->update([
+            'external_case_id' => $id,
+            'meta' => array_merge($case->meta ?? [], [
+                'las_match_method' => 'cnic',
+                'las_link_verified_at' => now()->toIso8601String(),
+            ]),
+        ]);
+    }
+
+    /** Manual selection still requires a matching CNIC. */
+    public function linkProgram(CaseRecord $case, int $id): ?int
+    {
+        if (!$case->isCourtRepresentation() || strlen($this->normalizeCnic($case->cnic)) !== 13) return null;
+        try {
+            $data = $this->readProgram($id);
+            if (!$data || !LasCmsIdentity::matches($case, $data)) return null;
+            $this->markCnicLinked($case, $id);
+            return $id;
+        } catch (\Exception $e) {
+            Log::warning("LasCMS selection failed for {$case->case_uid}: " . $e->getMessage());
             return null;
         }
+    }
+
+    /** Read only the matched program, or the program resolved from our draft UID. */
+    public function fetchCase(CaseRecord $case): ?array
+    {
+        if (!$case->isCourtRepresentation() || !$case->external_case_id) return null;
+        try {
+            $data = $this->readProgram((int) $case->external_case_id);
+            if (!$data) return null;
+            return $this->acceptProgram($case, $data);
+        } catch (\Exception $e) {
+            Log::warning("LasCMS case fetch failed for {$case->case_uid}: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /** Fetch the litigation board's programs with bounded parallel requests. */
+    public function fetchCases(Collection $cases): array
+    {
+        $eligible = $cases->filter(fn (CaseRecord $case) => $case->isCourtRepresentation() && $case->external_case_id);
+        if ($eligible->isEmpty()) return [];
+
+        $responses = Http::pool(function (Pool $pool) use ($eligible) {
+            foreach ($eligible as $case) {
+                $pool->as($case->id)->withHeaders([
+                    'X-JusticeHub-Key' => $this->apiKey,
+                    'Accept' => 'application/json',
+                ])->timeout(15)->get("{$this->baseUrl}/cases/{$case->external_case_id}");
+            }
+        }, concurrency: 5);
+
+        $programs = [];
+        foreach ($eligible as $case) {
+            $response = $responses[$case->id] ?? null;
+            if (!$response instanceof Response || !$response->successful()) continue;
+            $data = $response->json('data') ?? $response->json();
+            if (!is_array($data)) continue;
+            $program = $this->acceptProgram($case, $data);
+            if ($program) $programs[$case->id] = $program;
+        }
+        return $programs;
+    }
+
+    private function acceptProgram(CaseRecord $case, array $data): ?array
+    {
+        $returnedId = $data['program_id'] ?? $data['id'] ?? $case->external_case_id;
+        if ((int) $returnedId !== (int) $case->external_case_id) return null;
+
+        $fromDraft = data_get($case->meta, 'las_match_method') === 'source'
+            && data_get($case->meta, 'las_source_case_uid') === $case->case_uid;
+        $sourceMatches = !isset($data['justicehub_case_uid']) || $data['justicehub_case_uid'] === $case->case_uid;
+        if (($fromDraft && !$sourceMatches) || (!$fromDraft && !LasCmsIdentity::matches($case, $data))) {
+            $this->setLinkStatus($case, 'identity_mismatch', [], false, true);
+            return null;
+        }
+        if (!$fromDraft) $this->markCnicLinked($case, (int) $case->external_case_id);
+        return $data;
     }
 
     protected function setLinkStatus(
@@ -200,6 +219,15 @@ class LasCmsSyncService
     ): void
     {
         $meta = array_merge($case->meta ?? [], ['las_link_status' => $status]);
+        unset($meta['las_link_candidates'], $meta['las_candidates'], $meta['las_link_match_count']);
+        if ($status !== 'verified') {
+            unset($meta['las_link_verified_at'], $meta['las_match_method'], $meta['las_source_case_uid']);
+        }
+        if ($clearLink) {
+            foreach (['court_name', 'case_number', 'next_hearing', 'case_stage', 'case_decision', 'external_status', 'cms_approval_status'] as $key) {
+                unset($meta[$key]);
+            }
+        }
 
         foreach ($details as $key => $value) {
             if ($value !== null && $value !== []) {
@@ -226,8 +254,10 @@ class LasCmsSyncService
      */
     public function pushCase(CaseRecord $case): ?int
     {
+        if (!$case->isCourtRepresentation()) return null;
+
         if ($case->external_case_id) {
-            return $case->external_case_id;
+            return $this->fetchCase($case) ? (int) $case->external_case_id : null;
         }
 
         if ($case->jh_cms_interview_id) {
@@ -268,9 +298,11 @@ class LasCmsSyncService
             $response = $this->http()->post("{$this->baseUrl}/cases", $payload);
 
             if ($response->successful()) {
-                $externalId = $response->json('program_id') ?? $response->json('id') ?? $response->json('data.id');
-                $interviewId = $response->json('interview_id');
                 $interviewStatus = $response->json('status', 'draft');
+                $interviewId = $response->json('interview_id')
+                    ?? ($interviewStatus === 'draft' ? ($response->json('id') ?? $response->json('data.id')) : null);
+                // Generic id may be the interview ID, never treat it as a program when a draft exists.
+                $externalId = $response->json('program_id') ?? ($interviewId ? null : ($response->json('id') ?? $response->json('data.id')));
 
                 if (!$externalId && $interviewId) {
                     $this->markDraftLinked($case, (int) $interviewId, $interviewStatus);
@@ -302,6 +334,8 @@ class LasCmsSyncService
     /** Resolve a CMS draft interview to its final programs.id when available. */
     public function resolveDraft(CaseRecord $case): ?int
     {
+        if (!$case->isCourtRepresentation()) return null;
+
         try {
             $caseUid = rawurlencode($case->case_uid);
             $response = $this->http()->get("{$this->baseUrl}/cases/source/{$caseUid}");
@@ -316,6 +350,10 @@ class LasCmsSyncService
                 return null;
             }
 
+            if ($response->json('justicehub_case_uid', $case->case_uid) !== $case->case_uid) {
+                $this->setLinkStatus($case, 'source_mismatch', [], false, true);
+                return null;
+            }
             $programId = $response->json('program_id');
             $interviewId = $response->json('interview_id') ?? $case->jh_cms_interview_id;
             $status = $response->json('status', 'draft');
@@ -339,6 +377,7 @@ class LasCmsSyncService
 
     private function markDraftLinked(CaseRecord $case, int $interviewId, ?string $status): void
     {
+        $this->setLinkStatus($case, 'draft', [], false, true);
         $case->update([
             'jh_cms_interview_id' => $interviewId,
             'jh_cms_interview_status' => $status ?: 'draft',
@@ -364,6 +403,8 @@ class LasCmsSyncService
             'external_synced_at' => now(),
             'meta' => array_merge($case->meta ?? [], [
                 'las_link_status' => 'verified',
+                'las_match_method' => 'source',
+                'las_source_case_uid' => $case->case_uid,
                 'las_link_verified_at' => now()->toIso8601String(),
                 'las_interview_id' => $interviewId ?: $case->jh_cms_interview_id,
                 'las_interview_status' => $interviewStatus ?: 'converted',
@@ -376,7 +417,7 @@ class LasCmsSyncService
      */
     public function updateStatus(CaseRecord $case): bool
     {
-        if (!$case->external_case_id) {
+        if (!$this->fetchCase($case)) {
             Log::warning("LasCMS: updateStatus called on {$case->case_uid} but no external_case_id — skipping.");
             return false;
         }
@@ -416,8 +457,10 @@ class LasCmsSyncService
      * Fetch the full audit timeline from LAS CMS for a case.
      * Returns array of timeline events or empty array on failure.
      */
-    public function fetchTimeline(int $externalId): array
+    public function fetchTimeline(CaseRecord $case): array
     {
+        if (!$this->fetchCase($case)) return [];
+        $externalId = $case->external_case_id;
         try {
             $response = $this->http()->get("{$this->baseUrl}/cases/{$externalId}/timeline");
 
@@ -434,18 +477,13 @@ class LasCmsSyncService
         }
     }
 
-    public function fetchCaseWithHearings(int $externalId): ?array
+    public function fetchCaseWithHearings(CaseRecord $case): ?array
     {
+        $data = $this->fetchCase($case);
+        if (!$data) return null;
+        $externalId = $case->external_case_id;
         try {
-            $caseResp    = $this->http()->get("{$this->baseUrl}/cases/{$externalId}");
             $hearingResp = $this->http()->get("{$this->baseUrl}/cases/{$externalId}/hearings");
-
-            if (!$caseResp->successful()) {
-                Log::warning("LasCMS fetchCaseWithHearings: case endpoint returned {$caseResp->status()} for id={$externalId}");
-                return null;
-            }
-
-            $data     = $caseResp->json('data') ?? $caseResp->json() ?? [];
             $hearings = $hearingResp->successful()
                 ? ($hearingResp->json('hearings') ?? $hearingResp->json('data') ?? [])
                 : [];
@@ -463,7 +501,7 @@ class LasCmsSyncService
      */
     public function pullHearings(CaseRecord $case): int
     {
-        if (!$case->external_case_id) {
+        if (!$this->fetchCase($case)) {
             return 0;
         }
 
@@ -497,6 +535,7 @@ class LasCmsSyncService
                     'note'         => $h['hearingUpdate'] ?? null,
                     'meta'         => [
                         'external_hearing_id' => $hId,
+                        'external_program_id' => $case->external_case_id,
                         'case_number'         => $h['caseNumber'] ?? null,
                         'next_hearing'        => $h['nextHearing'] ?? null,
                         'source'              => 'las_cms',
@@ -525,16 +564,10 @@ class LasCmsSyncService
      */
     public function syncCaseInfo(CaseRecord $case): void
     {
-        if (!$case->external_case_id) return;
+        $data = $this->fetchCase($case);
+        if (!$data) return;
 
         try {
-            $response = $this->http()->get("{$this->baseUrl}/cases/{$case->external_case_id}");
-
-            if (!$response->successful()) return;
-
-            $data = $response->json('data') ?? $response->json();
-            if (!$data) return;
-
             $metaUpdates = [];
             if (!empty($data['nextHearing']))      $metaUpdates['next_hearing']   = $data['nextHearing'];
             if (!empty($data['courtName']))         $metaUpdates['court_name']     = $data['courtName'];
@@ -577,7 +610,7 @@ class LasCmsSyncService
      */
     public function pullAllHearings(): array
     {
-        $cases = CaseRecord::whereNotNull('external_case_id')->get();
+        $cases = CaseRecord::courtRepresentation()->whereNotNull('external_case_id')->get();
         $totalImported = 0;
         $casesUpdated  = 0;
 

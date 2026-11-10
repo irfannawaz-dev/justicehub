@@ -21,7 +21,7 @@ class PushCasesToLasCms extends Command
 
         // Single case mode
         if ($caseUid = $this->option('case')) {
-            $case = CaseRecord::where('case_uid', $caseUid)->first();
+            $case = CaseRecord::courtRepresentation()->where('case_uid', $caseUid)->first();
             if (!$case) {
                 $this->error("Case {$caseUid} not found.");
                 return 1;

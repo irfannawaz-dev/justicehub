@@ -13,16 +13,15 @@ class ReconcileLasCmsLinks extends Command
                             {--case= : Reconcile one case by case_uid}
                             {--all : Reconcile all Court Representation cases}
                             {--dry-run : Check matches without saving changes}
-                            {--try-name : Fall back to name search when CNIC is invalid or not found}
+                            {--try-name : Deprecated compatibility option; matching always requires CNIC}
                             {--delay=2200 : Delay between bulk requests in milliseconds}';
 
-    protected $description = 'Verify and repair LAS CMS links using CNIC (with optional name fallback)';
+    protected $description = 'Verify and repair Representation in Court CMS links using CNIC';
 
     public function handle(LasCmsSyncService $sync): int
     {
         $query = CaseRecord::query()
-            ->whereIn('assigned_pathway', ['Court Representation', 'Representation in Court'])
-            ->whereNotNull('cnic');
+            ->courtRepresentation();
 
         if ($caseUid = $this->option('case')) {
             $query->where('case_uid', $caseUid);
@@ -39,7 +38,6 @@ class ReconcileLasCmsLinks extends Command
 
         $delay    = max(0, (int) $this->option('delay'));
         $dryRun   = (bool) $this->option('dry-run');
-        $tryName  = (bool) $this->option('try-name');
         $counts   = [];
 
         foreach ($cases as $index => $case) {
@@ -52,13 +50,6 @@ class ReconcileLasCmsLinks extends Command
                 $matchedId = $sync->linkByCnic($case);
                 $case->refresh();
                 $linkStatus = data_get($case->meta, 'las_link_status', $matchedId ? 'verified' : 'failed');
-
-                // Name fallback: try when CNIC is invalid or produced no match
-                if (!$matchedId && $tryName && in_array($linkStatus, ['invalid_cnic', 'not_found'], true)) {
-                    $matchedId  = $sync->linkByName($case);
-                    $case->refresh();
-                    $linkStatus = data_get($case->meta, 'las_link_status', $matchedId ? 'name_matched' : $linkStatus);
-                }
 
                 $status = $linkStatus;
             } finally {

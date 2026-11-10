@@ -318,7 +318,7 @@ class IntakeController extends Controller
             }
         }
 
-        // LAS CMS: Push Court Representation intakes to the programs table
+        // LAS CMS: Create a draft interview for new Court Representation intakes
         if ($case && in_array($case->assigned_pathway, ['Court Representation', 'Representation in Court'], true)) {
             try {
                 $sync = new LasCmsSyncService();

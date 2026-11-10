@@ -14,7 +14,7 @@ class SyncLasCmsDrafts extends Command
 
     public function handle(LasCmsSyncService $sync): int
     {
-        $query = CaseRecord::query()
+        $query = CaseRecord::courtRepresentation()
             ->whereNotNull('jh_cms_interview_id')
             ->whereNull('external_case_id');
 

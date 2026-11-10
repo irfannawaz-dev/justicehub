@@ -13,11 +13,15 @@
     <div class="alert alert-success mb-4">{{ session('success') }}</div>
 @endif
 
+@if($errors->any())
+    <div class="alert alert-danger mb-4">{{ $errors->first() }}</div>
+@endif
+
 @forelse($cases as $case)
 @php
     $meta       = $case->meta ?? [];
     $status     = $meta['las_link_status'] ?? 'unknown';
-    $candidates = $meta['las_candidates'] ?? $meta['las_link_candidates'] ?? [];
+    $candidates = collect($meta['las_link_candidates'] ?? $meta['las_candidates'] ?? [])->filter(fn ($candidate) => \App\Support\LasCmsIdentity::matches($case, $candidate))->all();
 @endphp
 <div class="card mb-4" style="border-left: 3px solid {{ $status === 'name_ambiguous' ? 'var(--ochre)' : 'var(--ink-3)' }}">
     <div class="card-body">
@@ -38,7 +42,7 @@
             <a href="{{ route('cases.show', $case) }}" class="btn btn-sm btn-outline" target="_blank">View Case</a>
         </div>
 
-        @if($status === 'name_ambiguous' && count($candidates) > 0)
+        @if(count($candidates) > 0)
         {{-- Candidate selection --}}
         <p class="text-xs text-muted mb-2">Multiple LAS CMS records found — select the correct one:</p>
         <div class="grid gap-2" style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr))">
@@ -58,12 +62,12 @@
             @endforeach
         </div>
 
-        @elseif($status === 'not_matched' || $status === 'invalid_cnic' || $status === 'name_not_found')
+        @else
         {{-- Manual program_id entry --}}
         <form method="POST" action="{{ route('cases.link-las', $case) }}" class="flex gap-2 items-end mt-2">
             @csrf
             <div class="flex-1">
-                <label class="label text-xs">Enter LAS CMS Program ID manually</label>
+                <label class="label text-xs">Enter LAS CMS Program ID (CNIC must match)</label>
                 <input type="number" name="program_id" class="input input-sm" placeholder="e.g. 1234" required>
             </div>
             <button type="submit" class="btn btn-sm btn-primary">Link</button>

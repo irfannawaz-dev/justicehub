@@ -128,14 +128,7 @@ class CaseController extends Controller
         // Service pathway counts — matching actual lookup values stored in DB
         $hubCaseIds = (clone $hubBase)->pluck('id');
         $courtCases = (clone $hubBase)->whereIn('assigned_pathway', ['Court Representation', 'Representation in Court']);
-        $courtConnectedCount = (clone $courtCases)
-            ->where(function ($query) {
-                $query->where(function ($verified) {
-                    $verified->whereNotNull('external_case_id')
-                        ->where('meta->las_link_status', 'verified');
-                })->orWhereNotNull('jh_cms_interview_id');
-            })
-            ->count();
+        $courtConnectedCount = (clone $courtCases)->lasConnected()->count();
 
         // Ombudsman cases (under Govt pathway) count as ADR, not Referred
         $ombudsmanCount = (clone $hubBase)
@@ -156,14 +149,7 @@ class CaseController extends Controller
 
         // ── Cohort & status counts from filtered base ──
         $totalFiltered = (clone $base)->count();
-        $cmsConnectedCount = (clone $base)
-            ->where(function ($query) {
-                $query->where(function ($verified) {
-                    $verified->whereNotNull('external_case_id')
-                        ->where('meta->las_link_status', 'verified');
-                })->orWhereNotNull('jh_cms_interview_id');
-            })
-            ->count();
+        $cmsConnectedCount = (clone $base)->lasConnected()->count();
 
         $counts = [
             'total'      => $totalFiltered,
@@ -178,7 +164,7 @@ class CaseController extends Controller
             'sla_breach' => (clone $base)->where('sla_met', false)->count(),
             'underserved'=> (clone $base)->where('is_underserved', true)->count(),
             'cms_connected' => $cmsConnectedCount,
-            'cms_not_connected' => $totalFiltered - $cmsConnectedCount,
+            'cms_not_connected' => (clone $base)->lasNotConnected()->count(),
             'active'     => (clone $base)->where('status', 'Active')->count(),
             'closed'     => (clone $base)->whereIn('status', ['Closed', 'Settlement'])->count(),
             'safeguarding' => (clone $base)->where(function($q) {
@@ -212,19 +198,9 @@ class CaseController extends Controller
         }
         if ($request->filled('cms_link') && $request->cms_link !== 'all') {
             if ($request->cms_link === 'connected') {
-                $query->where(function ($connected) {
-                    $connected->where(function ($verified) {
-                        $verified->whereNotNull('external_case_id')
-                            ->where('meta->las_link_status', 'verified');
-                    })->orWhereNotNull('jh_cms_interview_id');
-                });
+                $query->lasConnected();
             } elseif ($request->cms_link === 'not_connected') {
-                $query->whereNull('jh_cms_interview_id')
-                    ->where(function ($q) {
-                        $q->whereNull('external_case_id')
-                            ->orWhereNull('meta->las_link_status')
-                            ->orWhere('meta->las_link_status', '!=', 'verified');
-                });
+                $query->lasNotConnected();
             }
         }
 
@@ -277,10 +253,13 @@ class CaseController extends Controller
         $cmsHearings    = collect();
         $cmsTimeline    = [];
 
-        if ($case->external_case_id) {
+        if ($case->isCourtRepresentation() && ($case->external_case_id || $case->jh_cms_interview_id || $case->cnic)) {
             try {
                 $sync    = new \App\Services\LasCmsSyncService();
-                $apiData = $sync->fetchCaseWithHearings($case->external_case_id);
+                if (!$case->external_case_id) {
+                    $case->jh_cms_interview_id ? $sync->resolveDraft($case) : $sync->linkByCnic($case);
+                }
+                $apiData = $sync->fetchCaseWithHearings($case);
 
                 if ($apiData) {
                     $cmsData = (object) [
@@ -321,7 +300,7 @@ class CaseController extends Controller
                 }
 
                 // ── Pull full audit timeline from LAS CMS ──
-                $cmsTimeline = $sync->fetchTimeline($case->external_case_id);
+                $cmsTimeline = $apiData ? $sync->fetchTimeline($case) : [];
 
             } catch (\Exception $e) {
                 \Log::warning('LAS CMS API data fetch failed for ' . $case->case_uid . ': ' . $e->getMessage());
@@ -329,6 +308,8 @@ class CaseController extends Controller
         }
 
         // ── Unified Activity Timeline ─────────────────────────────────────────
+        $case->setRelation('serviceEncounters', $case->serviceEncounters
+            ->filter(fn ($encounter) => $case->canShowCmsEncounter($encounter)));
         $timeline = collect();
 
         // 1. Intake
@@ -1031,7 +1012,7 @@ class CaseController extends Controller
         $cases = CaseRecord::whereIn('assigned_pathway', ['Court Representation', 'Representation in Court'])
             ->whereNull('external_case_id')
             ->whereNotNull('meta')
-            ->whereRaw("JSON_EXTRACT(meta, '$.las_link_status') IN ('name_ambiguous','not_matched','invalid_cnic','name_not_found')")
+            ->whereIn('meta->las_link_status', ['ambiguous', 'name_ambiguous', 'cnic_ambiguous', 'not_matched', 'not_found', 'invalid_cnic', 'cnic_mismatch', 'identity_mismatch', 'name_not_found'])
             ->when(!$user->isHead() && !$user->isAdmin(), fn($q) => $q->where('hub_id', $user->hub_id))
             ->orderByRaw("JSON_EXTRACT(meta, '$.las_link_status') DESC")
             ->orderBy('intake_date')
@@ -1047,18 +1028,16 @@ class CaseController extends Controller
         abort_unless($user->isHubCoordinator() || $user->isHead(), 403);
 
         $data = $request->validate([
-            'program_id' => 'required|integer',
+            'program_id' => 'required|integer|min:1',
         ]);
 
-        $case->update([
-            'external_case_id'   => $data['program_id'],
-            'external_synced_at' => now(),
-            'meta'               => array_merge($case->meta ?? [], [
-                'las_link_status'      => 'verified',
-                'las_link_verified_at' => now()->toIso8601String(),
-                'las_link_selected_by' => $user->name,
-            ]),
-        ]);
+        Gate::authorize('view', $case);
+        abort_unless($case->isCourtRepresentation(), 422, 'LAS CMS is only available for Representation in Court.');
+        $linkedId = app(\App\Services\LasCmsSyncService::class)->linkProgram($case, (int) $data['program_id']);
+        if (!$linkedId) {
+            return back()->withErrors(['program_id' => 'This CMS program could not be verified with the same CNIC.']);
+        }
+        $case->update(['meta' => array_merge($case->meta ?? [], ['las_link_selected_by' => $user->name])]);
 
         return redirect()->route('cases.show', $case)
             ->with('success', "Linked to LAS #{$data['program_id']} successfully.");

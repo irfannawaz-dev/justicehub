@@ -19,9 +19,63 @@ class CaseRecord extends Model
 
     protected $table = 'cases';
 
+    public const COURT_PATHWAYS = ['Court Representation', 'Representation in Court'];
+
+    public function isCourtRepresentation(): bool
+    {
+        return in_array($this->assigned_pathway, self::COURT_PATHWAYS, true);
+    }
+
+    public function hasVerifiedLasLink(): bool
+    {
+        return $this->isCourtRepresentation() && $this->external_case_id
+            && in_array(data_get($this->meta, 'las_link_status'), ['verified', 'cnic_matched'], true);
+    }
+
+    public function scopeCourtRepresentation($query)
+    {
+        return $query->whereIn('assigned_pathway', self::COURT_PATHWAYS);
+    }
+
+    public function canShowCmsEncounter(ServiceEncounter $encounter): bool
+    {
+        if (data_get($encounter->meta, 'source') !== 'las_cms') return true;
+
+        return $this->hasVerifiedLasLink()
+            && (int) data_get($encounter->meta, 'external_program_id', $this->external_case_id) === (int) $this->external_case_id;
+    }
+
+    public function scopeLasConnected($query)
+    {
+        return $query->courtRepresentation()->where(function ($connected) {
+            $connected->where(function ($verified) {
+                $verified->whereNotNull('external_case_id')
+                    ->whereIn('meta->las_link_status', ['verified', 'cnic_matched']);
+            })->orWhere(function ($draft) {
+                $draft->whereNotNull('jh_cms_interview_id')->where('meta->las_link_status', 'draft');
+            });
+        });
+    }
+
+    public function scopeLasNotConnected($query)
+    {
+        return $query->courtRepresentation()->whereNotIn('id', self::query()->lasConnected()->select('id'));
+    }
+
     protected static function booted(): void
     {
         static::saving(function (self $case) {
+            $cnicChanged = $case->isDirty('cnic')
+                && data_get($case->meta, 'las_match_method') !== 'source'
+                && \App\Support\LasCmsIdentity::normalizeCnic($case->cnic) !== \App\Support\LasCmsIdentity::normalizeCnic($case->getOriginal('cnic'));
+            if ($case->exists && ($cnicChanged || $case->isDirty('assigned_pathway'))) {
+                $meta = $case->meta ?? [];
+                if ($case->external_case_id || $case->jh_cms_interview_id || isset($meta['las_link_status'])) {
+                    $meta['las_link_status'] = 'identity_changed';
+                    unset($meta['las_link_verified_at'], $meta['las_match_method'], $meta['las_link_candidates'], $meta['las_candidates']);
+                    $case->meta = $meta;
+                }
+            }
             if ($case->isDirty('cnic') && $case->cnic) {
                 $normalized = preg_replace('/\D/', '', $case->cnic);
                 $case->cnic_hash = hash('sha256', $normalized);

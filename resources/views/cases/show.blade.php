@@ -488,7 +488,7 @@
                                     @else
                                         <span style="color:var(--burgundy); font-family:inherit; font-style:italic;">Not Available</span>
                                     @endif
-                                    @if($case->external_case_id)
+                                    @if($case->hasVerifiedLasLink())
                                     <span style="margin-left:8px; display:inline-flex; align-items:center; gap:4px; background:var(--forest); color:#fff; font-size:9px; font-weight:700; letter-spacing:0.05em; padding:2px 7px; font-family:inherit;">
                                         <x-lucide-gavel style="width:9px;height:9px;" /> LAS #{{ $case->external_case_id }}
                                     </span>
@@ -631,9 +631,9 @@
                     {{-- LAS CMS Ambiguous Candidates — user picks the right one --}}
                     @php
                         $lasStatus     = $case->meta['las_link_status'] ?? null;
-                        $lasCandidates = $case->meta['las_link_candidates'] ?? $case->meta['las_candidates'] ?? [];
+                        $lasCandidates = collect($case->meta['las_link_candidates'] ?? $case->meta['las_candidates'] ?? [])->filter(fn ($candidate) => \App\Support\LasCmsIdentity::matches($case, $candidate))->all();
                     @endphp
-                    @if(in_array($lasStatus, ['ambiguous','name_ambiguous','cnic_ambiguous']) && count($lasCandidates) > 0 && !$case->external_case_id)
+                    @if($case->isCourtRepresentation() && in_array($lasStatus, ['ambiguous','name_ambiguous','cnic_ambiguous']) && count($lasCandidates) > 0 && !$case->external_case_id)
                     <div class="card jh-anim-section" style="padding: 22px 26px; border-left: 3px solid var(--ochre);">
                         <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
                             <x-lucide-alert-triangle style="width:15px; height:15px; color:var(--ochre);" />
@@ -2092,7 +2092,7 @@
                 </div>
 
                 {{-- LAS CMS Integration Status --}}
-                @if($case->external_case_id)
+                @if($case->hasVerifiedLasLink())
                 <div class="card" style="padding: 22px 26px; border-left: 3px solid var(--forest);">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
                         <x-lucide-link style="width: 15px; height: 15px; color: var(--forest);" />
@@ -2170,7 +2170,7 @@
                     </div>
                     @endif
                 </div>
-                @elseif($case->jh_cms_interview_id)
+                @elseif($case->isCourtRepresentation() && $case->jh_cms_interview_id && data_get($case->meta, 'las_link_status') === 'draft')
                 <div class="card" style="padding: 22px 26px; border-left: 3px solid #0e7490;">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
                         <x-lucide-clipboard-clock style="width: 15px; height: 15px; color: #0e7490;" />

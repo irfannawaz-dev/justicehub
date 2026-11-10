@@ -16,7 +16,7 @@ class SyncLasCmsHearings extends Command
         $sync = new LasCmsSyncService();
 
         if ($caseUid = $this->option('case')) {
-            $case = \App\Models\CaseRecord::where('case_uid', $caseUid)->first();
+            $case = \App\Models\CaseRecord::courtRepresentation()->where('case_uid', $caseUid)->first();
             if (!$case) {
                 $this->error("Case {$caseUid} not found.");
                 return 1;

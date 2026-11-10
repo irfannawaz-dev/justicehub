@@ -231,19 +231,19 @@
                         <td style="padding: 12px 14px;">
                             <span class="mono" style="font-size: 12px; color: var(--forest); font-weight: 500;">{{ $case->case_uid }}</span>
                             @php
-                                $lasVerified = in_array(data_get($case->meta, 'las_link_status'), ['verified', 'name_matched', 'cnic_matched']);
+                                $lasVerified = $case->hasVerifiedLasLink();
                             @endphp
                             @if($case->external_case_id && $lasVerified)
-                            <div style="display:inline-flex; align-items:center; gap:4px; margin-top:4px; padding:3px 8px; background:var(--forest); border-radius:3px;" title="CNIC verified with LAS CMS · ID #{{ $case->external_case_id }}">
+                            <div style="display:inline-flex; align-items:center; gap:4px; margin-top:4px; padding:3px 8px; background:var(--forest); border-radius:3px;" title="Verified LAS CMS link · ID #{{ $case->external_case_id }}">
                                 <x-lucide-gavel style="width:11px; height:11px; color:#fff;" />
                                 <span style="font-size:10px; font-weight:700; color:#fff; letter-spacing:0.05em;">LAS</span>
                             </div>
-                            @elseif($case->external_case_id)
-                            <div style="display:inline-flex; align-items:center; gap:4px; margin-top:4px; padding:3px 8px; background:rgba(184,115,25,0.12); border:1px dashed var(--ochre); border-radius:3px;" title="LAS link needs CNIC verification · ID #{{ $case->external_case_id }}">
+                            @elseif($case->isCourtRepresentation() && $case->external_case_id)
+                            <div style="display:inline-flex; align-items:center; gap:4px; margin-top:4px; padding:3px 8px; background:rgba(184,115,25,0.12); border:1px dashed var(--ochre); border-radius:3px;" title="LAS link needs verification · ID #{{ $case->external_case_id }}">
                                 <x-lucide-circle-alert style="width:11px; height:11px; color:var(--ochre);" />
                                 <span style="font-size:10px; font-weight:700; color:var(--ochre); letter-spacing:0.05em;">LAS?</span>
                             </div>
-                            @elseif($case->jh_cms_interview_id)
+                            @elseif($case->isCourtRepresentation() && $case->jh_cms_interview_id && data_get($case->meta, 'las_link_status') === 'draft')
                             <div style="display:inline-flex; align-items:center; gap:4px; margin-top:4px; padding:3px 8px; background:rgba(14,116,144,0.10); border:1px solid rgba(14,116,144,0.35); border-radius:3px;" title="LAS CMS draft interview #{{ $case->jh_cms_interview_id }} · {{ ucfirst($case->jh_cms_interview_status ?? 'draft') }}">
                                 <x-lucide-clipboard-clock style="width:11px; height:11px; color:#0e7490;" />
                                 <span style="font-size:10px; font-weight:700; color:#0e7490; letter-spacing:0.05em;">CMS DRAFT</span>
@@ -329,19 +329,19 @@
                 <div style="display:flex; align-items:center; gap:6px;">
                     <span class="mono" style="font-size: 11px; color: var(--forest); font-weight: 500;">{{ $case->case_uid }}</span>
                     @php
-                        $lasVerified = in_array(data_get($case->meta, 'las_link_status'), ['verified', 'name_matched', 'cnic_matched']);
+                        $lasVerified = $case->hasVerifiedLasLink();
                     @endphp
                     @if($case->external_case_id && $lasVerified)
-                    <span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; background:var(--forest); border-radius:3px;" title="CNIC verified with LAS CMS · ID #{{ $case->external_case_id }}">
+                    <span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; background:var(--forest); border-radius:3px;" title="Verified LAS CMS link · ID #{{ $case->external_case_id }}">
                         <x-lucide-gavel style="width:11px; height:11px; color:#fff;" />
                         <span style="font-size:10px; font-weight:700; color:#fff; letter-spacing:0.05em;">LAS</span>
                     </span>
-                    @elseif($case->external_case_id)
-                    <span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; background:rgba(184,115,25,0.12); border:1px dashed var(--ochre); border-radius:3px;" title="LAS link needs CNIC verification · ID #{{ $case->external_case_id }}">
+                    @elseif($case->isCourtRepresentation() && $case->external_case_id)
+                    <span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; background:rgba(184,115,25,0.12); border:1px dashed var(--ochre); border-radius:3px;" title="LAS link needs verification · ID #{{ $case->external_case_id }}">
                         <x-lucide-circle-alert style="width:11px; height:11px; color:var(--ochre);" />
                         <span style="font-size:10px; font-weight:700; color:var(--ochre); letter-spacing:0.05em;">LAS?</span>
                     </span>
-                    @elseif($case->jh_cms_interview_id)
+                    @elseif($case->isCourtRepresentation() && $case->jh_cms_interview_id && data_get($case->meta, 'las_link_status') === 'draft')
                     <span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; background:rgba(14,116,144,0.10); border:1px solid rgba(14,116,144,0.35); border-radius:3px;" title="LAS CMS draft interview #{{ $case->jh_cms_interview_id }} · {{ ucfirst($case->jh_cms_interview_status ?? 'draft') }}">
                         <x-lucide-clipboard-clock style="width:11px; height:11px; color:#0e7490;" />
                         <span style="font-size:10px; font-weight:700; color:#0e7490; letter-spacing:0.05em;">CMS DRAFT</span>

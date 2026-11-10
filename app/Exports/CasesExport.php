@@ -102,14 +102,9 @@ class CasesExport implements FromQuery, WithHeadings, WithMapping, WithStyles, S
         // CMS link filter
         if ($cmsLink && $cmsLink !== 'all') {
             if ($cmsLink === 'connected') {
-                $q->whereNotNull('external_case_id')
-                  ->where('meta->las_link_status', 'verified');
+                $q->lasConnected();
             } elseif ($cmsLink === 'not_connected') {
-                $q->where(function ($sq) {
-                    $sq->whereNull('external_case_id')
-                       ->orWhereNull('meta->las_link_status')
-                       ->orWhere('meta->las_link_status', '!=', 'verified');
-                });
+                $q->lasNotConnected();
             }
         }
 

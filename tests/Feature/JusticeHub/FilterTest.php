@@ -106,11 +106,13 @@ class FilterTest extends TestCase
         $hub = Hub::first();
         $this->makeCase($hub->id, [
             'case_uid' => 'CL-LAS-CONNECTED',
+            'assigned_pathway' => 'Representation in Court',
             'external_case_id' => 3327,
             'meta' => ['las_link_status' => 'verified'],
         ]);
         $this->makeCase($hub->id, [
             'case_uid' => 'CL-LAS-NOT-CONNECTED',
+            'assigned_pathway' => 'Representation in Court',
             'external_case_id' => 3963,
             'meta' => ['las_link_status' => 'ambiguous'],
         ]);
@@ -126,16 +128,19 @@ class FilterTest extends TestCase
         $hub = Hub::first();
         $this->makeCase($hub->id, [
             'case_uid' => 'CL-LAS-VERIFIED',
+            'assigned_pathway' => 'Representation in Court',
             'external_case_id' => 3327,
             'meta' => ['las_link_status' => 'verified'],
         ]);
         $this->makeCase($hub->id, [
             'case_uid' => 'CL-LAS-AMBIGUOUS',
+            'assigned_pathway' => 'Representation in Court',
             'external_case_id' => 3963,
             'meta' => ['las_link_status' => 'ambiguous'],
         ]);
         $this->makeCase($hub->id, [
             'case_uid' => 'CL-LAS-MISSING',
+            'assigned_pathway' => 'Representation in Court',
             'external_case_id' => null,
             'meta' => ['las_link_status' => 'not_found'],
         ]);

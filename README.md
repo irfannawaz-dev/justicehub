@@ -150,11 +150,28 @@ MAIL_FROM_NAME="JusticeHub"
 
 ## Scheduled Tasks
 
-Add this to your server cron for SLA breach notifications:
+Add this to your server cron for SLA breach notifications and CMS draft resolution (every 15 minutes):
 
 ```
 * * * * * php /path/to/artisan schedule:run >> /dev/null 2>&1
 ```
+
+## LAS CMS litigation integration
+
+Only `Representation in Court` / `Court Representation` cases use this API. Configure `LAS_CMS_API_URL` and `LAS_CMS_API_KEY` on the server.
+
+- Existing cases: `GET /cases/lookup?cnic=...` matches a valid 13-digit CNIC (formatting differences are ignored). Names do not need to match. Multiple programs with the same CNIC require manual selection; the selected program's CNIC is checked again.
+- New intakes: `POST /cases` saves `interview_id` as a draft. `GET /cases/source/{justicehub_case_uid}` resolves that draft to `program_id` after conversion in CMS. An interview ID is never used as a program ID.
+- Case details, hearings, timeline and litigation board data come from the linked program's API endpoints. Connected counts include verified court programs and pending CMS drafts; other service pathways are excluded.
+
+Recheck existing court cases after deploying these changes:
+
+```bash
+php artisan las:reconcile-links --all --dry-run
+php artisan las:reconcile-links --all
+```
+
+`las:sync-drafts` can also be run manually. `las:sync-hearings` imports hearings and updates linked case information. The reconciliation command only reads the CMS API; it does not create interviews or programs. The old `--try-name` / `--name-fallback` options remain accepted for script compatibility but never permit name-only links.
 
 ---
 
