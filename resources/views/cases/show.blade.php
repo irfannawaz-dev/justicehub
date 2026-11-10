@@ -631,9 +631,9 @@
                     {{-- LAS CMS Ambiguous Candidates — user picks the right one --}}
                     @php
                         $lasStatus     = $case->meta['las_link_status'] ?? null;
-                        $lasCandidates = $case->meta['las_link_candidates'] ?? [];
+                        $lasCandidates = $case->meta['las_link_candidates'] ?? $case->meta['las_candidates'] ?? [];
                     @endphp
-                    @if($lasStatus === 'ambiguous' && count($lasCandidates) > 0 && !$case->external_case_id)
+                    @if(in_array($lasStatus, ['ambiguous','name_ambiguous','cnic_ambiguous']) && count($lasCandidates) > 0 && !$case->external_case_id)
                     <div class="card jh-anim-section" style="padding: 22px 26px; border-left: 3px solid var(--ochre);">
                         <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
                             <x-lucide-alert-triangle style="width:15px; height:15px; color:var(--ochre);" />
@@ -646,43 +646,52 @@
 
                         <div style="display:flex; flex-direction:column; gap:10px;">
                             @foreach($lasCandidates as $candidate)
+                            @php
+                                $cId   = $candidate['program_id'] ?? $candidate['id'] ?? '?';
+                                $cName = $candidate['clientName'] ?? $candidate['name'] ?? '—';
+                                $cDist = $candidate['districtName'] ?? $candidate['district'] ?? null;
+                                $cDate = $candidate['interviewDate'] ?? null;
+                                $cLaw  = $candidate['lawyer1'] ?? null;
+                                $cStat = $candidate['currentCaseStatus'] ?? null;
+                                $cAppr = $candidate['caseApprovalStatus'] ?? null;
+                                $cFact = $candidate['caseFacts'] ?? null;
+                                $cNum  = $candidate['caseNumber'] ?? null;
+                            @endphp
                             <div style="border:1px solid var(--rule); padding:16px 18px; background:var(--surface);">
                                 <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
                                     <div style="flex:1; min-width:0;">
                                         {{-- Header row --}}
                                         <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
-                                            <span class="mono" style="font-size:12px; font-weight:700; color:var(--ink);">LAS #{{ $candidate['program_id'] }}</span>
-                                            @if($candidate['caseNumber'] ?? null)
-                                            <span style="font-size:11px; padding:1px 7px; background:rgba(184,115,25,0.1); color:var(--ochre); font-weight:600;">{{ $candidate['caseNumber'] }}</span>
+                                            <span class="mono" style="font-size:12px; font-weight:700; color:var(--ink);">LAS #{{ $cId }}</span>
+                                            @if($cNum)
+                                            <span style="font-size:11px; padding:1px 7px; background:rgba(184,115,25,0.1); color:var(--ochre); font-weight:600;">{{ $cNum }}</span>
                                             @endif
-                                            @if($candidate['currentCaseStatus'] ?? null)
-                                            <span style="font-size:10px; padding:1px 7px; background:var(--surface-2,#f4f4f2); color:var(--ink-3); font-weight:600;">{{ $candidate['currentCaseStatus'] }}</span>
+                                            @if($cStat)
+                                            <span style="font-size:10px; padding:1px 7px; background:var(--surface-2,#f4f4f2); color:var(--ink-3); font-weight:600;">{{ $cStat }}</span>
                                             @endif
                                         </div>
 
                                         {{-- Details grid --}}
                                         <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:6px 16px; font-size:11px; margin-bottom:8px;">
-                                            @if($candidate['clientName'] ?? null)
-                                            <div><span style="color:var(--ink-4);">Client:</span> <strong>{{ $candidate['clientName'] }}</strong></div>
+                                            <div><span style="color:var(--ink-4);">Client:</span> <strong>{{ $cName }}</strong></div>
+                                            @if($cDist)
+                                            <div><span style="color:var(--ink-4);">District:</span> {{ $cDist }}</div>
                                             @endif
-                                            @if($candidate['districtName'] ?? null)
-                                            <div><span style="color:var(--ink-4);">District:</span> {{ $candidate['districtName'] }}</div>
+                                            @if($cDate)
+                                            <div><span style="color:var(--ink-4);">Interview:</span> {{ $cDate }}</div>
                                             @endif
-                                            @if($candidate['interviewDate'] ?? null)
-                                            <div><span style="color:var(--ink-4);">Interview:</span> {{ $candidate['interviewDate'] }}</div>
+                                            @if($cLaw)
+                                            <div><span style="color:var(--ink-4);">Lawyer:</span> {{ $cLaw }}</div>
                                             @endif
-                                            @if($candidate['lawyer1'] ?? null)
-                                            <div><span style="color:var(--ink-4);">Lawyer:</span> {{ $candidate['lawyer1'] }}</div>
-                                            @endif
-                                            @if($candidate['caseApprovalStatus'] ?? null)
-                                            <div><span style="color:var(--ink-4);">Approval:</span> {{ $candidate['caseApprovalStatus'] }}</div>
+                                            @if($cAppr)
+                                            <div><span style="color:var(--ink-4);">Approval:</span> {{ $cAppr }}</div>
                                             @endif
                                         </div>
 
                                         {{-- Case facts preview --}}
-                                        @if($candidate['caseFacts'] ?? null)
+                                        @if($cFact)
                                         <div style="font-size:11px; color:var(--ink-3); line-height:1.5; border-top:1px solid var(--rule-2); padding-top:6px;">
-                                            {{ $candidate['caseFacts'] }}
+                                            {{ $cFact }}
                                         </div>
                                         @endif
                                     </div>
@@ -690,9 +699,9 @@
                                     {{-- Link button --}}
                                     <form method="POST" action="{{ route('cases.link-las', $case) }}" style="flex-shrink:0;">
                                         @csrf
-                                        <input type="hidden" name="program_id" value="{{ $candidate['program_id'] }}">
+                                        <input type="hidden" name="program_id" value="{{ $cId }}">
                                         <button type="submit" class="btn-primary" style="font-size:11px; padding:6px 14px; white-space:nowrap; background:var(--moss); border-color:var(--moss);"
-                                                onclick="return confirm('Link this case to LAS #{{ $candidate['program_id'] }}?')">
+                                                onclick="return confirm('Link this case to LAS #{{ $cId }}?')">
                                             <x-lucide-link style="width:11px; height:11px;" /> Link This
                                         </button>
                                     </form>
