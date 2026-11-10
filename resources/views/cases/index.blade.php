@@ -231,7 +231,7 @@
                         <td style="padding: 12px 14px;">
                             <span class="mono" style="font-size: 12px; color: var(--forest); font-weight: 500;">{{ $case->case_uid }}</span>
                             @php
-                                $lasVerified = data_get($case->meta, 'las_link_status') === 'verified';
+                                $lasVerified = in_array(data_get($case->meta, 'las_link_status'), ['verified', 'name_matched', 'cnic_matched']);
                             @endphp
                             @if($case->external_case_id && $lasVerified)
                             <div style="display:inline-flex; align-items:center; gap:4px; margin-top:4px; padding:3px 8px; background:var(--forest); border-radius:3px;" title="CNIC verified with LAS CMS · ID #{{ $case->external_case_id }}">
@@ -329,7 +329,7 @@
                 <div style="display:flex; align-items:center; gap:6px;">
                     <span class="mono" style="font-size: 11px; color: var(--forest); font-weight: 500;">{{ $case->case_uid }}</span>
                     @php
-                        $lasVerified = data_get($case->meta, 'las_link_status') === 'verified';
+                        $lasVerified = in_array(data_get($case->meta, 'las_link_status'), ['verified', 'name_matched', 'cnic_matched']);
                     @endphp
                     @if($case->external_case_id && $lasVerified)
                     <span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; background:var(--forest); border-radius:3px;" title="CNIC verified with LAS CMS · ID #{{ $case->external_case_id }}">
