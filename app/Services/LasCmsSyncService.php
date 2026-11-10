@@ -43,6 +43,81 @@ class LasCmsSyncService
     }
 
     /**
+     * Look up a programs record by client name (and optionally district).
+     * Used as fallback when CNIC is missing or invalid.
+     * Returns programs.id if exactly one match found, null otherwise.
+     */
+    public function linkByName(CaseRecord $case): ?int
+    {
+        if (!$case->name) return null;
+
+        try {
+            $params = ['name' => $case->name];
+            if ($case->district) {
+                $params['district'] = $case->district;
+            }
+
+            $response = $this->http()->get("{$this->baseUrl}/cases/search", $params);
+
+            if ($response->status() === 404) {
+                $this->setLinkStatus($case, 'name_not_found', [], false, true);
+                return null;
+            }
+
+            if (!$response->successful()) {
+                Log::info("LasCMS linkByName: no match for {$case->name} ({$case->case_uid}) — HTTP {$response->status()}");
+                return null;
+            }
+
+            $matchCount = $response->json('match_count', 0);
+            $candidates = $response->json('candidates', []);
+
+            if ($matchCount === 0) {
+                $this->setLinkStatus($case, 'name_not_found', [], false, true);
+                return null;
+            }
+
+            if ($matchCount > 1) {
+                // Store candidates for manual review
+                $this->setLinkStatus($case, 'name_ambiguous', [
+                    'match_count' => $matchCount,
+                    'candidates'  => collect($candidates)->map(fn ($c) => [
+                        'program_id'  => $c['program_id'],
+                        'clientName'  => $c['clientName'],
+                        'districtName'=> $c['districtName'],
+                        'interviewDate' => $c['interviewDate'],
+                    ])->values()->all(),
+                ], false, false);
+                Log::info("LasCMS linkByName: ambiguous ({$matchCount} matches) for {$case->name} ({$case->case_uid})");
+                return null;
+            }
+
+            $program = $candidates[0];
+            $externalId = $program['program_id'] ?? null;
+
+            if (!$externalId) return null;
+
+            $case->update([
+                'external_case_id'   => $externalId,
+                'external_synced_at' => now(),
+                'meta'               => array_merge($case->meta ?? [], [
+                    'las_link_status'      => 'name_matched',
+                    'las_link_verified_at' => now()->toIso8601String(),
+                    'las_match_method'     => 'name',
+                    'las_matched_name'     => $program['clientName'],
+                ]),
+            ]);
+
+            Log::info("LasCMS: Linked {$case->case_uid} → programs.id={$externalId} via name match ('{$case->name}')");
+            return $externalId;
+
+        } catch (\Exception $e) {
+            Log::warning("LasCMS linkByName exception for {$case->case_uid}: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Look up an existing programs record by CNIC and link it to the JusticeHub case.
      * Does NOT create a new record — only matches an existing one.
      * Returns the programs.id if matched, null otherwise.

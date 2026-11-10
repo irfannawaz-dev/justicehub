@@ -8,6 +8,12 @@ enum UrgencyLevel: string
     case High = 'High';
     case Medium = 'Medium';
     case Low = 'Low';
+    case Standard = 'Standard';
+
+    public static function fromMixed(string $value): self
+    {
+        return self::from(ucfirst(strtolower(trim($value))));
+    }
 
     public function color(): string
     {
