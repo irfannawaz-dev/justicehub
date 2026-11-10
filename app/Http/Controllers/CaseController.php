@@ -1022,6 +1022,24 @@ class CaseController extends Controller
             ->with('activeTab', 'referrals');
     }
 
+    // ── LAS CMS: review ambiguous / unlinked cases ─────────────────────────
+    public function lasReview(Request $request)
+    {
+        $user = $request->user();
+        abort_unless($user->isHubCoordinator() || $user->isHead() || $user->isAdmin(), 403);
+
+        $cases = CaseRecord::whereIn('assigned_pathway', ['Court Representation', 'Representation in Court'])
+            ->whereNull('external_case_id')
+            ->whereNotNull('meta')
+            ->whereRaw("JSON_EXTRACT(meta, '$.las_link_status') IN ('name_ambiguous','not_matched','invalid_cnic','name_not_found')")
+            ->when(!$user->isHead() && !$user->isAdmin(), fn($q) => $q->where('hub_id', $user->hub_id))
+            ->orderByRaw("JSON_EXTRACT(meta, '$.las_link_status') DESC")
+            ->orderBy('intake_date')
+            ->paginate(20);
+
+        return view('cases.las-review', compact('cases'));
+    }
+
     // ── LAS CMS: select ambiguous candidate ────────────────────────────────
     public function linkLasCandidate(Request $request, CaseRecord $case)
     {

@@ -51,6 +51,7 @@ Route::middleware(['auth', 'hub.scope', 'can.write'])->group(function () {
     Route::post('/cases/{case}/messages', [CaseController::class, 'storeMessage'])->name('cases.message.store');
     Route::delete('/cases/{case}', [CaseController::class, 'destroy'])->name('cases.destroy');
     Route::post('/cases/{case}/link-las', [CaseController::class, 'linkLasCandidate'])->name('cases.link-las');
+    Route::get('/las-review', [CaseController::class, 'lasReview'])->name('las.review');
     Route::post('/cases/{case}/transfers/{transfer}/approve', [CaseController::class, 'approveTransfer'])->name('cases.transfer.approve');
     Route::post('/cases/{case}/transfers/{transfer}/reject',  [CaseController::class, 'rejectTransfer'])->name('cases.transfer.reject');
 

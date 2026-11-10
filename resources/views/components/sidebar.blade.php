@@ -35,6 +35,7 @@
         __('nav.group_system') => [
             ['route' => 'settings.index', 'label' => __('nav.nav_settings'),         'icon' => 'settings', 'permission' => 'settings.view'],
             ['route' => 'users.index',    'label' => __('nav.nav_user_management'),   'icon' => 'users',    'permission' => 'users.manage'],
+            ['route' => 'las.review',     'label' => 'LAS CMS Pending Links',         'icon' => 'link',     'permission' => 'cases.view'],
         ],
     ];
 
