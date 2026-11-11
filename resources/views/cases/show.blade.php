@@ -719,6 +719,13 @@
                             if (!$d || str_starts_with($d, '0000')) return null;
                             try { return \Carbon\Carbon::parse($d)->format('d M Y'); } catch (\Exception $e) { return $d; }
                         };
+                        $fmtValue = function($value): ?string {
+                            if ($value === null || $value === '') return null;
+                            if (is_array($value)) {
+                                return implode(', ', array_filter(array_map('strval', \Illuminate\Support\Arr::flatten($value))));
+                            }
+                            return (string) $value;
+                        };
                         $cmsApproval = $cmsData->caseApprovalStatus ?? 'Pending';
                         $isApproved  = $cmsApproval === 'Approved';
                         $isRejected  = $cmsApproval === 'Rejected';
@@ -757,10 +764,10 @@
                             </div>
                         </div>
 
-                        @else
+                        @endif
                         {{-- Approved or Pending: show full litigation data --}}
 
-                        @if(!$isApproved)
+                        @if(!$isApproved && !$isRejected)
                         <div style="display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: color-mix(in srgb, var(--ochre) 10%, transparent); border: 1px solid color-mix(in srgb, var(--ochre) 30%, transparent); border-radius: 4px; margin-bottom: 14px; font-size: 12px; color: var(--ochre);">
                             <x-lucide-clock style="width: 14px; height: 14px; flex-shrink: 0;" />
                             Awaiting approval in LAS CMS — litigation details will appear once approved.
@@ -789,16 +796,21 @@
                             ['label' => 'Police Station',   'value' => $cmsData->policeStation,                      'icon' => 'building-2'],
                             ['label' => 'Court Name',       'value' => $cmsData->courtName,                          'icon' => 'landmark'],
                             ['label' => 'Level of Court',   'value' => $cmsData->levelOfCourt,                       'icon' => 'layers'],
-                            ['label' => 'Nature of Case',   'value' => $cmsData->natureOfCase,                       'icon' => 'scale'],
-                            ['label' => 'Type of Case',     'value' => $cmsData->typeOfCase,                         'icon' => 'tag'],
-                            ['label' => 'Main Category',    'value' => $cmsData->mainCaseCategory,                   'icon' => 'folder'],
+                            ['label' => 'Nature of Case',   'value' => $fmtValue($cmsData->natureOfCase),             'icon' => 'scale'],
+                            ['label' => 'Type of Case',     'value' => $fmtValue($cmsData->typeOfCase),               'icon' => 'tag'],
+                            ['label' => 'Main Category',    'value' => $fmtValue($cmsData->mainCaseCategory),         'icon' => 'folder'],
                             ['label' => 'Filed Under Act',  'value' => $cmsData->caseFiledUnderAct,                  'icon' => 'book-open'],
                             ['label' => 'Assigned Lawyer',  'value' => $cmsData->lawyer1,                            'icon' => 'user'],
+                            ['label' => 'Second Lawyer',    'value' => $cmsData->lawyer2,                            'icon' => 'users'],
+                            ['label' => 'Other Stage',      'value' => $cmsData->caseStageother,                     'icon' => 'git-branch'],
                             ['label' => 'Approval Date',    'value' => $fmtDate($cmsData->approvalDate),             'icon' => 'calendar-check'],
                             ['label' => 'Vakalatnama Date', 'value' => $fmtDate($cmsData->vakalatnamaSubmissionDate),'icon' => 'calendar'],
                             ['label' => 'Case File Date',   'value' => $fmtDate($cmsData->caseFileDate),             'icon' => 'calendar'],
                             ['label' => 'Case Decision',    'value' => $cmsData->caseDecision,                       'icon' => 'gavel'],
                             ['label' => 'Disposal Date',    'value' => $fmtDate($cmsData->caseDisposalDate),         'icon' => 'calendar-x'],
+                            ['label' => 'Case Not Filed',   'value' => $cmsData->caseNotFiled ? 'Yes' : null,        'icon' => 'file-x'],
+                            ['label' => 'Not Filed Reason', 'value' => $cmsData->caseNotFiledReason,                 'icon' => 'message-square-warning'],
+                            ['label' => 'CMS Updated',      'value' => $fmtDate($cmsData->cmsUpdatedAt),             'icon' => 'refresh-cw'],
                             ['label' => 'CMS Unique No.',   'value' => $cmsData->UniqueNumber2,                      'icon' => 'fingerprint'],
                         ];
                         @endphp
@@ -815,8 +827,6 @@
                             @endif
                             @endforeach
                         </div>
-                        @endif {{-- end rejected/approved --}}
-
                         <div style="margin-top: 10px; font-size: 10.5px; color: var(--ink-4); display: flex; align-items: center; gap: 5px;">
                             <x-lucide-refresh-cw style="width: 10px; height: 10px;" />
                             {{ __('cases.synced_from_cms') }}
@@ -2108,6 +2118,18 @@
                             <div style="font-size: 10px; color: var(--ink-4); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px;">Last synced</div>
                             <div style="font-size: 12px; color: var(--ink-2);">{{ $case->external_synced_at ? \Carbon\Carbon::parse($case->external_synced_at)->diffForHumans() : 'Never' }}</div>
                         </div>
+                        <div>
+                            <div style="font-size: 10px; color: var(--ink-4); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px;">Verified By</div>
+                            <div style="font-size: 12px; color: var(--ink-2);">
+                                {{ data_get($case->meta, 'las_match_method') === 'source' ? 'JusticeHub UID' : 'CNIC + Client Name' }}
+                            </div>
+                        </div>
+                        @if(data_get($case->meta, 'las_match_method') === 'cnic_name')
+                        <div>
+                            <div style="font-size: 10px; color: var(--ink-4); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px;">CMS Client</div>
+                            <div style="font-size: 12px; color: var(--ink-2);">{{ data_get($case->meta, 'las_matched_name', $cmsData->clientName ?? '---') }}</div>
+                        </div>
+                        @endif
                         @if($case->meta && ($case->meta['court_name'] ?? null))
                         <div>
                             <div style="font-size: 10px; color: var(--ink-4); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px;">Court</div>

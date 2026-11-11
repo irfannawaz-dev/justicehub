@@ -263,17 +263,20 @@ class CaseController extends Controller
 
                 if ($apiData) {
                     $cmsData = (object) [
+                        'clientName'                 => $apiData['clientName']                ?? null,
                         'courtName'                  => $apiData['courtName']                 ?? null,
                         'levelOfCourt'               => $apiData['levelOfCourt']              ?? null,
                         'caseNumber'                 => $apiData['caseNumber']                ?? null,
                         'firNumber'                  => $apiData['firNumber']                 ?? null,
                         'policeStation'              => $apiData['policeStation']              ?? null,
                         'caseStage'                  => $apiData['caseStage']                 ?? null,
+                        'caseStageother'             => $apiData['caseStageother']            ?? null,
                         'caseDecision'               => $apiData['caseDecision']              ?? null,
                         'caseDisposalDate'           => $apiData['caseDisposalDate']          ?? null,
                         'currentCaseStatus'          => $apiData['currentCaseStatus']         ?? null,
                         'nextHearing'                => $apiData['nextHearing']               ?? null,
                         'lawyer1'                    => $apiData['lawyer1']                   ?? null,
+                        'lawyer2'                    => $apiData['lawyer2']                   ?? null,
                         'caseApprovalStatus'         => $apiData['caseApprovalStatus']        ?? null,
                         'approvalDate'               => $apiData['approvalDate']              ?? null,
                         'vakalatnamaSubmissionDate'  => $apiData['vakalatnamaSubmissionDate'] ?? null,
@@ -284,7 +287,10 @@ class CaseController extends Controller
                         'caseFiledUnderAct'          => $apiData['caseFiledUnderAct']         ?? null,
                         'ctcStatus'                  => $apiData['ctcStatus']                 ?? null,
                         'additionalComment'          => $apiData['additionalComment']         ?? null,
+                        'caseNotFiled'               => (bool) ($apiData['case_not_filed']    ?? false),
+                        'caseNotFiledReason'         => $apiData['case_not_filed_reason']     ?? null,
                         'UniqueNumber2'              => $apiData['UniqueNumber2']             ?? null,
+                        'cmsUpdatedAt'               => $apiData['updated_at']                ?? null,
                     ];
 
                     foreach ($apiData['hearings'] ?? [] as $h) {
@@ -1035,7 +1041,7 @@ class CaseController extends Controller
         abort_unless($case->isCourtRepresentation(), 422, 'LAS CMS is only available for Representation in Court.');
         $linkedId = app(\App\Services\LasCmsSyncService::class)->linkProgram($case, (int) $data['program_id']);
         if (!$linkedId) {
-            return back()->withErrors(['program_id' => 'This CMS program could not be verified with the same CNIC.']);
+            return back()->withErrors(['program_id' => 'This CMS program could not be verified with the same CNIC and client name.']);
         }
         $case->update(['meta' => array_merge($case->meta ?? [], ['las_link_selected_by' => $user->name])]);
 

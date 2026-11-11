@@ -29,7 +29,8 @@ class CaseRecord extends Model
     public function hasVerifiedLasLink(): bool
     {
         return $this->isCourtRepresentation() && $this->external_case_id
-            && in_array(data_get($this->meta, 'las_link_status'), ['verified', 'cnic_matched'], true);
+            && data_get($this->meta, 'las_link_status') === 'verified'
+            && in_array(data_get($this->meta, 'las_match_method'), ['source', 'cnic_name'], true);
     }
 
     public function scopeCourtRepresentation($query)
@@ -50,7 +51,8 @@ class CaseRecord extends Model
         return $query->courtRepresentation()->where(function ($connected) {
             $connected->where(function ($verified) {
                 $verified->whereNotNull('external_case_id')
-                    ->whereIn('meta->las_link_status', ['verified', 'cnic_matched']);
+                    ->where('meta->las_link_status', 'verified')
+                    ->whereIn('meta->las_match_method', ['source', 'cnic_name']);
             })->orWhere(function ($draft) {
                 $draft->whereNotNull('jh_cms_interview_id')->where('meta->las_link_status', 'draft');
             });
@@ -66,9 +68,12 @@ class CaseRecord extends Model
     {
         static::saving(function (self $case) {
             $cnicChanged = $case->isDirty('cnic')
-                && data_get($case->meta, 'las_match_method') !== 'source'
+                && !$case->hasVerifiedLasLink()
+                && !$case->jh_cms_interview_id
+                && data_get($case->meta, 'las_sync_flow') !== 'interview'
                 && \App\Support\LasCmsIdentity::normalizeCnic($case->cnic) !== \App\Support\LasCmsIdentity::normalizeCnic($case->getOriginal('cnic'));
-            if ($case->exists && ($cnicChanged || $case->isDirty('assigned_pathway'))) {
+            // A confirmed program/interview ID survives later client-detail edits.
+            if ($case->exists && $cnicChanged) {
                 $meta = $case->meta ?? [];
                 if ($case->external_case_id || $case->jh_cms_interview_id || isset($meta['las_link_status'])) {
                     $meta['las_link_status'] = 'identity_changed';

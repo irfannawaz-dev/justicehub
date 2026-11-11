@@ -108,7 +108,10 @@ class FilterTest extends TestCase
             'case_uid' => 'CL-LAS-CONNECTED',
             'assigned_pathway' => 'Representation in Court',
             'external_case_id' => 3327,
-            'meta' => ['las_link_status' => 'verified'],
+            'meta' => [
+                'las_link_status' => 'verified',
+                'las_match_method' => 'cnic_name',
+            ],
         ]);
         $this->makeCase($hub->id, [
             'case_uid' => 'CL-LAS-NOT-CONNECTED',
@@ -130,7 +133,10 @@ class FilterTest extends TestCase
             'case_uid' => 'CL-LAS-VERIFIED',
             'assigned_pathway' => 'Representation in Court',
             'external_case_id' => 3327,
-            'meta' => ['las_link_status' => 'verified'],
+            'meta' => [
+                'las_link_status' => 'verified',
+                'las_match_method' => 'cnic_name',
+            ],
         ]);
         $this->makeCase($hub->id, [
             'case_uid' => 'CL-LAS-AMBIGUOUS',

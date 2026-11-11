@@ -13,10 +13,10 @@ class ReconcileLasCmsLinks extends Command
                             {--case= : Reconcile one case by case_uid}
                             {--all : Reconcile all Court Representation cases}
                             {--dry-run : Check matches without saving changes}
-                            {--try-name : Deprecated compatibility option; matching always requires CNIC}
+                            {--try-name : Deprecated compatibility option; matching always requires CNIC and client name}
                             {--delay=2200 : Delay between bulk requests in milliseconds}';
 
-    protected $description = 'Verify and repair Representation in Court CMS links using CNIC';
+    protected $description = 'Link old court cases by CNIC and client name, preserving source-linked drafts';
 
     public function handle(LasCmsSyncService $sync): int
     {

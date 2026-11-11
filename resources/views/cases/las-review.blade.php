@@ -67,7 +67,7 @@
         <form method="POST" action="{{ route('cases.link-las', $case) }}" class="flex gap-2 items-end mt-2">
             @csrf
             <div class="flex-1">
-                <label class="label text-xs">Enter LAS CMS Program ID (CNIC must match)</label>
+                <label class="label text-xs">Enter LAS CMS Program ID (CNIC and client name must match)</label>
                 <input type="number" name="program_id" class="input input-sm" placeholder="e.g. 1234" required>
             </div>
             <button type="submit" class="btn btn-sm btn-primary">Link</button>

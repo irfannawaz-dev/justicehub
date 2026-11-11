@@ -11,10 +11,10 @@ class MatchLasCmsOffline extends Command
     protected $signature = 'las:match-offline
                             {file : Path to programs_export.txt from LAS CMS}
                             {--dry-run : Show matches without saving}
-                            {--name-fallback : Deprecated compatibility option; matching always requires CNIC}
-                            {--overwrite : Overwrite existing external_case_id links}';
+                            {--name-fallback : Deprecated compatibility option; CNIC and client name are always required}
+                            {--overwrite : Replace unverified external_case_id links; confirmed IDs are preserved}';
 
-    protected $description = 'Match JusticeHub cases to LAS CMS programs using an offline export file (id|name|cnic|district)';
+    protected $description = 'Match JusticeHub cases to LAS CMS programs by CNIC and client name using an offline export';
 
     public function handle(): int
     {
@@ -27,14 +27,14 @@ class MatchLasCmsOffline extends Command
 
         $this->info("Loading programs export...");
         $byCnic = $this->loadExport($filePath);
-        $this->info("  Loaded " . array_sum(array_map('count', $byCnic)) . " LAS CMS records.");
-        $this->info("  " . count($byCnic) . " unique CNICs.");
+        $this->info("  " . count($byCnic) . " unique CNICs loaded; client names will be verified within each CNIC group.");
 
         $dryRun       = (bool) $this->option('dry-run');
         $overwrite    = (bool) $this->option('overwrite');
 
         $query = CaseRecord::query()
-            ->courtRepresentation()->whereNull('jh_cms_interview_id');
+            ->courtRepresentation()->whereNull('jh_cms_interview_id')
+            ->where(fn ($query) => $query->whereNull('meta->las_sync_flow')->orWhere('meta->las_sync_flow', '!=', 'interview'));
 
         if (!$overwrite) {
             $query->whereNull('external_case_id');
@@ -54,6 +54,10 @@ class MatchLasCmsOffline extends Command
         ];
 
         foreach ($cases as $case) {
+            if ($case->hasVerifiedLasLink()) {
+                $this->line("{$case->case_uid}: already linked (LAS #{$case->external_case_id})");
+                continue;
+            }
             $result = $this->matchCase($case, $byCnic);
 
             $status    = $result['status'];
@@ -71,9 +75,9 @@ class MatchLasCmsOffline extends Command
 
             if ($programId && !$dryRun) {
                 $meta = array_merge($case->meta ?? [], [
-                    'las_link_status'      => $status,
+                    'las_link_status'      => 'verified',
                     'las_link_verified_at' => now()->toIso8601String(),
-                    'las_match_method'     => $result['method'],
+                    'las_match_method'     => 'cnic_name',
                     'las_matched_name'     => $result['matched_name'] ?? null,
                 ]);
 
@@ -105,7 +109,7 @@ class MatchLasCmsOffline extends Command
         return self::SUCCESS;
     }
 
-    /** Index the export by valid CNIC; names and districts never establish a link. */
+    /** Index by CNIC; the final match also requires the normalized client name. */
     private function loadExport(string $filePath): array
     {
         $byCnic = [];
@@ -155,13 +159,13 @@ class MatchLasCmsOffline extends Command
                 'status' => 'cnic_matched',
                 'program_id' => $matches[0]['id'],
                 'matched_name' => $matches[0]['name'],
-                'method' => 'cnic',
+                'method' => 'cnic_name',
             ];
         }
         return [
             'status' => $matches ? 'cnic_ambiguous' : 'not_matched',
             'program_id' => null,
-            'method' => 'cnic',
+            'method' => 'cnic_name',
             'candidates' => $matches,
         ];
     }

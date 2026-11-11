@@ -160,8 +160,8 @@ Add this to your server cron for SLA breach notifications and CMS draft resoluti
 
 Only `Representation in Court` / `Court Representation` cases use this API. Configure `LAS_CMS_API_URL` and `LAS_CMS_API_KEY` on the server.
 
-- Existing cases: `GET /cases/lookup?cnic=...` matches a valid 13-digit CNIC (formatting differences are ignored). Names do not need to match. Multiple programs with the same CNIC require manual selection; the selected program's CNIC is checked again.
-- New intakes: `POST /cases` saves `interview_id` as a draft. `GET /cases/source/{justicehub_case_uid}` resolves that draft to `program_id` after conversion in CMS. An interview ID is never used as a program ID.
+- Existing unlinked cases: `GET /cases/lookup?cnic=...` retrieves candidates across all CMS program categories. JusticeHub links only when both the normalized 13-digit CNIC and normalized client name match. Multiple programs for the same CNIC and name require manual selection; both identity fields are rechecked before saving the ID. After linking, all reads and updates use the saved program ID, including after later client-detail corrections.
+- New intakes: `POST /cases` saves `interview_id` as a draft. `GET /cases/source/{justicehub_case_uid}` resolves that draft to `program_id` after conversion in CMS. An interview ID is never used as a program ID. New intake retries and reads follow this source UID rather than CNIC matching, even when the initial POST fails. Once saved, the program ID remains the link.
 - Case details, hearings, timeline and litigation board data come from the linked program's API endpoints. Connected counts include verified court programs and pending CMS drafts; other service pathways are excluded.
 
 Recheck existing court cases after deploying these changes:

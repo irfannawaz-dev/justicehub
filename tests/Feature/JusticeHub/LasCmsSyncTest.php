@@ -43,19 +43,33 @@ class LasCmsSyncTest extends TestCase
         ], $attributes));
     }
 
-    public function test_existing_case_matches_by_cnic_even_when_name_differs(): void
+    public function test_same_cnic_with_different_client_name_does_not_link(): void
     {
         $case = $this->makeCase();
         Http::fake([$this->url . '/cases/lookup*' => Http::response([
             'program_id' => 51, 'cnic' => '42201-1234567-1', 'clientName' => 'Different CMS Name',
         ])]);
 
-        $this->assertSame(51, app(LasCmsSyncService::class)->linkByCnic($case));
-        $this->assertTrue($case->fresh()->hasVerifiedLasLink());
+        $this->assertNull(app(LasCmsSyncService::class)->linkByCnic($case));
+        $this->assertFalse($case->fresh()->hasVerifiedLasLink());
+        $this->assertSame('identity_mismatch', $case->meta['las_link_status']);
         Http::assertSent(fn ($request) => $request->method() === 'GET'
             && $request['cnic'] === '42201-1234567-1'
             && $request->hasHeader('X-JusticeHub-Key', 'test-key'));
         Http::assertSentCount(1);
+    }
+
+    public function test_cnic_and_normalized_client_name_create_a_verified_link(): void
+    {
+        $case = $this->makeCase(['name' => 'Mst; Local Client Name']);
+        Http::fake([$this->url . '/cases/lookup*' => Http::response([
+            'program_id' => 51, 'cnic' => '42201-1234567-1', 'clientName' => 'local client name',
+        ])]);
+
+        $this->assertSame(51, app(LasCmsSyncService::class)->linkByCnic($case));
+        $case->refresh();
+        $this->assertTrue($case->hasVerifiedLasLink());
+        $this->assertSame('cnic_name', $case->meta['las_match_method']);
     }
 
     public function test_same_name_with_different_cnic_never_links_and_clears_old_candidates(): void
@@ -91,9 +105,9 @@ class LasCmsSyncTest extends TestCase
         Http::fake([$this->url . '/cases/lookup*' => Http::response([
             'match_count' => 3,
             'candidates' => [
-                ['program_id' => 51, 'cnic' => $case->cnic],
-                ['program_id' => 52, 'cnic' => $case->cnic],
-                ['program_id' => 53, 'cnic' => '42201-7654321-1'],
+                ['program_id' => 51, 'cnic' => $case->cnic, 'clientName' => $case->name],
+                ['program_id' => 52, 'cnic' => $case->cnic, 'clientName' => $case->name],
+                ['program_id' => 53, 'cnic' => '42201-7654321-1', 'clientName' => $case->name],
             ],
         ], 409)]);
 
@@ -107,7 +121,7 @@ class LasCmsSyncTest extends TestCase
     {
         $case = $this->makeCase();
         Http::fake([$this->url . '/cases/lookup*' => Http::response([
-            'match_count' => 2, 'candidates' => [['program_id' => 51, 'cnic' => $case->cnic]],
+            'match_count' => 2, 'candidates' => [['program_id' => 51, 'cnic' => $case->cnic, 'clientName' => $case->name]],
         ], 409)]);
         $this->assertNull(app(LasCmsSyncService::class)->linkByCnic($case));
         $this->assertSame('ambiguous', $case->meta['las_link_status']);
@@ -118,7 +132,7 @@ class LasCmsSyncTest extends TestCase
         $case = $this->makeCase();
         Http::fake([
             $this->url . '/cases/lookup*' => Http::response(['data' => ['program_id' => 51]]),
-            $this->url . '/cases/51' => Http::response(['data' => ['id' => 51, 'cnic' => $case->cnic]]),
+            $this->url . '/cases/51' => Http::response(['data' => ['id' => 51, 'cnic' => $case->cnic, 'clientName' => $case->name]]),
         ]);
         $this->assertSame(51, app(LasCmsSyncService::class)->linkByCnic($case));
         Http::assertSentCount(2);
@@ -183,6 +197,22 @@ class LasCmsSyncTest extends TestCase
         Http::assertSent(fn ($request) => $request->method() === 'GET' && str_contains($request->url(), '/source/'));
     }
 
+    public function test_manual_cnic_selection_is_only_for_old_unlinked_cases(): void
+    {
+        $old = $this->makeCase();
+        $draft = $this->makeCase(['jh_cms_interview_id' => 61, 'meta' => ['las_link_status' => 'draft']]);
+        $newIntake = $this->makeCase(['meta' => ['las_sync_flow' => 'interview']]);
+        Http::fake([$this->url . '/cases/51' => Http::response(['id' => 51, 'cnic' => $old->cnic, 'clientName' => $old->name])]);
+        $service = app(LasCmsSyncService::class);
+        $this->assertNull($service->linkProgram($draft, 51));
+        $this->assertNull($service->linkProgram($newIntake, 51));
+        Http::assertNothingSent();
+        $this->assertSame(51, $service->linkProgram($old, 51));
+        $this->assertSame(51, $service->linkProgram($old, 51));
+        $this->assertNull($service->linkProgram($old, 52));
+        Http::assertSentCount(1);
+    }
+
     public function test_converted_draft_reads_program_and_hearings_by_resolved_id(): void
     {
         $case = $this->makeCase(['cnic' => null, 'jh_cms_interview_id' => 61, 'meta' => ['las_link_status' => 'draft']]);
@@ -213,22 +243,62 @@ class LasCmsSyncTest extends TestCase
         $this->assertSame('source_mismatch', $case->meta['las_link_status']);
     }
 
-    public function test_cnic_change_invalidates_old_match_but_name_change_does_not(): void
+    public function test_client_detail_changes_preserve_the_confirmed_program_id(): void
     {
-        $case = $this->makeCase(['external_case_id' => 51, 'meta' => ['las_link_status' => 'verified', 'las_match_method' => 'cnic']]);
+        $case = $this->makeCase(['external_case_id' => 51, 'meta' => ['las_link_status' => 'verified', 'las_match_method' => 'cnic_name']]);
         $case->update(['name' => 'Corrected Name']);
         $this->assertTrue($case->hasVerifiedLasLink());
         $case->update(['cnic' => '42201-1234567-1']);
         $this->assertTrue($case->hasVerifiedLasLink());
         $case->update(['cnic' => '4220176543211']);
-        $this->assertFalse($case->hasVerifiedLasLink());
-        $this->assertSame('identity_changed', $case->meta['las_link_status']);
+        $this->assertTrue($case->hasVerifiedLasLink());
+        $this->assertSame('verified', $case->meta['las_link_status']);
+        $this->assertSame(51, (int) $case->external_case_id);
+    }
+
+    public function test_linked_case_keeps_using_program_id_without_cnic_or_source_rematching(): void
+    {
+        $case = $this->makeCase([
+            'cnic' => null, 'external_case_id' => 51, 'jh_cms_interview_id' => 61,
+            'meta' => ['las_link_status' => 'verified', 'las_match_method' => 'cnic_name'],
+        ]);
+        Http::fake([
+            $this->url . '/cases/51' => Http::response(['id' => 51, 'cnic' => '42201-7654321-1', 'courtName' => 'Saved Program Court']),
+            $this->url . '/cases/51/hearings' => Http::response(['hearings' => []]),
+            $this->url . '/cases/51/timeline' => Http::response(['timeline' => []]),
+            $this->url . '/cases/51/status' => Http::response(['success' => true]),
+        ]);
+        $service = app(LasCmsSyncService::class);
+        $this->assertSame(51, $service->linkByCnic($case));
+        $this->assertSame(51, $service->resolveDraft($case));
+        Http::assertNothingSent();
+        $this->assertSame('Saved Program Court', $service->fetchCaseWithHearings($case)['courtName']);
+        $this->assertSame([], $service->fetchTimeline($case));
+        $this->assertTrue($service->updateStatus($case));
+        $this->assertSame(51, (int) $case->fresh()->external_case_id);
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), '/lookup') || str_contains($request->url(), '/source/'));
+    }
+
+    public function test_failed_new_intake_post_resolves_its_source_instead_of_matching_an_old_cnic(): void
+    {
+        $case = $this->makeCase();
+        Http::fake([
+            $this->url . '/cases' => Http::response(['error' => 'Temporary failure'], 503),
+            $this->url . '/cases/source/*' => Http::response(['error' => 'Source not found'], 404),
+        ]);
+        $service = app(LasCmsSyncService::class);
+        $this->assertNull($service->pushCase($case));
+        $this->assertSame('interview', $case->fresh()->meta['las_sync_flow']);
+        $this->assertNull($service->linkByCnic($case));
+        $this->assertNull($case->fresh()->external_case_id);
+        Http::assertSentCount(2);
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), '/lookup'));
     }
 
     public function test_counts_and_filters_include_only_court_cnic_matches_and_drafts(): void
     {
         $this->asHead();
-        $matched = $this->makeCase(['external_case_id' => 51, 'meta' => ['las_link_status' => 'cnic_matched']]);
+        $matched = $this->makeCase(['external_case_id' => 51, 'meta' => ['las_link_status' => 'verified', 'las_match_method' => 'cnic_name']]);
         $draft = $this->makeCase(['jh_cms_interview_id' => 61, 'meta' => ['las_link_status' => 'draft']]);
         $nameOnly = $this->makeCase(['external_case_id' => 52, 'meta' => ['las_link_status' => 'name_matched']]);
         $unmatched = $this->makeCase();
@@ -251,8 +321,8 @@ class LasCmsSyncTest extends TestCase
         $bad = $this->makeCase(['external_case_id' => 52]);
         $advice = $this->makeCase(['external_case_id' => 53, 'assigned_pathway' => 'Mediation']);
         Http::fake([
-            $this->url . '/cases/51' => Http::response(['id' => 51, 'cnic' => $good->cnic, 'caseStage' => 'Evidence']),
-            $this->url . '/cases/52' => Http::response(['id' => 52, 'cnic' => '42201-7654321-1']),
+            $this->url . '/cases/51' => Http::response(['id' => 51, 'cnic' => $good->cnic, 'clientName' => $good->name, 'caseStage' => 'Evidence']),
+            $this->url . '/cases/52' => Http::response(['id' => 52, 'cnic' => '42201-7654321-1', 'clientName' => $bad->name]),
         ]);
         $data = app(LasCmsSyncService::class)->fetchCases(collect([$good, $bad, $advice]));
         $this->assertSame([$good->id], array_keys($data));
@@ -266,8 +336,8 @@ class LasCmsSyncTest extends TestCase
         $this->asHead();
         $case = $this->makeCase();
         Http::fake([
-            $this->url . '/cases/lookup*' => Http::response(['program_id' => 51, 'cnic' => $case->cnic]),
-            $this->url . '/cases/51' => Http::response(['id' => 51, 'cnic' => $case->cnic, 'courtName' => 'Matched Family Court']),
+            $this->url . '/cases/lookup*' => Http::response(['program_id' => 51, 'cnic' => $case->cnic, 'clientName' => $case->name]),
+            $this->url . '/cases/51' => Http::response(['id' => 51, 'cnic' => $case->cnic, 'clientName' => $case->name, 'courtName' => 'Matched Family Court']),
             $this->url . '/cases/51/hearings' => Http::response(['hearings' => []]),
             $this->url . '/cases/51/timeline' => Http::response(['timeline' => []]),
         ]);
@@ -279,7 +349,7 @@ class LasCmsSyncTest extends TestCase
     public function test_reconcile_dry_run_does_not_persist_links(): void
     {
         $case = $this->makeCase();
-        Http::fake([$this->url . '/cases/lookup*' => Http::response(['program_id' => 51, 'cnic' => $case->cnic])]);
+        Http::fake([$this->url . '/cases/lookup*' => Http::response(['program_id' => 51, 'cnic' => $case->cnic, 'clientName' => $case->name])]);
         $this->artisan('las:reconcile-links', ['--case' => $case->case_uid, '--dry-run' => true])->assertSuccessful();
         $this->assertNull($case->fresh()->external_case_id);
         $this->artisan('las:reconcile-links', ['--case' => $case->case_uid])->assertSuccessful();
@@ -300,19 +370,25 @@ class LasCmsSyncTest extends TestCase
         $this->assertDatabaseHas('service_encounters', ['case_id' => $case->id, 'note' => 'UNRELATED CMS HEARING']);
     }
 
-    public function test_offline_matching_uses_cnic_only_and_preserves_ambiguity(): void
+    public function test_offline_matching_requires_cnic_and_name_and_preserves_ambiguity(): void
     {
         $good = $this->makeCase();
         $nameOnly = $this->makeCase(['cnic' => null]);
         $duplicate = $this->makeCase(['cnic' => '4220176543211', 'external_case_id' => 99]);
+        $linked = $this->makeCase(['cnic' => null, 'external_case_id' => 80, 'meta' => [
+            'las_link_status' => 'verified', 'las_match_method' => 'source',
+        ]]);
+        $newIntake = $this->makeCase(['meta' => ['las_sync_flow' => 'interview']]);
         $file = tempnam(sys_get_temp_dir(), 'las-cms-test-');
-        file_put_contents($file, "51|Different Name|42201-1234567-1|Dadu\n52|Local Client Name|42201-7654321-1|Dadu\n53|Other Name|42201-7654321-1|Hyderabad\n");
+        file_put_contents($file, "51|Mst; Local Client Name|42201-1234567-1|Dadu\n52|Local Client Name|42201-7654321-1|Dadu\n53|Local Client Name|42201-7654321-1|Hyderabad\n");
         try {
             $this->artisan('las:match-offline', ['file' => $file, '--name-fallback' => true, '--overwrite' => true])->assertSuccessful();
             $this->assertSame(51, (int) $good->fresh()->external_case_id);
             $this->assertNull($nameOnly->fresh()->external_case_id);
             $this->assertNull($duplicate->fresh()->external_case_id);
             $this->assertSame('cnic_ambiguous', $duplicate->fresh()->meta['las_link_status']);
+            $this->assertSame(80, (int) $linked->fresh()->external_case_id);
+            $this->assertNull($newIntake->fresh()->external_case_id);
         } finally {
             unlink($file);
         }
