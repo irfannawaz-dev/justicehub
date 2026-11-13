@@ -306,15 +306,19 @@ class IntakeController extends Controller
                 \Log::error('Intake email failed for ' . $case->case_uid . ': ' . $emailError);
 
                 // Notify all Head users via in-app notification (database only, not mail)
-                \App\Models\User::where('role', 'head')->get()->each(function ($admin) use ($case, $emailError) {
-                    $admin->notify(
-                        (new \App\Notifications\CaseNotification(
-                            title:   "Email delivery failed — {$case->case_uid}",
-                            message: "The intake notification email for case {$case->case_uid} (client: {$case->name}) could not be sent. Error: {$emailError}",
-                            type:    'info',
-                        ))->onConnection('sync')->onQueue('default')
-                    );
-                });
+                try {
+                    \App\Models\User::where('role', 'head')->get()->each(function ($admin) use ($case, $emailError) {
+                        $admin->notify(
+                            (new \App\Notifications\CaseNotification(
+                                title:   "Email delivery failed — {$case->case_uid}",
+                                message: "The intake notification email for case {$case->case_uid} (client: {$case->name}) could not be sent. Error: {$emailError}",
+                                type:    'info',
+                            ))->onConnection('sync')->onQueue('default')
+                        );
+                    });
+                } catch (\Exception $ne) {
+                    \Log::warning("Intake email-failure admin notification also failed: " . $ne->getMessage());
+                }
             }
         }
 
