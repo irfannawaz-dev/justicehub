@@ -1298,7 +1298,7 @@ class CaseController extends Controller
     {
         abort_unless($request->user()->can('reports.export'), 403);
 
-        $filename = 'justice-hub-cases-' . now()->format('Y-m-d') . '.xlsx';
+        $filename = 'justice-hub-complete-case-report-' . now()->format('Y-m-d') . '.xlsx';
 
         return \Maatwebsite\Excel\Facades\Excel::download(
             new \App\Exports\CasesExport($request->all()),

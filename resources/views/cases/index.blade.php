@@ -185,13 +185,14 @@
             </a>
         @endif
 
-        {{-- Export Excel --}}
+        {{-- Complete filtered case report --}}
         @can('reports.export')
         <a href="{{ route('cases.export', array_filter(['hub' => $currentHub, 'status' => $currentStatus, 'pathway' => $currentPathway, 'disposition' => $currentDisposition, 'district' => $currentDistrict, 'search' => $currentSearch, 'cms_link' => $currentCmsLink], fn($v) => $v && $v !== 'all')) }}"
+           title="Download all intake and case fields for the currently filtered cases"
            style="display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border:1px solid var(--moss); color:var(--moss); font-size:12px; font-weight:500; text-decoration:none; font-family:inherit; transition:all 120ms;"
            onmouseenter="this.style.background='var(--moss)';this.style.color='#fff'"
            onmouseleave="this.style.background='transparent';this.style.color='var(--moss)'">
-            <x-lucide-download style="width:12px;height:12px;" /> {{ __('common.export_excel') }}
+            <x-lucide-download style="width:12px;height:12px;" /> {{ __('dashboard.download_report') }}
         </a>
         @endcan
 
