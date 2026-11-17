@@ -29,3 +29,6 @@ DUAL-LANGUAGE-PLAN.md
 AUDIT.md
 public/JusticeHub-User-Manual.pdf
 resources/views/manual.blade.php
+storage/backups/
+*.sql
+config/cors.php
